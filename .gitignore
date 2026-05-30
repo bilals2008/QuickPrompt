@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-electron
+release
+*.local
+app-update.yml
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
