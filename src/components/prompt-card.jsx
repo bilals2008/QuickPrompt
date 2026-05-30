@@ -1,11 +1,12 @@
 import { useState } from "react"
-import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled } from "@tabler/icons-react"
+import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled, IconEdit } from "@tabler/icons-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { EditPromptDialog } from "@/components/edit-prompt-dialog"
 
 const TAG_COLORS = [
   "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
@@ -41,8 +42,9 @@ function formatTime(date) {
   return new Date(date).toLocaleDateString()
 }
 
-export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid" }) {
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved }) {
   const [copied, setCopied] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   const handleCopy = (e) => {
     e.stopPropagation()
@@ -88,21 +90,34 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   )
 
   const menuBtn = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="flex cursor-pointer items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-          <IconDotsVertical className="size-3.5" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCopy(prompt.content) }}>
-          <IconCopy className="size-3.5" /> Copy
-        </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive" onClick={(e) => { e.stopPropagation(); onDelete(prompt.id) }}>
-          <IconTrash className="size-3.5" /> Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="flex cursor-pointer items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+            <IconDotsVertical className="size-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-36">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCopy(prompt.content) }}>
+            <IconCopy className="size-3.5" /> Copy
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditOpen(true) }}>
+            <IconEdit className="size-3.5" /> Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onClick={(e) => { e.stopPropagation(); onDelete(prompt.id) }}>
+            <IconTrash className="size-3.5" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <EditPromptDialog
+        prompt={{ ...prompt, tags: prompt.tags || [] }}
+        onSaved={onSaved}
+        allTags={allTags}
+        mini={mini}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+    </>
   )
 
   return viewMode === "list" ? (

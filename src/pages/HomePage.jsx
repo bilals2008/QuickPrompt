@@ -183,6 +183,9 @@ export default function HomePage() {
                 onCopy={copyPrompt}
                 onDelete={deletePrompt}
                 onToggleFavorite={toggleFavoriteHandler}
+                allTags={allTags}
+                mini={!sidebarVisible}
+                onSaved={loadPrompts}
               />
             ))}
           </div>
@@ -196,6 +199,9 @@ export default function HomePage() {
                 onCopy={copyPrompt}
                 onDelete={deletePrompt}
                 onToggleFavorite={toggleFavoriteHandler}
+                allTags={allTags}
+                mini={!sidebarVisible}
+                onSaved={loadPrompts}
               />
             ))}
           </div>

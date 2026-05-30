@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
-import { IconPlus, IconX, IconCheck } from "@tabler/icons-react"
+import { IconX, IconCheck, IconEdit } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -35,8 +35,10 @@ function getTagColor(tag) {
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
 }
 
-export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
-  const [open, setOpen] = useState(false)
+export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini, open: externalOpen, onOpenChange: externalOnOpenChange }) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = externalOpen !== undefined ? externalOpen : internalOpen
+  const setOpen = externalOnOpenChange || setInternalOpen
   const [content, setContent] = useState("")
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
@@ -44,10 +46,12 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   const inputRef = useRef(null)
 
   useEffect(() => {
-    if (open) {
+    if (open && prompt) {
+      setContent(prompt.content || "")
+      setSelectedTags(prompt.tags ? [...prompt.tags] : [])
       setAllTags(externalTags || [])
     }
-  }, [open, externalTags])
+  }, [open, prompt, externalTags])
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 100)
@@ -80,22 +84,19 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
     setSelectedTags(selectedTags.filter((t) => t !== tag))
   }
 
-  async function savePrompt() {
+  async function saveEdit() {
     if (!content.trim()) {
       toast.error("Please enter a prompt")
       return
     }
     try {
-      await window.db.createPrompt({
+      await window.db.updatePrompt(prompt.id, {
         content: content.trim(),
         tags: selectedTags.join(","),
       })
       onSaved?.()
-      setContent("")
-      setSelectedTags([])
-      setTagInput("")
       setOpen(false)
-      toast.success("Prompt saved!")
+      toast.success("Prompt updated!")
     } catch (err) {
       toast.error(err?.message || String(err))
       console.error(err)
@@ -104,19 +105,10 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg cursor-pointer"
-          size="icon"
-        >
-          <IconPlus size={20} />
-        </Button>
-      </DialogTrigger>
-
       {mini ? (
         <DialogContent className="sm:max-w-sm gap-3">
           <DialogHeader>
-            <DialogTitle className="text-sm">New Prompt</DialogTitle>
+            <DialogTitle className="text-sm">Edit Prompt</DialogTitle>
           </DialogHeader>
           <Textarea
             id="content"
@@ -161,15 +153,15 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
             )}
           </div>
           <div className="flex gap-2">
-            <Button onClick={savePrompt} className="flex-1 cursor-pointer h-8 text-xs">
-              Save
+            <Button onClick={saveEdit} className="flex-1 cursor-pointer h-8 text-xs">
+              Update
             </Button>
           </div>
         </DialogContent>
       ) : (
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>New Prompt</DialogTitle>
+            <DialogTitle>Edit Prompt</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -226,8 +218,8 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                 </div>
               )}
             </div>
-            <Button onClick={savePrompt} className="w-full cursor-pointer">
-              Save Prompt
+            <Button onClick={saveEdit} className="w-full cursor-pointer">
+              Update Prompt
             </Button>
           </div>
         </DialogContent>
