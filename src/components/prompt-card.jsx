@@ -118,7 +118,15 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite }) {
       <div className="flex flex-col gap-1.5 p-2.5 pb-0 sm:hidden">
         <div className="flex items-start justify-between gap-1">
           <div className="flex min-w-0 flex-1 flex-wrap gap-1">
-            {tagBadges || <span className="text-[10px] text-muted-foreground/40 italic">untagged</span>}
+            {prompt.tags.length > 0 ? (
+              prompt.tags.map((tag) => (
+                <span key={tag} className="text-[10px] text-muted-foreground/70 font-medium">
+                  #{tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-[10px] text-muted-foreground/40 italic">untagged</span>
+            )}
           </div>
           {starBtn}
         </div>

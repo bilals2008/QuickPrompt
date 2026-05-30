@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
-import { IconPlus, IconX } from "@tabler/icons-react"
+import { IconPlus, IconX, IconCheck } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { TagManager } from "@/components/tag-manager"
 import { cn } from "@/lib/utils"
 
 const TAG_COLORS = [
@@ -40,6 +41,17 @@ export function AddPromptDialog({ onSaved, allTags: externalTags }) {
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
   const [allTags, setAllTags] = useState(externalTags || [])
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (open) {
+      setAllTags(externalTags || [])
+    }
+  }, [open, externalTags])
+
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 100)
+  }, [open])
 
   async function addTag(tag) {
     const t = tag.trim().toLowerCase()
@@ -54,6 +66,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags }) {
       }
     }
     setTagInput("")
+    inputRef.current?.focus()
   }
 
   function removeTag(tag) {
@@ -112,42 +125,33 @@ export function AddPromptDialog({ onSaved, allTags: externalTags }) {
             <Label>Tags</Label>
             <div className="flex items-center gap-2">
               <Input
-                placeholder="Type tag and press Enter..."
+                ref={inputRef}
+                placeholder="Quick add..."
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault()
-                    addTag(tagInput)
+                    if (tagInput.trim()) addTag(tagInput)
                   }
                 }}
-                className="flex-1"
-                list="tag-suggestions"
+                className="flex-1 text-xs placeholder:text-xs"
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => addTag(tagInput)}
-                className="cursor-pointer"
-              >
-                Add
-              </Button>
+              <TagManager
+                selectedTags={selectedTags}
+                onTagsChange={setSelectedTags}
+                allTags={allTags}
+              />
             </div>
-            <datalist id="tag-suggestions">
-              {allTags
-                .filter((t) => !selectedTags.includes(t))
-                .map((t) => (
-                  <option key={t} value={t} />
-                ))}
-            </datalist>
             {selectedTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-1.5">
                 {selectedTags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
                     className={cn("text-xs font-normal gap-1 border", getTagColor(tag))}
                   >
+                    <IconCheck size={10} />
                     {tag}
                     <IconX
                       size={12}
