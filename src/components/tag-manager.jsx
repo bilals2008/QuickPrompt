@@ -154,11 +154,12 @@ export function TagManager({ selectedTags, onTagsChange, allTags: externalTags }
                     className={cn("text-[11px] font-normal gap-0.5 border leading-none px-1.5 py-0.5 h-auto", getTagColor(tag))}
                   >
                     {tag}
-                    <IconX
-                      size={10}
+                    <span
                       className="cursor-pointer hover:text-destructive"
                       onClick={() => toggleTag(tag)}
-                    />
+                    >
+                      <IconX size={10} />
+                    </span>
                   </Badge>
                 ))}
               </div>

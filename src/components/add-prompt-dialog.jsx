@@ -53,20 +53,27 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
     if (open) setTimeout(() => inputRef.current?.focus(), 100)
   }, [open])
 
-  async function addTag(tag) {
-    const t = tag.trim().toLowerCase()
-    if (!t || selectedTags.includes(t)) return
+  function addTag() {
+    const input = inputRef.current
+    if (!input) return
+    const t = input.value.trim().toLowerCase()
+    if (!t) return
+    input.value = ""
+    setTagInput("")
+    if (selectedTags.includes(t)) {
+      setSelectedTags(selectedTags.filter((tag) => tag !== t))
+      input.focus()
+      return
+    }
     setSelectedTags([...selectedTags, t])
     if (!allTags.includes(t)) {
-      try {
-        await window.db.createTag(t)
-        setAllTags([...allTags, t])
-      } catch (err) {
+      window.db.createTag(t).then(() => {
+        setAllTags((prev) => [...prev, t])
+      }).catch((err) => {
         console.error("Failed to create tag:", err)
-      }
+      })
     }
-    setTagInput("")
-    inputRef.current?.focus()
+    input.focus()
   }
 
   function removeTag(tag) {
@@ -128,7 +135,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault()
-                  if (tagInput.trim()) addTag(tagInput)
+                  addTag()
                 }
               }}
               className="h-7 text-xs placeholder:text-xs"
@@ -142,11 +149,12 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                     className={cn("text-[10px] font-normal gap-0.5 border leading-none px-1.5 py-0.5", getTagColor(tag))}
                   >
                     {tag}
-                    <IconX
-                      size={9}
-                      className="cursor-pointer hover:text-destructive"
+                    <span
+                      className="cursor-pointer hover:text-destructive leading-none"
                       onClick={() => removeTag(tag)}
-                    />
+                    >
+                      <IconX size={9} />
+                    </span>
                   </Badge>
                 ))}
               </div>
@@ -186,7 +194,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault()
-                      if (tagInput.trim()) addTag(tagInput)
+                      addTag()
                     }
                   }}
                   className="flex-1 text-xs placeholder:text-xs"
@@ -207,11 +215,12 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                     >
                       <IconCheck size={10} />
                       {tag}
-                      <IconX
-                        size={12}
+                      <span
                         className="cursor-pointer hover:text-destructive"
                         onClick={() => removeTag(tag)}
-                      />
+                      >
+                        <IconX size={12} />
+                      </span>
                     </Badge>
                   ))}
                 </div>
