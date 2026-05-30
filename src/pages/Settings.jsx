@@ -139,6 +139,26 @@ export default function Settings() {
         <ScrollArea className="flex-1">
           <div className="p-4 sm:p-6">
 
+            {!showSidebar && (
+              <div className="mb-4 flex justify-center gap-2">
+                {sections.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setActiveSection(s.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                      activeSection === s.id
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <s.icon size={14} />
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {activeSection === "general" && (
               <section>
                 <div className="mb-4">
@@ -262,26 +282,6 @@ export default function Settings() {
                    <p>Built by Muhammad Bilal Hassan</p>
                  </div>
               </section>
-            )}
-
-            {!showSidebar && (
-              <div className="mt-4 flex justify-center gap-2">
-                {sections.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setActiveSection(s.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
-                      activeSection === s.id
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    )}
-                  >
-                    <s.icon size={14} />
-                    {s.label}
-                  </button>
-                ))}
-              </div>
             )}
 
           </div>
