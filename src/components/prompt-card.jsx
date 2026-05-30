@@ -1,0 +1,132 @@
+import { useState } from "react"
+import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled } from "@tabler/icons-react"
+import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
+
+const TAG_COLORS = [
+  "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  "bg-green-500/10 text-green-500 border-green-500/20",
+  "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  "bg-pink-500/10 text-pink-500 border-pink-500/20",
+  "bg-teal-500/10 text-teal-500 border-teal-500/20",
+  "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  "bg-rose-500/10 text-rose-500 border-rose-500/20",
+]
+
+function getTagColor(tag) {
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
+}
+
+function formatTime(date) {
+  const now = new Date()
+  const diff = now - new Date(date)
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return new Date(date).toLocaleDateString()
+}
+
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = (e) => {
+    e.stopPropagation()
+    onCopy(prompt.content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  const handleFavorite = (e) => {
+    e.stopPropagation()
+    onToggleFavorite(prompt.id)
+  }
+
+  return (
+    <div
+      onClick={() => onCopy(prompt.content)}
+      className="group flex cursor-pointer flex-col rounded-xl border border-border bg-card transition-all hover:ring-1 hover:ring-primary/30"
+    >
+      <div className="flex flex-col gap-2 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
+            {prompt.content}
+          </p>
+          <button
+            onClick={handleFavorite}
+            className="shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-amber-400"
+          >
+            {prompt.favorite ? (
+              <IconStarFilled size={14} className="text-amber-400" />
+            ) : (
+              <IconStar size={14} />
+            )}
+          </button>
+        </div>
+        {prompt.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {prompt.tags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className={cn("text-[10px] font-normal border", getTagColor(tag))}
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between border-t border-border px-4 py-2">
+        <span className="text-[11px] text-muted-foreground">
+          {formatTime(prompt.created_at)}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleCopy}
+            className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+          >
+            <IconCopy className="size-3" />
+            {copied ? "Copied!" : "Copy"}
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex cursor-pointer items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                <IconDotsVertical className="size-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCopy(prompt.content) }}>
+                <IconCopy className="size-3.5" /> Copy
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={(e) => { e.stopPropagation(); onDelete(prompt.id) }}>
+                <IconTrash className="size-3.5" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function parsePrompt(p) {
+  return {
+    ...p,
+    tags: p.tags ? p.tags.split(",").filter(Boolean) : [],
+  }
+}
