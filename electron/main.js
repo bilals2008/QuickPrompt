@@ -62,9 +62,9 @@ function toggleWindow() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 420,
-    height: 560,
-    minWidth: 340,
+    width: 440,
+    height: 600,
+    minWidth: 360,
     minHeight: 400,
     icon: path.join(process.env.VITE_PUBLIC, "icon.png"),
     webPreferences: {
@@ -98,6 +98,8 @@ app.whenReady().then(async () => {
   if (isMac) {
     app.dock.hide()
   }
+
+  Menu.setApplicationMenu(null)
 
   try {
     await initDatabase()

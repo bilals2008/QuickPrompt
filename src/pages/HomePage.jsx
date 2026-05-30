@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { IconCopy, IconPlus, IconTrash, IconX } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -55,6 +55,8 @@ export default function HomePage() {
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
   const [search, setSearch] = useState("")
+  const [showSearch, setShowSearch] = useState(true)
+  const headerRef = useRef(null)
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -78,6 +80,16 @@ export default function HomePage() {
     loadPrompts()
     loadTags()
   }, [loadPrompts, loadTags])
+
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      setShowSearch(entry.contentRect.width > 360)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   async function addTag(tag) {
     const t = tag.trim().toLowerCase()
@@ -156,20 +168,31 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">QuickPrompt</h1>
-          <p className="text-sm text-muted-foreground">Create, tag, and copy prompts instantly</p>
+      <header ref={headerRef} className="flex items-center justify-between px-6 py-4 border-b border-border/30 gap-3">
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold text-foreground truncate">QuickPrompt</h1>
+          <p className="text-xs text-muted-foreground truncate hidden sm:block">Create, tag, and copy prompts instantly</p>
         </div>
         <Input
           placeholder="Search prompts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs h-9 text-sm"
+          className={cn("h-9 text-sm transition-all", showSearch ? "max-w-52" : "max-w-0 opacity-0 pointer-events-none p-0 border-transparent")}
         />
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      {!showSearch && (
+        <div className="px-4 pt-3 pb-0">
+          <Input
+            placeholder="Search prompts..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 text-sm"
+          />
+        </div>
+      )}
+
+      <div className={cn("flex-1 overflow-y-auto", showSearch ? "p-6" : "p-4 pt-3")}>
         {filteredPrompts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <p className="text-lg font-medium">No prompts yet</p>
