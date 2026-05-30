@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { IconCopy, IconPlus, IconTrash, IconX } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -74,26 +74,41 @@ export default function HomePage() {
   const [selectedTags, setSelectedTags] = useState([])
   const [search, setSearch] = useState("")
 
-  useEffect(() => {
-    const saved = localStorage.getItem("qp-prompts")
-    if (saved) setPrompts(JSON.parse(saved))
-    const tags = localStorage.getItem("qp-tags")
-    if (tags) setAllTags(JSON.parse(tags))
+  const loadPrompts = useCallback(async () => {
+    try {
+      const data = await window.db.getAllPrompts()
+      setPrompts(data || [])
+    } catch (err) {
+      console.error("Failed to load prompts:", err)
+    }
+  }, [])
+
+  const loadTags = useCallback(async () => {
+    try {
+      const data = await window.db.getAllTags()
+      setAllTags(data.map((t) => t.name) || [])
+    } catch (err) {
+      console.error("Failed to load tags:", err)
+    }
   }, [])
 
   useEffect(() => {
-    localStorage.setItem("qp-prompts", JSON.stringify(prompts))
-  }, [prompts])
+    loadPrompts()
+    loadTags()
+  }, [loadPrompts, loadTags])
 
-  useEffect(() => {
-    localStorage.setItem("qp-tags", JSON.stringify(allTags))
-  }, [allTags])
-
-  function addTag(tag) {
+  async function addTag(tag) {
     const t = tag.trim().toLowerCase()
     if (!t || selectedTags.includes(t)) return
     setSelectedTags([...selectedTags, t])
-    if (!allTags.includes(t)) setAllTags([...allTags, t])
+    if (!allTags.includes(t)) {
+      try {
+        await window.db.createTag(t)
+        setAllTags([...allTags, t])
+      } catch (err) {
+        console.error("Failed to create tag:", err)
+      }
+    }
     setTagInput("")
   }
 
@@ -101,46 +116,64 @@ export default function HomePage() {
     setSelectedTags(selectedTags.filter((t) => t !== tag))
   }
 
-  function savePrompt() {
+  async function savePrompt() {
     if (!content.trim()) {
       toast.error("Please enter a prompt")
       return
     }
-    const prompt = {
-      id: Date.now().toString(),
-      content: content.trim(),
-      model: model || "none",
-      tags: selectedTags,
-      createdAt: new Date().toISOString(),
+    try {
+      await window.db.createPrompt({
+        content: content.trim(),
+        model: model || "",
+        tags: selectedTags.join(","),
+      })
+      await loadPrompts()
+      setContent("")
+      setModel("")
+      setSelectedTags([])
+      setTagInput("")
+      setOpen(false)
+      toast.success("Prompt saved!")
+    } catch (err) {
+      toast.error("Failed to save prompt")
+      console.error(err)
     }
-    setPrompts([prompt, ...prompts])
-    setContent("")
-    setModel("")
-    setSelectedTags([])
-    setTagInput("")
-    setOpen(false)
-    toast.success("Prompt saved!")
   }
 
-  function copyPrompt(content) {
-    navigator.clipboard.writeText(content)
+  function copyPrompt(text) {
+    navigator.clipboard.writeText(text)
     toast.success("Copied to clipboard!")
   }
 
-  function deletePrompt(id) {
-    setPrompts(prompts.filter((p) => p.id !== id))
-    toast.success("Prompt deleted")
+  async function deletePrompt(id) {
+    try {
+      await window.db.deletePrompt(id)
+      await loadPrompts()
+      toast.success("Prompt deleted")
+    } catch (err) {
+      toast.error("Failed to delete prompt")
+      console.error(err)
+    }
   }
 
-  const filteredPrompts = prompts.filter((p) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      p.content.toLowerCase().includes(q) ||
-      p.tags.some((t) => t.includes(q)) ||
-      p.model.includes(q)
-    )
-  })
+  function parsePrompt(p) {
+    return {
+      ...p,
+      tags: p.tags ? p.tags.split(",").filter(Boolean) : [],
+    }
+  }
+
+  const filteredPrompts = prompts
+    .map(parsePrompt)
+    .filter((p) => {
+      if (!search) return true
+      const q = search.toLowerCase()
+      return (
+        p.content.toLowerCase().includes(q) ||
+        p.tags.some((t) => t.includes(q)) ||
+        p.model.toLowerCase().includes(q)
+      )
+    })
 
   return (
     <div className="flex flex-col h-full">
@@ -195,7 +228,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                  {prompt.model !== "none" && (
+                  {prompt.model && (
                     <Badge variant="secondary" className="text-xs font-normal">
                       {MODELS.find((m) => m.value === prompt.model)?.label || prompt.model}
                     </Badge>
@@ -210,7 +243,7 @@ export default function HomePage() {
                     </Badge>
                   ))}
                   <span className="text-xs text-muted-foreground ml-auto">
-                    {formatTime(prompt.createdAt)}
+                    {formatTime(prompt.created_at)}
                   </span>
                 </div>
               </div>
