@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate, useOutletContext } from "react-router-dom"
 import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -10,6 +11,7 @@ import {
   IconCheck,
   IconSettings,
   IconMessage,
+  IconArrowLeft,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -95,31 +97,47 @@ function SettingRow({ icon: Icon, label, description, children }) {
 }
 
 export default function Settings() {
+  const navigate = useNavigate()
+  const { sidebarVisible } = useOutletContext()
   const { theme, setTheme } = useTheme()
   const [activeSection, setActiveSection] = useState("appearance")
 
+  const showSidebar = sidebarVisible
+
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card/50 px-4">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/30 bg-card/50 px-4">
+        {!showSidebar && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 cursor-pointer"
+            onClick={() => navigate("/")}
+          >
+            <IconArrowLeft size={16} />
+          </Button>
+        )}
         <IconSettings className="size-4 text-primary" />
         <h1 className="text-base font-bold tracking-tight text-primary">Settings</h1>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <nav className="w-44 shrink-0 border-r border-border bg-card/30 p-3 flex flex-col gap-1">
-          {sections.map((section) => (
-            <NavItem
-              key={section.id}
-              icon={section.icon}
-              label={section.label}
-              active={activeSection === section.id}
-              onClick={() => setActiveSection(section.id)}
-            />
-          ))}
-        </nav>
+        {showSidebar && (
+          <nav className="w-44 shrink-0 border-r border-border/30 bg-card/30 p-3 flex flex-col gap-1">
+            {sections.map((section) => (
+              <NavItem
+                key={section.id}
+                icon={section.icon}
+                label={section.label}
+                active={activeSection === section.id}
+                onClick={() => setActiveSection(section.id)}
+              />
+            ))}
+          </nav>
+        )}
 
         <ScrollArea className="flex-1">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
 
             {activeSection === "general" && (
               <section>
@@ -262,6 +280,26 @@ export default function Settings() {
                   <p>QuickPrompt &copy; {new Date().getFullYear()}</p>
                 </div>
               </section>
+            )}
+
+            {!showSidebar && (
+              <div className="mt-4 flex justify-center gap-2">
+                {sections.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setActiveSection(s.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                      activeSection === s.id
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <s.icon size={14} />
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             )}
 
           </div>

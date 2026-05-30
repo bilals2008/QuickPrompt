@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
-import { IconCopy, IconPlus, IconTrash, IconX, IconSearch } from "@tabler/icons-react"
+import { useNavigate, useOutletContext } from "react-router-dom"
+import { IconCopy, IconPlus, IconTrash, IconX, IconSearch, IconSettings } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -48,6 +49,8 @@ function formatTime(date) {
 }
 
 export default function HomePage() {
+  const navigate = useNavigate()
+  const { sidebarVisible } = useOutletContext()
   const [prompts, setPrompts] = useState([])
   const [allTags, setAllTags] = useState([])
   const [open, setOpen] = useState(false)
@@ -168,9 +171,19 @@ export default function HomePage() {
           <h1 className="text-lg font-semibold text-foreground truncate">QuickPrompt</h1>
           <p className="text-xs text-muted-foreground truncate hidden sm:block">Create, tag, and copy prompts instantly</p>
         </div>
-        {prompts.length > 0 && (
-          <div className="flex items-center gap-2">
-            {searchOpen ? (
+        <div className="flex items-center gap-1">
+          {!sidebarVisible && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 cursor-pointer"
+              onClick={() => navigate("/settings")}
+            >
+              <IconSettings size={16} />
+            </Button>
+          )}
+          {prompts.length > 0 && (
+            searchOpen ? (
               <Input
                 ref={searchRef}
                 placeholder="Search prompts..."
@@ -190,9 +203,9 @@ export default function HomePage() {
               >
                 <IconSearch size={16} />
               </Button>
-            )}
-          </div>
-        )}
+            )
+          )}
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4">
