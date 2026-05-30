@@ -68,7 +68,7 @@ function createWindow() {
     minHeight: 400,
     icon: path.join(process.env.VITE_PUBLIC, "icon.png"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.mjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -94,6 +94,9 @@ function createWindow() {
   }
 }
 
+let dbReady = false
+let dbError = null
+
 app.whenReady().then(async () => {
   if (isMac) {
     app.dock.hide()
@@ -103,8 +106,10 @@ app.whenReady().then(async () => {
 
   try {
     await initDatabase()
+    dbReady = true
     console.log("[Main] Database ready")
   } catch (err) {
+    dbError = err.message || String(err)
     console.error("[Main] Database init failed:", err)
   }
 
@@ -131,6 +136,10 @@ app.on("will-quit", () => {
 
 ipcMain.handle("get-app-version", () => {
   return app.getVersion()
+})
+
+ipcMain.handle("db:health", () => {
+  return { ready: dbReady, error: dbError }
 })
 
 ipcMain.handle("db:createPrompt", async (_event, data) => {

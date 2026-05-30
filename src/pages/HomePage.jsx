@@ -82,6 +82,9 @@ export default function HomePage() {
   useEffect(() => {
     loadPrompts()
     loadTags()
+    window.db?.health?.().then((h) => {
+      if (!h.ready) toast.error("Database error: " + (h.error || "unknown"))
+    })
   }, [loadPrompts, loadTags])
 
   useEffect(() => {
@@ -125,7 +128,8 @@ export default function HomePage() {
       setOpen(false)
       toast.success("Prompt saved!")
     } catch (err) {
-      toast.error("Failed to save prompt")
+      const msg = err?.message || String(err)
+      toast.error(msg)
       console.error(err)
     }
   }

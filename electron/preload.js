@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 })
 
 contextBridge.exposeInMainWorld("db", {
+  health: () => ipcRenderer.invoke("db:health"),
   createPrompt: (data) => ipcRenderer.invoke("db:createPrompt", data),
   getAllPrompts: () => ipcRenderer.invoke("db:getAllPrompts"),
   updatePrompt: (id, data) => ipcRenderer.invoke("db:updatePrompt", id, data),
