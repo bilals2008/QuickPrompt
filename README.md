@@ -8,6 +8,7 @@ Built with Electron + React 19 + Vite 8 + shadcn/ui + Tailwind CSS v4 + SQLite3.
 
 - **Quick save** — FAB button to add prompts with tags
 - **One-click copy** — click any prompt card to copy to clipboard
+- **Favorite system** — star prompts to mark favorites, filter to show only favorites
 - **Tag system** — color-coded tags with autocomplete suggestions
 - **Search** — filter prompts by content or tags
 - **Responsive grid** — adapts from 1 column on small screens to 4 columns on large screens
