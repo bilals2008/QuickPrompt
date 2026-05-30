@@ -171,7 +171,7 @@ export default function HomePage() {
         )}
       </div>
 
-      <AddPromptDialog onSaved={loadPrompts} allTags={allTags} />
+      <AddPromptDialog onSaved={loadPrompts} allTags={allTags} mini={!sidebarVisible} />
     </div>
   )
 }
