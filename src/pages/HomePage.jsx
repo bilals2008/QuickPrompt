@@ -157,7 +157,7 @@ export default function HomePage() {
             <p className="text-sm mt-1">Click the + button to add your first prompt</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
             {filteredPrompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}
