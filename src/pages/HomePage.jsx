@@ -57,7 +57,7 @@ function PromptCardItem({ prompt, onCopy, onDelete }) {
       onClick={() => onCopy(prompt.content)}
       className="group flex cursor-pointer flex-col rounded-xl border border-border bg-card transition-all hover:ring-1 hover:ring-primary/30"
     >
-      <div className="flex flex-col gap-2 p-4">
+      <div className="flex flex-col gap-1.5 p-3">
         <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
           {prompt.content}
         </p>
@@ -75,7 +75,7 @@ function PromptCardItem({ prompt, onCopy, onDelete }) {
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between border-t border-border px-4 py-2">
+      <div className="flex items-center justify-between border-t border-border px-3 py-1.5">
         <span className="text-[11px] text-muted-foreground">
           {formatTime(prompt.created_at)}
         </span>
@@ -301,7 +301,7 @@ export default function HomePage() {
             <p className="text-sm mt-1">Click the + button to add your first prompt</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredPrompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}
