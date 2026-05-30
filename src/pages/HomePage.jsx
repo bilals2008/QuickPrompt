@@ -13,24 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-
-const MODELS = [
-  { value: "gpt-4", label: "GPT-4" },
-  { value: "gpt-3.5", label: "GPT-3.5" },
-  { value: "claude-3", label: "Claude 3" },
-  { value: "gemini", label: "Gemini" },
-  { value: "llama", label: "Llama" },
-  { value: "mistral", label: "Mistral" },
-  { value: "other", label: "Other" },
-]
 
 const TAG_COLORS = [
   "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -69,7 +52,6 @@ export default function HomePage() {
   const [allTags, setAllTags] = useState([])
   const [open, setOpen] = useState(false)
   const [content, setContent] = useState("")
-  const [model, setModel] = useState("")
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
   const [search, setSearch] = useState("")
@@ -124,12 +106,10 @@ export default function HomePage() {
     try {
       await window.db.createPrompt({
         content: content.trim(),
-        model: model || "",
         tags: selectedTags.join(","),
       })
       await loadPrompts()
       setContent("")
-      setModel("")
       setSelectedTags([])
       setTagInput("")
       setOpen(false)
@@ -170,8 +150,7 @@ export default function HomePage() {
       const q = search.toLowerCase()
       return (
         p.content.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.includes(q)) ||
-        p.model.toLowerCase().includes(q)
+        p.tags.some((t) => t.includes(q))
       )
     })
 
@@ -228,11 +207,6 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                  {prompt.model && (
-                    <Badge variant="secondary" className="text-xs font-normal">
-                      {MODELS.find((m) => m.value === prompt.model)?.label || prompt.model}
-                    </Badge>
-                  )}
                   {prompt.tags.map((tag) => (
                     <Badge
                       key={tag}
@@ -276,21 +250,6 @@ export default function HomePage() {
                 rows={5}
                 className="resize-none"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
-              <Select value={model} onValueChange={setModel}>
-                <SelectTrigger id="model" className="cursor-pointer">
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODELS.map((m) => (
-                    <SelectItem key={m.value} value={m.value} className="cursor-pointer">
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label>Tags</Label>
