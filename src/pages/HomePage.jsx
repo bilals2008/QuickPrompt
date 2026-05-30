@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconCopy, IconPlus, IconTrash, IconX, IconSearch, IconSettings } from "@tabler/icons-react"
+import { IconCopy, IconPlus, IconTrash, IconX, IconSearch, IconSettings, IconDotsVertical } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,6 +14,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 import { cn } from "@/lib/utils"
 
 const TAG_COLORS = [
@@ -33,6 +40,72 @@ function getTagColor(tag) {
     hash = tag.charCodeAt(i) + ((hash << 5) - hash)
   }
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
+}
+
+function PromptCardItem({ prompt, onCopy, onDelete }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = (e) => {
+    e.stopPropagation()
+    onCopy(prompt.content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div
+      onClick={() => onCopy(prompt.content)}
+      className="group flex cursor-pointer flex-col rounded-xl border border-border bg-card transition-all hover:ring-1 hover:ring-primary/30"
+    >
+      <div className="flex flex-col gap-2 p-4">
+        <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
+          {prompt.content}
+        </p>
+        {prompt.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {prompt.tags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className={cn("text-[10px] font-normal border", getTagColor(tag))}
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between border-t border-border px-4 py-2">
+        <span className="text-[11px] text-muted-foreground">
+          {formatTime(prompt.created_at)}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleCopy}
+            className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+          >
+            <IconCopy className="size-3" />
+            {copied ? "Copied!" : "Copy"}
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex cursor-pointer items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                <IconDotsVertical className="size-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCopy(prompt.content) }}>
+                <IconCopy className="size-3.5" /> Copy
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={(e) => { e.stopPropagation(); onDelete(prompt.id) }}>
+                <IconTrash className="size-3.5" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function formatTime(date) {
@@ -228,51 +301,14 @@ export default function HomePage() {
             <p className="text-sm mt-1">Click the + button to add your first prompt</p>
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredPrompts.map((prompt) => (
-              <div
+              <PromptCardItem
                 key={prompt.id}
-                onClick={() => copyPrompt(prompt.content)}
-                className="group relative bg-card border border-border rounded-xl p-4 cursor-pointer transition-all hover:border-primary/30 hover:bg-accent/30"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap flex-1">
-                    {prompt.content}
-                  </p>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => { e.stopPropagation(); copyPrompt(prompt.content) }}
-                    >
-                      <IconCopy size={14} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                      onClick={(e) => { e.stopPropagation(); deletePrompt(prompt.id) }}
-                    >
-                      <IconTrash size={14} />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mt-3 flex-wrap">
-                  {prompt.tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="outline"
-                      className={cn("text-xs font-normal border", getTagColor(tag))}
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    {formatTime(prompt.created_at)}
-                  </span>
-                </div>
-              </div>
+                prompt={prompt}
+                onCopy={copyPrompt}
+                onDelete={deletePrompt}
+              />
             ))}
           </div>
         )}
