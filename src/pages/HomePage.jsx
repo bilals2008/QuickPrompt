@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconSearch, IconSettings, IconStar, IconStarFilled } from "@tabler/icons-react"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PromptCardItem, parsePrompt } from "@/components/prompt-card"
 import { AddPromptDialog } from "@/components/add-prompt-dialog"
 import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -15,6 +16,7 @@ export default function HomePage() {
   const [allTags, setAllTags] = useState([])
   const [search, setSearch] = useState("")
   const [searchOpen, setSearchOpen] = useState(false)
+  const [viewMode, setViewMode] = useState("grid")
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const searchRef = useRef(null)
 
@@ -116,6 +118,21 @@ export default function HomePage() {
           )}
           {prompts.length > 0 && (
             <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 cursor-pointer"
+                    onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+                  >
+                    {viewMode === "grid" ? <IconLayoutList size={16} /> : <IconLayoutGrid size={16} />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {viewMode === "grid" ? "List view" : "Grid view"}
+                </TooltipContent>
+              </Tooltip>
               <Button
                 variant="ghost"
                 size="icon"
@@ -156,12 +173,26 @@ export default function HomePage() {
             <p className="text-lg font-medium">No prompts yet</p>
             <p className="text-sm mt-1">Click the + button to add your first prompt</p>
           </div>
-        ) : (
+        ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
             {filteredPrompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}
                 prompt={prompt}
+                viewMode="grid"
+                onCopy={copyPrompt}
+                onDelete={deletePrompt}
+                onToggleFavorite={toggleFavoriteHandler}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 mx-auto w-full max-w-4xl">
+            {filteredPrompts.map((prompt) => (
+              <PromptCardItem
+                key={prompt.id}
+                prompt={prompt}
+                viewMode="list"
                 onCopy={copyPrompt}
                 onDelete={deletePrompt}
                 onToggleFavorite={toggleFavoriteHandler}

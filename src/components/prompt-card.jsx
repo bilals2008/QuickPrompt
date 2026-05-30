@@ -41,7 +41,7 @@ function formatTime(date) {
   return new Date(date).toLocaleDateString()
 }
 
-export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite }) {
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid" }) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = (e) => {
@@ -105,7 +105,31 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite }) {
     </DropdownMenu>
   )
 
-  return (
+  return viewMode === "list" ? (
+    <div
+      onClick={() => onCopy(prompt.content)}
+      className="group flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all hover:ring-1 hover:ring-primary/30"
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <p className="line-clamp-1 text-sm text-muted-foreground leading-relaxed min-w-0 flex-1">
+          {prompt.content}
+        </p>
+        {tagBadges && (
+          <div className="hidden sm:flex flex-wrap gap-1 shrink-0">
+            {tagBadges}
+          </div>
+        )}
+        <span className="hidden sm:inline text-[11px] text-muted-foreground/50 shrink-0 w-14 text-right">
+          {formatTime(prompt.created_at)}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        {starBtn}
+        {copyBtn}
+        {menuBtn}
+      </div>
+    </div>
+  ) : (
     <div
       onClick={() => onCopy(prompt.content)}
       className="group flex cursor-pointer flex-col rounded-xl border border-border bg-card transition-all hover:ring-1 hover:ring-primary/30"

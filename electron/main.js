@@ -103,8 +103,6 @@ app.whenReady().then(async () => {
     app.dock.hide()
   }
 
-  Menu.setApplicationMenu(null)
-
   try {
     await initDatabase()
     dbReady = true
