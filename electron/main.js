@@ -10,6 +10,7 @@ import {
   getAllTags,
   createTag,
   searchPrompts,
+  toggleFavorite,
 } from "./database/prompts.js"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -168,4 +169,8 @@ ipcMain.handle("db:createTag", async (_event, name) => {
 
 ipcMain.handle("db:searchPrompts", async (_event, query) => {
   return searchPrompts(query)
+})
+
+ipcMain.handle("db:toggleFavorite", async (_event, id) => {
+  return toggleFavorite(id)
 })

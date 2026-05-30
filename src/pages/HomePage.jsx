@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconCopy, IconPlus, IconTrash, IconX, IconSearch, IconSettings, IconDotsVertical } from "@tabler/icons-react"
+import { IconCopy, IconPlus, IconTrash, IconX, IconSearch, IconSettings, IconDotsVertical, IconStar, IconStarFilled } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -42,7 +42,7 @@ function getTagColor(tag) {
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
 }
 
-function PromptCardItem({ prompt, onCopy, onDelete }) {
+function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite }) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = (e) => {
@@ -52,15 +52,32 @@ function PromptCardItem({ prompt, onCopy, onDelete }) {
     setTimeout(() => setCopied(false), 1500)
   }
 
+  const handleFavorite = (e) => {
+    e.stopPropagation()
+    onToggleFavorite(prompt.id)
+  }
+
   return (
     <div
       onClick={() => onCopy(prompt.content)}
       className="group flex cursor-pointer flex-col rounded-xl border border-border bg-card transition-all hover:ring-1 hover:ring-primary/30"
     >
-      <div className="flex flex-col gap-1.5 p-3">
-        <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
-          {prompt.content}
-        </p>
+      <div className="flex flex-col gap-2 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
+            {prompt.content}
+          </p>
+          <button
+            onClick={handleFavorite}
+            className="shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-amber-400"
+          >
+            {prompt.favorite ? (
+              <IconStarFilled size={14} className="text-amber-400" />
+            ) : (
+              <IconStar size={14} />
+            )}
+          </button>
+        </div>
         {prompt.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {prompt.tags.map((tag) => (
@@ -75,7 +92,7 @@ function PromptCardItem({ prompt, onCopy, onDelete }) {
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between border-t border-border px-3 py-1.5">
+      <div className="flex items-center justify-between border-t border-border px-4 py-2">
         <span className="text-[11px] text-muted-foreground">
           {formatTime(prompt.created_at)}
         </span>
@@ -132,6 +149,7 @@ export default function HomePage() {
   const [selectedTags, setSelectedTags] = useState([])
   const [search, setSearch] = useState("")
   const [searchOpen, setSearchOpen] = useState(false)
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const searchRef = useRef(null)
 
   const loadPrompts = useCallback(async () => {
@@ -223,6 +241,16 @@ export default function HomePage() {
     }
   }
 
+  async function toggleFavoriteHandler(id) {
+    try {
+      await window.db.toggleFavorite(id)
+      await loadPrompts()
+    } catch (err) {
+      toast.error("Failed to update favorite")
+      console.error(err)
+    }
+  }
+
   function parsePrompt(p) {
     return {
       ...p,
@@ -240,6 +268,7 @@ export default function HomePage() {
         p.tags.some((t) => t.includes(q))
       )
     })
+    .filter((p) => (showFavoritesOnly ? p.favorite : true))
 
   return (
     <div className="flex flex-col h-full">
@@ -269,27 +298,37 @@ export default function HomePage() {
             </Button>
           )}
           {prompts.length > 0 && (
-            searchOpen ? (
-              <Input
-                ref={searchRef}
-                placeholder="Search prompts..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") { setSearchOpen(false); setSearch("") }
-                }}
-                className="h-9 w-40 text-sm"
-              />
-            ) : (
+            <>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 cursor-pointer"
-                onClick={() => setSearchOpen(true)}
+                className={cn("h-9 w-9 cursor-pointer", showFavoritesOnly && "text-amber-400")}
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
               >
-                <IconSearch size={16} />
+                {showFavoritesOnly ? <IconStarFilled size={16} /> : <IconStar size={16} />}
               </Button>
-            )
+              {searchOpen ? (
+                <Input
+                  ref={searchRef}
+                  placeholder="Search prompts..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") { setSearchOpen(false); setSearch("") }
+                  }}
+                  className="h-9 w-40 text-sm"
+                />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 cursor-pointer"
+                  onClick={() => setSearchOpen(true)}
+                >
+                  <IconSearch size={16} />
+                </Button>
+              )}
+            </>
           )}
         </div>
       </header>
@@ -308,6 +347,7 @@ export default function HomePage() {
                 prompt={prompt}
                 onCopy={copyPrompt}
                 onDelete={deletePrompt}
+                onToggleFavorite={toggleFavoriteHandler}
               />
             ))}
           </div>

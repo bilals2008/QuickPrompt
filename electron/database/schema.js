@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS prompts (
   content TEXT NOT NULL,
   model TEXT DEFAULT '',
   tags TEXT DEFAULT '',
-  created_at TEXT NOT NULL
+  favorite INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -15,7 +17,19 @@ CREATE TABLE IF NOT EXISTS tags (
 );
 `
 
+const MIGRATIONS = [
+  `ALTER TABLE prompts ADD COLUMN favorite INTEGER DEFAULT 0`,
+  `ALTER TABLE prompts ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''`,
+]
+
 export async function createTables() {
   const db = getDatabase()
   await db.exec(SCHEMA)
+  for (const sql of MIGRATIONS) {
+    try {
+      await db.exec(sql)
+    } catch {
+      // Column already exists, ignore
+    }
+  }
 }

@@ -13,4 +13,5 @@ contextBridge.exposeInMainWorld("db", {
   getAllTags: () => ipcRenderer.invoke("db:getAllTags"),
   createTag: (name) => ipcRenderer.invoke("db:createTag", name),
   searchPrompts: (query) => ipcRenderer.invoke("db:searchPrompts", query),
+  toggleFavorite: (id) => ipcRenderer.invoke("db:toggleFavorite", id),
 })

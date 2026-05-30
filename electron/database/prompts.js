@@ -1,13 +1,13 @@
 import crypto from 'node:crypto'
 import { getDatabase } from './db.js'
 
-export async function createPrompt({ content, model = '', tags = '' }) {
+export async function createPrompt({ content, model = '', tags = '', favorite = 0 }) {
   const db = getDatabase()
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
   await db.run(
-    'INSERT INTO prompts (id, content, model, tags, created_at) VALUES (?, ?, ?, ?, ?)',
-    [id, content, model, tags, now]
+    'INSERT INTO prompts (id, content, model, tags, favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [id, content, model, tags, favorite, now, now]
   )
   return getPromptById(id)
 }
@@ -19,7 +19,16 @@ export async function getPromptById(id) {
 
 export async function getAllPrompts() {
   const db = getDatabase()
-  return db.all('SELECT * FROM prompts ORDER BY created_at DESC')
+  return db.all('SELECT * FROM prompts ORDER BY favorite DESC, created_at DESC')
+}
+
+export async function toggleFavorite(id) {
+  const db = getDatabase()
+  const prompt = await db.get('SELECT favorite FROM prompts WHERE id = ?', [id])
+  if (!prompt) return null
+  const newVal = prompt.favorite ? 0 : 1
+  await db.run('UPDATE prompts SET favorite = ?, updated_at = ? WHERE id = ?', [newVal, new Date().toISOString(), id])
+  return db.get('SELECT * FROM prompts WHERE id = ?', [id])
 }
 
 export async function updatePrompt(id, { content, model, tags }) {
