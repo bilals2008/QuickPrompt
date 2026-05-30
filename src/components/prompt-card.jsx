@@ -1,23 +1,21 @@
 import { useState } from "react"
 import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled } from "@tabler/icons-react"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
 
 const TAG_COLORS = [
-  "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  "bg-green-500/10 text-green-500 border-green-500/20",
-  "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  "bg-pink-500/10 text-pink-500 border-pink-500/20",
-  "bg-teal-500/10 text-teal-500 border-teal-500/20",
-  "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  "bg-rose-500/10 text-rose-500 border-rose-500/20",
+  "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+  "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+  "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400",
+  "bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400",
+  "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400",
+  "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400",
+  "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+  "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400",
 ]
 
 function getTagColor(tag) {
@@ -27,6 +25,8 @@ function getTagColor(tag) {
   }
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
 }
+
+const TAG_CLASS = "inline-flex items-center rounded-full px-1.5 py-[1px] text-[10px] font-medium border leading-tight"
 
 function formatTime(date) {
   const now = new Date()
@@ -71,13 +71,9 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite }) {
 
   const tagBadges = prompt.tags.length > 0 ? (
     prompt.tags.map((tag) => (
-      <Badge
-        key={tag}
-        variant="outline"
-        className={cn("text-[10px] font-normal border", getTagColor(tag))}
-      >
+      <span key={tag} className={`${TAG_CLASS} ${getTagColor(tag)}`}>
         {tag}
-      </Badge>
+      </span>
     ))
   ) : null
 
@@ -120,8 +116,8 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite }) {
           <div className="flex min-w-0 flex-1 flex-wrap gap-1">
             {prompt.tags.length > 0 ? (
               prompt.tags.map((tag) => (
-                <span key={tag} className="text-[10px] text-muted-foreground/70 font-medium">
-                  #{tag}
+                <span key={tag} className={`${TAG_CLASS} ${getTagColor(tag)}`}>
+                  {tag}
                 </span>
               ))
             ) : (
@@ -130,7 +126,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite }) {
           </div>
           {starBtn}
         </div>
-        <p className="line-clamp-1 text-xs text-muted-foreground leading-relaxed">
+        <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
           {prompt.content}
         </p>
       </div>
