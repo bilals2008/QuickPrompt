@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import { getDatabase } from './db.js'
 
 export async function createPrompt({ content, model = '', tags = '' }) {
