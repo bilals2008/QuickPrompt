@@ -256,29 +256,11 @@ export default function Settings() {
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {pkg.description}
                   </p>
-                  <Separator className="my-4" />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-border bg-background p-3">
-                      <p className="text-xs text-muted-foreground">Electron</p>
-                      <p className="text-sm font-medium text-foreground">42</p>
-                    </div>
-                    <div className="rounded-lg border border-border bg-background p-3">
-                      <p className="text-xs text-muted-foreground">React</p>
-                      <p className="text-sm font-medium text-foreground">19</p>
-                    </div>
-                    <div className="rounded-lg border border-border bg-background p-3">
-                      <p className="text-xs text-muted-foreground">SQLite</p>
-                      <p className="text-sm font-medium text-foreground">3</p>
-                    </div>
-                    <div className="rounded-lg border border-border bg-background p-3">
-                      <p className="text-xs text-muted-foreground">shadcn/ui</p>
-                      <p className="text-sm font-medium text-foreground">4</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6 text-center text-[11px] text-muted-foreground space-y-0.5">
-                  <p>QuickPrompt &copy; {new Date().getFullYear()}</p>
-                </div>
+                 </div>
+                 <div className="mt-6 text-center text-[11px] text-muted-foreground space-y-0.5">
+                   <p>QuickPrompt &copy; {new Date().getFullYear()}</p>
+                   <p>Built by Muhammad Bilal Hassan</p>
+                 </div>
               </section>
             )}
 
