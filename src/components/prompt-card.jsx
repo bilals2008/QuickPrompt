@@ -123,26 +123,32 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   return viewMode === "list" ? (
     <div
       onClick={() => onCopy(prompt.content)}
-      className="group flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all hover:ring-1 hover:ring-primary/30"
+      className="group flex cursor-pointer items-center gap-4 rounded-lg border border-border bg-card px-4 py-3 transition-all hover:bg-accent/50 hover:ring-1 hover:ring-primary/20"
     >
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <p className="line-clamp-1 text-sm text-muted-foreground leading-relaxed min-w-0 flex-1">
-          {prompt.content}
-        </p>
-        {tagBadges && (
-          <div className="hidden sm:flex flex-wrap gap-1 shrink-0">
-            {tagBadges}
-          </div>
+      <button onClick={handleFavorite} className="shrink-0 cursor-pointer">
+        {prompt.favorite ? (
+          <IconStarFilled size={16} className="text-chart-3" />
+        ) : (
+          <IconStar size={16} className="text-muted-foreground hover:text-chart-3" />
         )}
-        <span className="hidden sm:inline text-[11px] text-muted-foreground/50 shrink-0 w-14 text-right">
-          {formatTime(prompt.created_at)}
-        </span>
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{prompt.content}</span>
+        </p>
       </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {starBtn}
-        {copyBtn}
-        {menuBtn}
-      </div>
+      {tagBadges && (
+        <div className="items-center gap-1.5 shrink-0 flex">
+          {prompt.tags.slice(0, 2).map((tag) => (
+            <span key={tag} className={`${TAG_CLASS} ${getTagColor(tag)}`}>
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+      <span className="shrink-0 text-xs text-muted-foreground hidden sm:block">{formatTime(prompt.created_at)}</span>
+      {copyBtn}
+      {menuBtn}
     </div>
   ) : (
     <div

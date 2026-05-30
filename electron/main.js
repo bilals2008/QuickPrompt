@@ -74,7 +74,7 @@ function createWindow() {
       nodeIntegration: false,
     },
     show: false,
-    skipTaskbar: isMac,
+    skipTaskbar: true,
   })
 
   mainWindow.on("ready-to-show", () => {

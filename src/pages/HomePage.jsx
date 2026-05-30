@@ -190,7 +190,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-2 mx-auto w-full max-w-4xl">
+          <div className="flex flex-col gap-2 w-full">
             {filteredPrompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}

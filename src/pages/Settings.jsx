@@ -60,6 +60,33 @@ const themes = [
     accent: "#38bdf8",
     text: "#dce8f5",
   },
+  {
+    id: "sunset",
+    label: "Sunset",
+    desc: "Warm orange dusk",
+    bg: "#1a0c0a",
+    card: "#2a1410",
+    accent: "#f97316",
+    text: "#fde8d0",
+  },
+  {
+    id: "midnight",
+    label: "Midnight",
+    desc: "Dark with gold accents",
+    bg: "#0f0f1a",
+    card: "#1a1a2e",
+    accent: "#fbbf24",
+    text: "#e8e6f0",
+  },
+  {
+    id: "nord",
+    label: "Nord",
+    desc: "Cool arctic blue",
+    bg: "#eceff4",
+    card: "#ffffff",
+    accent: "#5e81ac",
+    text: "#2e3440",
+  },
 ]
 
 function NavItem({ icon: Icon, label, active, onClick }) {
@@ -195,7 +222,7 @@ export default function Settings() {
                   <h2 className="text-sm font-semibold text-foreground">Appearance</h2>
                   <p className="text-xs text-muted-foreground">Choose your theme</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {themes.map((t) => (
                     <button
                       key={t.id}
