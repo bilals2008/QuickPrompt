@@ -168,8 +168,17 @@ export default function HomePage() {
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between px-6 py-4 border-b border-border/30 gap-3">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-foreground truncate">QuickPrompt</h1>
-          <p className="text-xs text-muted-foreground truncate hidden sm:block">Create, tag, and copy prompts instantly</p>
+          {sidebarVisible ? (
+            <>
+              <h1 className="text-lg font-semibold text-foreground truncate">QuickPrompt</h1>
+              <p className="text-xs text-muted-foreground truncate hidden sm:block">Create, tag, and copy prompts instantly</p>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-foreground">{prompts.length}</span>
+              <span className="text-xs text-muted-foreground">prompts</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1">
           {!sidebarVisible && (
