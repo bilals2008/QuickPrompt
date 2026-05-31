@@ -19,7 +19,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="forest"], [data-theme="ocean"], [data-theme="midnight"], [data-theme="sunset"]));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="forest"], [data-theme="ocean"], [data-theme="midnight"], [data-theme="sunset"], [data-theme="dracula"], [data-theme="tokyo-night"], [data-theme="cyberpunk"]));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -241,6 +241,36 @@
   --sidebar-ring: #5e81ac;
 }
 
+[data-theme="lavender"] {
+  --background: #faf5ff;
+  --foreground: #1e1033;
+  --card: #ffffff;
+  --card-foreground: #1e1033;
+  --popover: #ffffff;
+  --popover-foreground: #1e1033;
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --secondary: #f3e8ff;
+  --secondary-foreground: #1e1033;
+  --muted: #f3e8ff;
+  --muted-foreground: #7c6b9a;
+  --accent: #ede9fe;
+  --accent-foreground: #1e1033;
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: #ffffff;
+  --border: #e9d5ff;
+  --input: #e9d5ff;
+  --ring: #8b5cf6;
+  --sidebar: #f5f0ff;
+  --sidebar-foreground: #1e1033;
+  --sidebar-primary: #8b5cf6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ede9fe;
+  --sidebar-accent-foreground: #1e1033;
+  --sidebar-border: #e9d5ff;
+  --sidebar-ring: #8b5cf6;
+}
+
 [data-theme="midnight"] {
   --background: #0f0f1a;
   --foreground: #e8e6f0;
@@ -269,6 +299,96 @@
   --sidebar-accent-foreground: #e8e6f0;
   --sidebar-border: #2e2e52;
   --sidebar-ring: #fbbf24;
+}
+
+[data-theme="dracula"] {
+  --background: #282a36;
+  --foreground: #f8f8f2;
+  --card: #2d3044;
+  --card-foreground: #f8f8f2;
+  --popover: #2d3044;
+  --popover-foreground: #f8f8f2;
+  --primary: #bd93f9;
+  --primary-foreground: #282a36;
+  --secondary: #343746;
+  --secondary-foreground: #f8f8f2;
+  --muted: #343746;
+  --muted-foreground: #6272a4;
+  --accent: #44475a;
+  --accent-foreground: #f8f8f2;
+  --destructive: #ff5555;
+  --destructive-foreground: #ffffff;
+  --border: #44475a;
+  --input: #44475a;
+  --ring: #bd93f9;
+  --sidebar: #21222c;
+  --sidebar-foreground: #f8f8f2;
+  --sidebar-primary: #bd93f9;
+  --sidebar-primary-foreground: #282a36;
+  --sidebar-accent: #44475a;
+  --sidebar-accent-foreground: #f8f8f2;
+  --sidebar-border: #44475a;
+  --sidebar-ring: #bd93f9;
+}
+
+[data-theme="tokyo-night"] {
+  --background: #1a1b26;
+  --foreground: #c0caf5;
+  --card: #24283b;
+  --card-foreground: #c0caf5;
+  --popover: #24283b;
+  --popover-foreground: #c0caf5;
+  --primary: #7aa2f7;
+  --primary-foreground: #1a1b26;
+  --secondary: #292e42;
+  --secondary-foreground: #c0caf5;
+  --muted: #292e42;
+  --muted-foreground: #565f89;
+  --accent: #3b4261;
+  --accent-foreground: #c0caf5;
+  --destructive: #f7768e;
+  --destructive-foreground: #1a1b26;
+  --border: #3b4261;
+  --input: #3b4261;
+  --ring: #7aa2f7;
+  --sidebar: #16161e;
+  --sidebar-foreground: #c0caf5;
+  --sidebar-primary: #7aa2f7;
+  --sidebar-primary-foreground: #1a1b26;
+  --sidebar-accent: #3b4261;
+  --sidebar-accent-foreground: #c0caf5;
+  --sidebar-border: #3b4261;
+  --sidebar-ring: #7aa2f7;
+}
+
+[data-theme="cyberpunk"] {
+  --background: #0a0a0f;
+  --foreground: #e0e0e0;
+  --card: #12121a;
+  --card-foreground: #e0e0e0;
+  --popover: #12121a;
+  --popover-foreground: #e0e0e0;
+  --primary: #00ff9f;
+  --primary-foreground: #0a0a0f;
+  --secondary: #1a1a28;
+  --secondary-foreground: #e0e0e0;
+  --muted: #1a1a28;
+  --muted-foreground: #6a6a8a;
+  --accent: #ff00aa;
+  --accent-foreground: #ffffff;
+  --destructive: #ff3333;
+  --destructive-foreground: #ffffff;
+  --border: #2a2a3a;
+  --input: #2a2a3a;
+  --ring: #00ff9f;
+  --sidebar: #08080d;
+  --sidebar-foreground: #e0e0e0;
+  --sidebar-primary: #00ff9f;
+  --sidebar-primary-foreground: #0a0a0f;
+  --sidebar-accent: #ff00aa;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2a2a3a;
+  --sidebar-ring: #00ff9f;
 }
 
 * {
@@ -368,7 +488,10 @@ html *::after {
 [data-theme="forest"] .sticky-tint-yellow,
 [data-theme="ocean"] .sticky-tint-yellow,
 [data-theme="midnight"] .sticky-tint-yellow,
-[data-theme="sunset"] .sticky-tint-yellow {
+[data-theme="sunset"] .sticky-tint-yellow,
+[data-theme="dracula"] .sticky-tint-yellow,
+[data-theme="tokyo-night"] .sticky-tint-yellow,
+[data-theme="cyberpunk"] .sticky-tint-yellow {
   background: linear-gradient(145deg, rgba(254, 240, 138, 0.15) 0%, rgba(253, 224, 71, 0.1) 100%);
 }
 
@@ -376,7 +499,10 @@ html *::after {
 [data-theme="forest"] .sticky-tint-green,
 [data-theme="ocean"] .sticky-tint-green,
 [data-theme="midnight"] .sticky-tint-green,
-[data-theme="sunset"] .sticky-tint-green {
+[data-theme="sunset"] .sticky-tint-green,
+[data-theme="dracula"] .sticky-tint-green,
+[data-theme="tokyo-night"] .sticky-tint-green,
+[data-theme="cyberpunk"] .sticky-tint-green {
   background: linear-gradient(145deg, rgba(134, 239, 172, 0.15) 0%, rgba(74, 222, 128, 0.1) 100%);
 }
 
@@ -384,7 +510,10 @@ html *::after {
 [data-theme="forest"] .sticky-tint-blue,
 [data-theme="ocean"] .sticky-tint-blue,
 [data-theme="midnight"] .sticky-tint-blue,
-[data-theme="sunset"] .sticky-tint-blue {
+[data-theme="sunset"] .sticky-tint-blue,
+[data-theme="dracula"] .sticky-tint-blue,
+[data-theme="tokyo-night"] .sticky-tint-blue,
+[data-theme="cyberpunk"] .sticky-tint-blue {
   background: linear-gradient(145deg, rgba(147, 197, 253, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
 }
 
@@ -392,7 +521,10 @@ html *::after {
 [data-theme="forest"] .sticky-tint-pink,
 [data-theme="ocean"] .sticky-tint-pink,
 [data-theme="midnight"] .sticky-tint-pink,
-[data-theme="sunset"] .sticky-tint-pink {
+[data-theme="sunset"] .sticky-tint-pink,
+[data-theme="dracula"] .sticky-tint-pink,
+[data-theme="tokyo-night"] .sticky-tint-pink,
+[data-theme="cyberpunk"] .sticky-tint-pink {
   background: linear-gradient(145deg, rgba(244, 114, 182, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
 }
 
@@ -400,7 +532,10 @@ html *::after {
 [data-theme="forest"] .sticky-tint-purple,
 [data-theme="ocean"] .sticky-tint-purple,
 [data-theme="midnight"] .sticky-tint-purple,
-[data-theme="sunset"] .sticky-tint-purple {
+[data-theme="sunset"] .sticky-tint-purple,
+[data-theme="dracula"] .sticky-tint-purple,
+[data-theme="tokyo-night"] .sticky-tint-purple,
+[data-theme="cyberpunk"] .sticky-tint-purple {
   background: linear-gradient(145deg, rgba(192, 132, 252, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
 }
 
@@ -408,7 +543,10 @@ html *::after {
 [data-theme="forest"] .sticky-tint-orange,
 [data-theme="ocean"] .sticky-tint-orange,
 [data-theme="midnight"] .sticky-tint-orange,
-[data-theme="sunset"] .sticky-tint-orange {
+[data-theme="sunset"] .sticky-tint-orange,
+[data-theme="dracula"] .sticky-tint-orange,
+[data-theme="tokyo-night"] .sticky-tint-orange,
+[data-theme="cyberpunk"] .sticky-tint-orange {
   background: linear-gradient(145deg, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.1) 100%);
 }
 
@@ -416,7 +554,10 @@ html *::after {
 [data-theme="forest"] .sticky-tint-teal,
 [data-theme="ocean"] .sticky-tint-teal,
 [data-theme="midnight"] .sticky-tint-teal,
-[data-theme="sunset"] .sticky-tint-teal {
+[data-theme="sunset"] .sticky-tint-teal,
+[data-theme="dracula"] .sticky-tint-teal,
+[data-theme="tokyo-night"] .sticky-tint-teal,
+[data-theme="cyberpunk"] .sticky-tint-teal {
   background: linear-gradient(145deg, rgba(45, 212, 191, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%);
 }
 
@@ -424,7 +565,10 @@ html *::after {
 [data-theme="forest"] .sticky-tint-rose,
 [data-theme="ocean"] .sticky-tint-rose,
 [data-theme="midnight"] .sticky-tint-rose,
-[data-theme="sunset"] .sticky-tint-rose {
+[data-theme="sunset"] .sticky-tint-rose,
+[data-theme="dracula"] .sticky-tint-rose,
+[data-theme="tokyo-night"] .sticky-tint-rose,
+[data-theme="cyberpunk"] .sticky-tint-rose {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.15) 0%, rgba(244, 63, 94, 0.1) 100%);
 }
 
