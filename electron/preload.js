@@ -15,3 +15,16 @@ contextBridge.exposeInMainWorld("db", {
   searchPrompts: (query) => ipcRenderer.invoke("db:searchPrompts", query),
   toggleFavorite: (id) => ipcRenderer.invoke("db:toggleFavorite", id),
 })
+
+contextBridge.exposeInMainWorld("updateAPI", {
+  checkForUpdates: () => ipcRenderer.invoke("update:check"),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
+  getStatus: () => ipcRenderer.invoke("update:get-status"),
+  setAutoCheck: (enabled) => ipcRenderer.invoke("update:set-auto-check", enabled),
+  getAutoCheck: () => ipcRenderer.invoke("update:get-auto-check"),
+  onEvent: (callback) => {
+    const handler = (_e, data) => callback(data)
+    ipcRenderer.on("update:event", handler)
+    return () => ipcRenderer.removeListener("update:event", handler)
+  },
+})

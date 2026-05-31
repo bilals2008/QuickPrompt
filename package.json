@@ -12,17 +12,21 @@
     "dist:mac": "vite build && electron-builder --mac",
     "dist:mac:arm": "vite build && electron-builder --mac --arm64",
     "dist:all": "vite build && electron-builder --win nsis --mac",
+    "release:win": "vite build && electron-builder --win nsis --publish always",
+    "release:mac": "vite build && electron-builder --mac --publish always",
+    "release:all": "vite build && electron-builder --win nsis --mac --publish always",
+    "release:draft": "vite build && electron-builder --win nsis --mac --publish always",
     "lint": "eslint .",
     "preview": "vite preview",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
+    "electron-store": "^11.0.2",
     "electron-updater": "^6.8.3",
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
-
     "@tabler/icons-react": "^3.44.0",
     "@tailwindcss/vite": "^4.3.0",
     "@vitejs/plugin-react": "^6.0.2",
@@ -51,25 +55,51 @@
   "build": {
     "appId": "com.quickprompt.app",
     "productName": "QuickPrompt",
-    "directories": { "output": "release" },
-    "files": ["dist/**/*", "dist-electron/**/*", "package.json"],
-    "extraMetadata": { "main": "dist-electron/main.js" },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "dist-electron/main.js"
+    },
     "mac": {
       "icon": "build/icon.png",
       "artifactName": "QuickPrompt-${version}.${ext}",
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ]
     },
     "win": {
       "icon": "build/icon.png",
       "artifactName": "QuickPrompt-Setup-${version}.${ext}",
-      "target": [{ "target": "nsis", "arch": ["x64"] }]
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "differentialPackage": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "bilals2008",
+      "repo": "QuickPrompt"
     }
   }
 }

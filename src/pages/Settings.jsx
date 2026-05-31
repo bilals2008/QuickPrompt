@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, useOutletContext } from "react-router-dom"
 import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import {
   IconMoon,
   IconInfoCircle,
@@ -12,6 +13,11 @@ import {
   IconSettings,
   IconMessage,
   IconArrowLeft,
+  IconRefresh,
+  IconDownload,
+  IconLoader2,
+  IconCircleCheck,
+  IconAlertCircle,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -20,6 +26,7 @@ import pkg from "../../package.json"
 const sections = [
   { id: "general", icon: IconPlayerPlay, label: "General" },
   { id: "appearance", icon: IconMoon, label: "Appearance" },
+  { id: "updates", icon: IconRefresh, label: "Updates" },
   { id: "about", icon: IconInfoCircle, label: "About" },
 ]
 
@@ -128,6 +135,52 @@ export default function Settings() {
   const { sidebarVisible } = useOutletContext()
   const { theme, setTheme } = useTheme()
   const [activeSection, setActiveSection] = useState("appearance")
+  const [updateStatus, setUpdateStatus] = useState("idle")
+  const [updateInfo, setUpdateInfo] = useState(null)
+  const [autoCheck, setAutoCheck] = useState(true)
+  const [checking, setChecking] = useState(false)
+
+  useEffect(() => {
+    window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
+
+    const unsubscribe = window.updateAPI?.onEvent((event) => {
+      setUpdateStatus(event.status)
+      if (event.version) {
+        setUpdateInfo({ version: event.version, releaseNotes: event.releaseNotes })
+      }
+      if (event.status === "available") {
+        toast.success(`Update available: v${event.version}`)
+      }
+      if (event.status === "downloaded") {
+        toast.success(`Update downloaded: v${event.version}. Restart to install.`)
+      }
+      if (event.status === "error") {
+        toast.error("Update check failed")
+      }
+    })
+
+    return () => unsubscribe?.()
+  }, [])
+
+  async function handleCheckUpdate() {
+    setChecking(true)
+    try {
+      await window.updateAPI?.checkForUpdates()
+    } catch {
+      toast.error("Failed to check for updates")
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  function handleInstallUpdate() {
+    window.updateAPI?.installUpdate()
+  }
+
+  function handleAutoCheckToggle(checked) {
+    setAutoCheck(checked)
+    window.updateAPI?.setAutoCheck(checked)
+  }
 
   const showSidebar = sidebarVisible
 
@@ -278,6 +331,102 @@ export default function Settings() {
                       <p className="text-xs text-muted-foreground mt-0.5">{t.desc}</p>
                     </button>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {activeSection === "updates" && (
+              <section>
+                <div className="mb-4">
+                  <h2 className="text-sm font-semibold text-foreground">Updates</h2>
+                  <p className="text-xs text-muted-foreground">Manage application updates</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <IconRefresh className="size-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">Current version</p>
+                        <p className="text-xs text-muted-foreground">v{pkg.version}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {updateStatus === "checking" && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <IconLoader2 className="size-3 animate-spin" />
+                          Checking...
+                        </div>
+                      )}
+                      {updateStatus === "idle" && (
+                        <div className="flex items-center gap-1.5 text-xs text-green-500">
+                          <IconCircleCheck className="size-3" />
+                          Up to date
+                        </div>
+                      )}
+                      {updateStatus === "available" && (
+                        <div className="flex items-center gap-1.5 text-xs text-amber-500">
+                          <IconDownload className="size-3" />
+                          v{updateInfo?.version} available
+                        </div>
+                      )}
+                      {updateStatus === "downloaded" && (
+                        <div className="flex items-center gap-1.5 text-xs text-green-500">
+                          <IconCircleCheck className="size-3" />
+                          Ready to install
+                        </div>
+                      )}
+                      {updateStatus === "error" && (
+                        <div className="flex items-center gap-1.5 text-xs text-red-500">
+                          <IconAlertCircle className="size-3" />
+                          Error
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <SettingRow
+                    icon={IconRefresh}
+                    label="Check for updates on startup"
+                    description="Automatically check when app launches"
+                  >
+                    <Switch
+                      checked={autoCheck}
+                      onCheckedChange={handleAutoCheckToggle}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+
+                  <Separator />
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={handleCheckUpdate}
+                      disabled={checking || updateStatus === "checking"}
+                    >
+                      {checking || updateStatus === "checking" ? (
+                        <IconLoader2 className="size-3.5 animate-spin mr-1.5" />
+                      ) : (
+                        <IconRefresh className="size-3.5 mr-1.5" />
+                      )}
+                      Check for Updates
+                    </Button>
+
+                    {updateStatus === "downloaded" && (
+                      <Button
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={handleInstallUpdate}
+                      >
+                        <IconDownload className="size-3.5 mr-1.5" />
+                        Install & Restart
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </section>
             )}

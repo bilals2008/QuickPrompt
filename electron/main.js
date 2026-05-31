@@ -12,6 +12,8 @@ import {
   searchPrompts,
   toggleFavorite,
 } from "./database/prompts.js"
+import { autoUpdater } from "electron-updater"
+import Store from "electron-store"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -22,6 +24,40 @@ let mainWindow
 let tray
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"]
 const isMac = process.platform === "darwin"
+
+const store = new Store({ name: "settings" })
+let updateStatus = "idle"
+let updateInfo = null
+
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = true
+
+autoUpdater.on("checking-for-update", () => {
+  updateStatus = "checking"
+  mainWindow?.webContents.send("update:event", { status: "checking" })
+})
+
+autoUpdater.on("update-available", (info) => {
+  updateStatus = "available"
+  updateInfo = { version: info.version, releaseNotes: info.releaseNotes }
+  mainWindow?.webContents.send("update:event", { status: "available", ...updateInfo })
+})
+
+autoUpdater.on("update-not-available", () => {
+  updateStatus = "idle"
+  mainWindow?.webContents.send("update:event", { status: "idle" })
+})
+
+autoUpdater.on("update-downloaded", (info) => {
+  updateStatus = "downloaded"
+  updateInfo = { version: info.version, releaseNotes: info.releaseNotes }
+  mainWindow?.webContents.send("update:event", { status: "downloaded", ...updateInfo })
+})
+
+autoUpdater.on("error", (err) => {
+  updateStatus = "error"
+  mainWindow?.webContents.send("update:event", { status: "error", error: err.message })
+})
 
 function createTray() {
   const iconPath = path.join(process.env.VITE_PUBLIC, "icon.png")
@@ -115,6 +151,14 @@ app.whenReady().then(async () => {
   createWindow()
   createTray()
 
+  if (store.get("autoCheckUpdates", true)) {
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        autoUpdater.checkForUpdates().catch(() => {})
+      }
+    }, 3000)
+  }
+
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -171,4 +215,29 @@ ipcMain.handle("db:searchPrompts", async (_event, query) => {
 
 ipcMain.handle("db:toggleFavorite", async (_event, id) => {
   return toggleFavorite(id)
+})
+
+ipcMain.handle("update:check", async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return { success: true, updateInfo: result?.updateInfo }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle("update:install", () => {
+  autoUpdater.quitAndInstall()
+})
+
+ipcMain.handle("update:get-status", () => {
+  return { status: updateStatus, ...updateInfo }
+})
+
+ipcMain.handle("update:set-auto-check", (_event, enabled) => {
+  store.set("autoCheckUpdates", enabled)
+})
+
+ipcMain.handle("update:get-auto-check", () => {
+  return store.get("autoCheckUpdates", true)
 })
