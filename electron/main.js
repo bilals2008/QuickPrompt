@@ -131,6 +131,7 @@ function createWindow() {
     minWidth: 360,
     minHeight: 400,
     icon: path.join(process.env.VITE_PUBLIC, "icon.png"),
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       contextIsolation: true,
