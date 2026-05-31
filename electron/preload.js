@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("db", {
 
 contextBridge.exposeInMainWorld("updateAPI", {
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
+  downloadUpdate: () => ipcRenderer.invoke("update:download"),
   installUpdate: () => ipcRenderer.invoke("update:install"),
   getStatus: () => ipcRenderer.invoke("update:get-status"),
   setAutoCheck: (enabled) => ipcRenderer.invoke("update:set-auto-check", enabled),

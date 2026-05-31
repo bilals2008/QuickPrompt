@@ -185,6 +185,7 @@ export default function Settings() {
   const [updateInfo, setUpdateInfo] = useState(null)
   const [autoCheck, setAutoCheck] = useState(true)
   const [checking, setChecking] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
@@ -221,6 +222,17 @@ export default function Settings() {
 
   function handleInstallUpdate() {
     window.updateAPI?.installUpdate()
+  }
+
+  async function handleDownloadUpdate() {
+    setDownloading(true)
+    try {
+      await window.updateAPI?.downloadUpdate()
+    } catch {
+      toast.error("Failed to download update")
+    } finally {
+      setDownloading(false)
+    }
   }
 
   function handleAutoCheckToggle(checked) {
@@ -422,6 +434,12 @@ export default function Settings() {
                           v{updateInfo?.version} available
                         </div>
                       )}
+                      {updateStatus === "downloading" && (
+                        <div className="flex items-center gap-1.5 text-xs text-blue-500">
+                          <IconLoader2 className="size-3 animate-spin" />
+                          Downloading...
+                        </div>
+                      )}
                       {updateStatus === "downloaded" && (
                         <div className="flex items-center gap-1.5 text-xs text-green-500">
                           <IconCircleCheck className="size-3" />
@@ -477,6 +495,22 @@ export default function Settings() {
                       >
                         <IconDownload className="size-3.5 mr-1.5" />
                         Install & Restart
+                      </Button>
+                    )}
+
+                    {updateStatus === "available" && (
+                      <Button
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={handleDownloadUpdate}
+                        disabled={downloading}
+                      >
+                        {downloading ? (
+                          <IconLoader2 className="size-3.5 animate-spin mr-1.5" />
+                        ) : (
+                          <IconDownload className="size-3.5 mr-1.5" />
+                        )}
+                        Download
                       </Button>
                     )}
                   </div>

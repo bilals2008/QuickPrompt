@@ -70,6 +70,11 @@ autoUpdater.on("update-available", (info) => {
   mainWindow?.webContents.send("update:event", { status: "available", ...updateInfo })
 })
 
+autoUpdater.on("download-progress", (progress) => {
+  updateStatus = "downloading"
+  mainWindow?.webContents.send("update:event", { status: "downloading", percent: progress.percent })
+})
+
 autoUpdater.on("update-not-available", () => {
   updateStatus = "idle"
   mainWindow?.webContents.send("update:event", { status: "idle" })
@@ -256,6 +261,15 @@ ipcMain.handle("update:check", async () => {
 
 ipcMain.handle("update:install", () => {
   autoUpdater.quitAndInstall()
+})
+
+ipcMain.handle("update:download", async () => {
+  try {
+    await autoUpdater.downloadUpdate()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
 })
 
 ipcMain.handle("update:get-status", () => {
