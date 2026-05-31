@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
-import { IconX, IconCheck, IconEdit } from "@tabler/icons-react"
+import { IconX, IconCheck } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,7 +11,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { TagManager } from "@/components/tag-manager"
 import { cn } from "@/lib/utils"
