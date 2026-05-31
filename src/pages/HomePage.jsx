@@ -100,12 +100,14 @@ export default function HomePage() {
             </>
           ) : (
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-foreground">{prompts.length}</span>
-              <span className="text-xs text-muted-foreground">prompts</span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-foreground">{prompts.length}</span>
+                <span className="text-xs text-muted-foreground font-medium">prompts</span>
+              </div>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {!sidebarVisible && (
             <Button
               variant="ghost"
@@ -170,11 +172,18 @@ export default function HomePage() {
       <div className="flex-1 overflow-y-auto p-4">
         {filteredPrompts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <p className="text-lg font-medium">No prompts yet</p>
-            <p className="text-sm mt-1">Click the + button to add your first prompt</p>
+            <div className="sticky-note sticky-tint-yellow p-6 text-center">
+              <p className="text-lg font-semibold text-foreground/80">No prompts yet</p>
+              <p className="text-sm mt-2 text-foreground/60">Click the + button to add your first prompt</p>
+            </div>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
+          <div className={cn(
+            "grid gap-3",
+            !sidebarVisible
+              ? "grid-cols-1"
+              : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          )}>
             {filteredPrompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}

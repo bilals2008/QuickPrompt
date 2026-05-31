@@ -106,54 +106,54 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {mini ? (
-        <DialogContent className="sm:max-w-sm gap-3">
+        <DialogContent className="sm:max-w-sm gap-3 sticky-dialog">
           <DialogHeader>
-            <DialogTitle className="text-sm">Edit Prompt</DialogTitle>
+            <DialogTitle className="text-sm font-semibold">Edit Prompt</DialogTitle>
           </DialogHeader>
-          <Textarea
-            id="content"
-            placeholder="Write your prompt here..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={3}
-            className="resize-none text-xs"
-          />
-          <div className="space-y-1.5">
-            <Input
-              ref={inputRef}
-              placeholder="Quick add tag... enter to create"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault()
-                  addTag()
-                }
-              }}
-              className="h-7 text-xs placeholder:text-xs"
+          <div className="space-y-3">
+            <Textarea
+              id="content"
+              placeholder="Write your prompt here..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={3}
+              className="resize-none text-sm border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
             />
-            {selectedTags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {selectedTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    className={cn("text-[10px] font-normal gap-0.5 border leading-none px-1.5 py-0.5", getTagColor(tag))}
-                  >
-                    {tag}
-                    <span
-                      className="cursor-pointer hover:text-destructive leading-none"
-                      onClick={() => removeTag(tag)}
+            <div className="space-y-2">
+              <Input
+                ref={inputRef}
+                placeholder="Add tag... enter to create"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    addTag()
+                  }
+                }}
+                className="h-8 text-xs placeholder:text-xs border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+              />
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedTags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className={cn("text-[11px] font-medium gap-1 border leading-none px-2 py-0.5", getTagColor(tag))}
                     >
-                      <IconX size={9} />
-                    </span>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={saveEdit} className="flex-1 cursor-pointer h-8 text-xs">
+                      {tag}
+                      <span
+                        className="cursor-pointer hover:text-destructive leading-none ml-0.5"
+                        onClick={() => removeTag(tag)}
+                      >
+                        <IconX size={10} />
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={saveEdit} className="w-full cursor-pointer h-9 text-sm font-medium">
               Update
             </Button>
           </div>

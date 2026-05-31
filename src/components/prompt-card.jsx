@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { EditPromptDialog } from "@/components/edit-prompt-dialog"
+import { cn } from "@/lib/utils"
 
 const TAG_COLORS = [
   "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
@@ -18,6 +19,25 @@ const TAG_COLORS = [
   "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
   "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400",
 ]
+
+const STICKY_TINTS = [
+  "sticky-tint-yellow",
+  "sticky-tint-green",
+  "sticky-tint-blue",
+  "sticky-tint-pink",
+  "sticky-tint-purple",
+  "sticky-tint-orange",
+  "sticky-tint-teal",
+  "sticky-tint-rose",
+]
+
+function getStickyTint(content) {
+  let hash = 0
+  for (let i = 0; i < content.length; i++) {
+    hash = content.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return STICKY_TINTS[Math.abs(hash) % STICKY_TINTS.length]
+}
 
 function getTagColor(tag) {
   let hash = 0
@@ -153,69 +173,90 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   ) : (
     <div
       onClick={() => onCopy(prompt.content)}
-      className="group flex cursor-pointer flex-col rounded-xl border border-border bg-card transition-all hover:ring-1 hover:ring-primary/30"
+      className={cn(
+        "group flex cursor-pointer flex-col rounded-xl transition-all",
+        mini
+          ? `sticky-note ${getStickyTint(prompt.content)}`
+          : "border border-border bg-card hover:ring-1 hover:ring-primary/30"
+      )}
     >
-      {/* Compact layout (mini window) */}
-      <div className="flex flex-col gap-1.5 p-2.5 pb-0 sm:hidden">
-        <div className="flex items-start justify-between gap-1">
-          <div className="flex min-w-0 flex-1 flex-wrap gap-1">
-            {prompt.tags.length > 0 ? (
-              prompt.tags.map((tag) => (
-                <span key={tag} className={`${TAG_CLASS} ${getTagColor(tag)}`}>
-                  {tag}
-                </span>
-              ))
-            ) : (
-              <span className="text-[10px] text-muted-foreground/40 italic">untagged</span>
-            )}
-          </div>
-          {starBtn}
-        </div>
-        <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
-          {prompt.content}
-        </p>
-      </div>
-      <div className="flex items-center justify-between px-2.5 py-1 sm:hidden">
-        <span className="text-[10px] text-muted-foreground/50">
-          {formatTime(prompt.created_at)}
-        </span>
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={handleCopy}
-            className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-          >
-            <IconCopy className="size-2.5" />
-            {copied ? "Done" : "Copy"}
-          </button>
-          {menuBtn}
-        </div>
-      </div>
-
-      {/* Full layout (large window) */}
-      <div className="hidden sm:flex sm:flex-col">
-        <div className="flex flex-col gap-2 p-4">
+      {/* Compact layout (mini window) - Sticky Note Style */}
+      {mini && (
+        <div className="flex flex-col gap-2 p-3.5 pb-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
+            <p className="line-clamp-3 text-[13px] text-foreground/80 leading-relaxed font-medium">
               {prompt.content}
             </p>
-            {starBtn}
+            <button
+              onClick={handleFavorite}
+              className="shrink-0 cursor-pointer transition-colors hover:scale-110"
+            >
+              {prompt.favorite ? (
+                <IconStarFilled size={14} className="text-amber-500 drop-shadow-sm" />
+              ) : (
+                <IconStar size={14} className="text-foreground/30 hover:text-amber-500" />
+              )}
+            </button>
           </div>
-          {tagBadges && (
+          {prompt.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {tagBadges}
+              {prompt.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className={`${TAG_CLASS} ${getTagColor(tag)} bg-background/40 backdrop-blur-sm`}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           )}
         </div>
-        <div className="flex items-center justify-between border-t border-border px-4 py-2">
-          <span className="text-[11px] text-muted-foreground">
+      )}
+      {mini && (
+        <div className="flex items-center justify-between px-3.5 py-1.5 mt-auto">
+          <span className="text-[10px] text-foreground/40 font-medium">
             {formatTime(prompt.created_at)}
           </span>
-          <div className="flex items-center gap-1">
-            {copyBtn}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={handleCopy}
+              className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] text-foreground/50 font-medium transition-colors hover:bg-foreground/10 hover:text-foreground/80"
+            >
+              <IconCopy className="size-3" />
+              {copied ? "Copied!" : "Copy"}
+            </button>
             {menuBtn}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Full layout (large window) */}
+      {!mini && (
+        <div className="flex flex-col bg-card rounded-xl border border-border">
+          <div className="flex flex-col gap-2 p-4">
+            <div className="flex items-start justify-between gap-2">
+              <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
+                {prompt.content}
+              </p>
+              {starBtn}
+            </div>
+            {tagBadges && (
+              <div className="flex flex-wrap gap-1">
+                {tagBadges}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between border-t border-border px-4 py-2">
+            <span className="text-[11px] text-muted-foreground">
+              {formatTime(prompt.created_at)}
+            </span>
+            <div className="flex items-center gap-1">
+              {copyBtn}
+              {menuBtn}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

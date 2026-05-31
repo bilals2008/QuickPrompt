@@ -300,3 +300,160 @@ html *::after {
     transition: none;
   }
 }
+
+/* Sticky Note Styles for Mini Window */
+.sticky-note {
+  position: relative;
+  border-radius: 12px;
+  border: none;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: stickyAppear 0.3s ease-out;
+}
+
+.sticky-note:hover {
+  transform: translateY(-2px) rotate(-0.5deg);
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.15),
+    0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.sticky-note::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  width: 24px;
+  height: 10px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  border-radius: 2px;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.sticky-tint-yellow {
+  background: linear-gradient(145deg, #fef9c3 0%, #fef08a 100%);
+}
+.sticky-tint-green {
+  background: linear-gradient(145deg, #dcfce7 0%, #bbf7d0 100%);
+}
+.sticky-tint-blue {
+  background: linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%);
+}
+.sticky-tint-pink {
+  background: linear-gradient(145deg, #fce7f3 0%, #fbcfe8 100%);
+}
+.sticky-tint-purple {
+  background: linear-gradient(145deg, #f3e8ff 0%, #e9d5ff 100%);
+}
+.sticky-tint-orange {
+  background: linear-gradient(145deg, #ffedd5 0%, #fed7aa 100%);
+}
+.sticky-tint-teal {
+  background: linear-gradient(145deg, #ccfbf1 0%, #99f6e4 100%);
+}
+.sticky-tint-rose {
+  background: linear-gradient(145deg, #ffe4e6 0%, #fecdd3 100%);
+}
+
+[data-theme="dark"] .sticky-tint-yellow,
+[data-theme="forest"] .sticky-tint-yellow,
+[data-theme="ocean"] .sticky-tint-yellow,
+[data-theme="midnight"] .sticky-tint-yellow,
+[data-theme="sunset"] .sticky-tint-yellow {
+  background: linear-gradient(145deg, rgba(254, 240, 138, 0.15) 0%, rgba(253, 224, 71, 0.1) 100%);
+}
+
+[data-theme="dark"] .sticky-tint-green,
+[data-theme="forest"] .sticky-tint-green,
+[data-theme="ocean"] .sticky-tint-green,
+[data-theme="midnight"] .sticky-tint-green,
+[data-theme="sunset"] .sticky-tint-green {
+  background: linear-gradient(145deg, rgba(134, 239, 172, 0.15) 0%, rgba(74, 222, 128, 0.1) 100%);
+}
+
+[data-theme="dark"] .sticky-tint-blue,
+[data-theme="forest"] .sticky-tint-blue,
+[data-theme="ocean"] .sticky-tint-blue,
+[data-theme="midnight"] .sticky-tint-blue,
+[data-theme="sunset"] .sticky-tint-blue {
+  background: linear-gradient(145deg, rgba(147, 197, 253, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
+}
+
+[data-theme="dark"] .sticky-tint-pink,
+[data-theme="forest"] .sticky-tint-pink,
+[data-theme="ocean"] .sticky-tint-pink,
+[data-theme="midnight"] .sticky-tint-pink,
+[data-theme="sunset"] .sticky-tint-pink {
+  background: linear-gradient(145deg, rgba(244, 114, 182, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
+}
+
+[data-theme="dark"] .sticky-tint-purple,
+[data-theme="forest"] .sticky-tint-purple,
+[data-theme="ocean"] .sticky-tint-purple,
+[data-theme="midnight"] .sticky-tint-purple,
+[data-theme="sunset"] .sticky-tint-purple {
+  background: linear-gradient(145deg, rgba(192, 132, 252, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
+}
+
+[data-theme="dark"] .sticky-tint-orange,
+[data-theme="forest"] .sticky-tint-orange,
+[data-theme="ocean"] .sticky-tint-orange,
+[data-theme="midnight"] .sticky-tint-orange,
+[data-theme="sunset"] .sticky-tint-orange {
+  background: linear-gradient(145deg, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.1) 100%);
+}
+
+[data-theme="dark"] .sticky-tint-teal,
+[data-theme="forest"] .sticky-tint-teal,
+[data-theme="ocean"] .sticky-tint-teal,
+[data-theme="midnight"] .sticky-tint-teal,
+[data-theme="sunset"] .sticky-tint-teal {
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%);
+}
+
+[data-theme="dark"] .sticky-tint-rose,
+[data-theme="forest"] .sticky-tint-rose,
+[data-theme="ocean"] .sticky-tint-rose,
+[data-theme="midnight"] .sticky-tint-rose,
+[data-theme="sunset"] .sticky-tint-rose {
+  background: linear-gradient(145deg, rgba(251, 113, 133, 0.15) 0%, rgba(244, 63, 94, 0.1) 100%);
+}
+
+@keyframes stickyAppear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) rotate(1deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.sticky-dialog {
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 10px 20px rgba(0, 0, 0, 0.08);
+  animation: stickyDialogAppear 0.2s ease-out;
+}
+
+@keyframes stickyDialogAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

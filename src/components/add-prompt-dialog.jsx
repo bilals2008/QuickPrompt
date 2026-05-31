@@ -106,7 +106,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg cursor-pointer"
+          className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all"
           size="icon"
         >
           <IconPlus size={20} />
@@ -114,54 +114,54 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
       </DialogTrigger>
 
       {mini ? (
-        <DialogContent className="sm:max-w-sm gap-3">
+        <DialogContent className="sm:max-w-sm gap-3 sticky-dialog">
           <DialogHeader>
-            <DialogTitle className="text-sm">New Prompt</DialogTitle>
+            <DialogTitle className="text-sm font-semibold">New Prompt</DialogTitle>
           </DialogHeader>
-          <Textarea
-            id="content"
-            placeholder="Write your prompt here..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={3}
-            className="resize-none text-xs"
-          />
-          <div className="space-y-1.5">
-            <Input
-              ref={inputRef}
-              placeholder="Quick add tag... enter to create"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault()
-                  addTag()
-                }
-              }}
-              className="h-7 text-xs placeholder:text-xs"
+          <div className="space-y-3">
+            <Textarea
+              id="content"
+              placeholder="Write your prompt here..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={3}
+              className="resize-none text-sm border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
             />
-            {selectedTags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {selectedTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    className={cn("text-[10px] font-normal gap-0.5 border leading-none px-1.5 py-0.5", getTagColor(tag))}
-                  >
-                    {tag}
-                    <span
-                      className="cursor-pointer hover:text-destructive leading-none"
-                      onClick={() => removeTag(tag)}
+            <div className="space-y-2">
+              <Input
+                ref={inputRef}
+                placeholder="Add tag... enter to create"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    addTag()
+                  }
+                }}
+                className="h-8 text-xs placeholder:text-xs border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+              />
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedTags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className={cn("text-[11px] font-medium gap-1 border leading-none px-2 py-0.5", getTagColor(tag))}
                     >
-                      <IconX size={9} />
-                    </span>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={savePrompt} className="flex-1 cursor-pointer h-8 text-xs">
+                      {tag}
+                      <span
+                        className="cursor-pointer hover:text-destructive leading-none ml-0.5"
+                        onClick={() => removeTag(tag)}
+                      >
+                        <IconX size={10} />
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={savePrompt} className="w-full cursor-pointer h-9 text-sm font-medium">
               Save
             </Button>
           </div>
