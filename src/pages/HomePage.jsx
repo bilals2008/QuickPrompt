@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
 import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList } from "@tabler/icons-react"
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PromptCardItem, parsePrompt } from "@/components/prompt-card"
 import { AddPromptDialog } from "@/components/add-prompt-dialog"
+import { DataPagination } from "@/components/data-pagination"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -18,6 +19,8 @@ export default function HomePage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [viewMode, setViewMode] = useState("grid")
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(!sidebarVisible ? 8 : 16)
   const searchRef = useRef(null)
 
   const loadPrompts = useCallback(async () => {
@@ -77,17 +80,28 @@ export default function HomePage() {
     }
   }
 
-  const filteredPrompts = prompts
-    .map(parsePrompt)
-    .filter((p) => {
-      if (!search) return true
-      const q = search.toLowerCase()
-      return (
-        p.content.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.includes(q))
-      )
-    })
-    .filter((p) => (showFavoritesOnly ? p.favorite : true))
+  const filteredPrompts = useMemo(() => {
+    return prompts
+      .map(parsePrompt)
+      .filter((p) => {
+        if (!search) return true
+        const q = search.toLowerCase()
+        return (
+          p.content.toLowerCase().includes(q) ||
+          p.tags.some((t) => t.includes(q))
+        )
+      })
+      .filter((p) => (showFavoritesOnly ? p.favorite : true))
+  }, [prompts, search, showFavoritesOnly])
+
+  const paginatedPrompts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredPrompts.slice(start, start + pageSize)
+  }, [filteredPrompts, currentPage, pageSize])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, showFavoritesOnly, pageSize])
 
   return (
     <div className="flex flex-col h-full">
@@ -184,7 +198,7 @@ export default function HomePage() {
               ? "grid-cols-1"
               : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           )}>
-            {filteredPrompts.map((prompt) => (
+            {paginatedPrompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}
                 prompt={prompt}
@@ -200,7 +214,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2 w-full">
-            {filteredPrompts.map((prompt) => (
+            {paginatedPrompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}
                 prompt={prompt}
@@ -213,6 +227,20 @@ export default function HomePage() {
                 onSaved={loadPrompts}
               />
             ))}
+          </div>
+        )}
+
+        {filteredPrompts.length > 0 && (
+          <div className={cn("mt-4", !sidebarVisible && "px-1")}>
+            <DataPagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalItems={filteredPrompts.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[8, 16, 24, 48]}
+              mini={!sidebarVisible}
+            />
           </div>
         )}
       </div>
