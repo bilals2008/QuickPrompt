@@ -498,7 +498,6 @@ export default function Settings() {
                 <div className="rounded-xl border border-border bg-card p-5">
                   <div className="mb-4 flex items-center justify-between">
                     <div>
-                      <p className="text-base font-bold text-foreground">{pkg.productName}</p>
                       <p className="text-xs text-muted-foreground">v{pkg.version}</p>
                     </div>
                   </div>
@@ -506,13 +505,13 @@ export default function Settings() {
                     {pkg.description}
                   </p>
                  </div>
-                 <div className="mt-6 text-center text-[11px] text-muted-foreground space-y-0.5">
-                   <p>QuickPrompt &copy; {new Date().getFullYear()}</p>
-                   <p>Built by Muhammad Bilal Hassan</p>
-                 </div>
               </section>
             )}
 
+          </div>
+
+          <div className="px-6 pb-4 pt-2 text-center text-[11px] text-muted-foreground">
+            <p>Built by Muhammad Bilal Hassan</p>
           </div>
         </ScrollArea>
       </div>
