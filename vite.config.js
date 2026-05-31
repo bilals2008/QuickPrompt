@@ -14,7 +14,7 @@ export default defineConfig({
         vite: {
           build: {
             rollupOptions: {
-              external: ["sqlite3"],
+              external: ["sqlite3", "electron", "electron-updater", "node:fs", "node:path", "node:url", "node:os"],
             },
           },
         },

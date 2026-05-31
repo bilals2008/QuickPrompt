@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } from "electron"
 import path from "node:path"
+import fs from "node:fs"
 import { fileURLToPath } from "node:url"
 import { initDatabase, closeDatabase } from "./database/db.js"
 import {
@@ -12,8 +13,8 @@ import {
   searchPrompts,
   toggleFavorite,
 } from "./database/prompts.js"
-import { autoUpdater } from "electron-updater"
-import Store from "electron-store"
+import updater from "electron-updater"
+const { autoUpdater } = updater
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -25,7 +26,33 @@ let tray
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"]
 const isMac = process.platform === "darwin"
 
-const store = new Store({ name: "settings" })
+const settingsPath = path.join(app.getPath("userData"), "QuickPrompt", "settings.json")
+
+function readSettings() {
+  try {
+    if (fs.existsSync(settingsPath)) {
+      return JSON.parse(fs.readFileSync(settingsPath, "utf-8"))
+    }
+  } catch { /* ignore */ }
+  return {}
+}
+
+function writeSettings(data) {
+  const dir = path.dirname(settingsPath)
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(settingsPath, JSON.stringify(data, null, 2))
+}
+
+function getSetting(key, fallback) {
+  const settings = readSettings()
+  return settings[key] ?? fallback
+}
+
+function setSetting(key, value) {
+  const settings = readSettings()
+  settings[key] = value
+  writeSettings(settings)
+}
 let updateStatus = "idle"
 let updateInfo = null
 
@@ -151,7 +178,7 @@ app.whenReady().then(async () => {
   createWindow()
   createTray()
 
-  if (store.get("autoCheckUpdates", true)) {
+  if (getSetting("autoCheckUpdates", true)) {
     setTimeout(() => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         autoUpdater.checkForUpdates().catch(() => {})
@@ -235,9 +262,9 @@ ipcMain.handle("update:get-status", () => {
 })
 
 ipcMain.handle("update:set-auto-check", (_event, enabled) => {
-  store.set("autoCheckUpdates", enabled)
+  setSetting("autoCheckUpdates", enabled)
 })
 
 ipcMain.handle("update:get-auto-check", () => {
-  return store.get("autoCheckUpdates", true)
+  return getSetting("autoCheckUpdates", true)
 })
