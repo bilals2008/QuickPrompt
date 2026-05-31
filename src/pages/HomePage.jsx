@@ -230,7 +230,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {filteredPrompts.length > 0 && (
+        {filteredPrompts.length > 20 && (
           <div className={cn("mt-4", !sidebarVisible && "px-1")}>
             <DataPagination
               currentPage={currentPage}
