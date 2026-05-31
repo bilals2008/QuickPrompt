@@ -21,7 +21,6 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
-    "electron-store": "^11.0.2",
     "electron-updater": "^6.8.3",
     "sqlite3": "^6.0.1"
   },
