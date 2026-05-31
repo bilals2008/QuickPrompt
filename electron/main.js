@@ -153,7 +153,14 @@ function createWindow() {
   mainWindow.on("close", (event) => {
     if (!app.isQuitting) {
       event.preventDefault()
-      mainWindow.hide()
+      const closeBehavior = getSetting("closeBehavior", "tray")
+      if (closeBehavior === "quit") {
+        app.isQuitting = true
+        closeDatabase()
+        app.quit()
+      } else {
+        mainWindow.hide()
+      }
     }
   })
 

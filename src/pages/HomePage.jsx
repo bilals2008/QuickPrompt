@@ -21,6 +21,8 @@ export default function HomePage() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(!sidebarVisible ? 8 : 16)
+  const [autoCopy, setAutoCopy] = useState(false)
+  const [notifications, setNotifications] = useState(false)
   const searchRef = useRef(null)
 
   const loadPrompts = useCallback(async () => {
@@ -47,6 +49,10 @@ export default function HomePage() {
     window.db?.health?.().then((h) => {
       if (!h.ready) toast.error("Database error: " + (h.error || "unknown"))
     })
+
+    window.settingsAPI?.get("defaultView", "grid").then((v) => setViewMode(v))
+    window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
+    window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
   }, [loadPrompts, loadTags])
 
   useEffect(() => {
@@ -56,16 +62,16 @@ export default function HomePage() {
 
   function copyPrompt(text) {
     navigator.clipboard.writeText(text)
-    toast.success("Copied to clipboard!")
+    if (notifications) toast.success("Copied to clipboard!")
   }
 
   async function deletePrompt(id) {
     try {
       await window.db.deletePrompt(id)
       await loadPrompts()
-      toast.success("Prompt deleted")
+      if (notifications) toast.success("Prompt deleted")
     } catch (err) {
-      toast.error("Failed to delete prompt")
+      if (notifications) toast.error("Failed to delete prompt")
       console.error(err)
     }
   }
@@ -75,7 +81,7 @@ export default function HomePage() {
       await window.db.toggleFavorite(id)
       await loadPrompts()
     } catch (err) {
-      toast.error("Failed to update favorite")
+      if (notifications) toast.error("Failed to update favorite")
       console.error(err)
     }
   }
@@ -140,7 +146,11 @@ export default function HomePage() {
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9 cursor-pointer"
-                    onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+                    onClick={() => {
+                      const newMode = viewMode === "grid" ? "list" : "grid"
+                      setViewMode(newMode)
+                      window.settingsAPI?.set("defaultView", newMode)
+                    }}
                   >
                     {viewMode === "grid" ? <IconLayoutList size={16} /> : <IconLayoutGrid size={16} />}
                   </Button>
@@ -209,6 +219,7 @@ export default function HomePage() {
                 allTags={allTags}
                 mini={!sidebarVisible}
                 onSaved={loadPrompts}
+                autoCopy={autoCopy}
               />
             ))}
           </div>
@@ -225,6 +236,7 @@ export default function HomePage() {
                 allTags={allTags}
                 mini={!sidebarVisible}
                 onSaved={loadPrompts}
+                autoCopy={autoCopy}
               />
             ))}
           </div>

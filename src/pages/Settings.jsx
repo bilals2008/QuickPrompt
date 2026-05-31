@@ -197,17 +197,17 @@ export default function Settings() {
   const [checking, setChecking] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [closeBehavior, setCloseBehavior] = useState("tray")
-  const [autoCopy, setAutoCopy] = useState(false)
+  const [autoCopy, setAutoCopy] = useState(true)
   const [defaultView, setDefaultView] = useState("grid")
-  const [notifications, setNotifications] = useState(true)
+  const [notifications, setNotifications] = useState(false)
 
   useEffect(() => {
     window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
 
     window.settingsAPI?.get("closeBehavior", "tray").then((v) => setCloseBehavior(v))
-    window.settingsAPI?.get("autoCopy", false).then((v) => setAutoCopy(v))
+    window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
     window.settingsAPI?.get("defaultView", "grid").then((v) => setDefaultView(v))
-    window.settingsAPI?.get("notifications", true).then((v) => setNotifications(v))
+    window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
 
     const unsubscribe = window.updateAPI?.onEvent((event) => {
       setUpdateStatus(event.status)

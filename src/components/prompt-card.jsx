@@ -62,15 +62,26 @@ function formatTime(date) {
   return new Date(date).toLocaleDateString()
 }
 
-export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved }) {
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true }) {
   const [copied, setCopied] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [clicked, setClicked] = useState(false)
 
   const handleCopy = (e) => {
     e.stopPropagation()
     onCopy(prompt.content)
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
+  }
+
+  const handleCardClick = () => {
+    if (autoCopy) {
+      onCopy(prompt.content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }
+    setClicked(true)
+    setTimeout(() => setClicked(false), 200)
   }
 
   const handleFavorite = (e) => {
@@ -142,8 +153,11 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
 
   return viewMode === "list" ? (
     <div
-      onClick={() => onCopy(prompt.content)}
-      className="group flex cursor-pointer items-center gap-4 rounded-lg border border-border bg-card px-4 py-3 transition-all hover:bg-accent/50 hover:ring-1 hover:ring-primary/20"
+      onClick={handleCardClick}
+      className={cn(
+        "group flex cursor-pointer items-center gap-4 rounded-lg border border-border bg-card px-4 py-3 transition-all hover:bg-accent/50 hover:ring-1 hover:ring-primary/20",
+        clicked && "scale-[0.98] ring-2 ring-primary/40"
+      )}
     >
       <button onClick={handleFavorite} className="shrink-0 cursor-pointer">
         {prompt.favorite ? (
@@ -172,12 +186,13 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
     </div>
   ) : (
     <div
-      onClick={() => onCopy(prompt.content)}
+      onClick={handleCardClick}
       className={cn(
         "group flex cursor-pointer flex-col rounded-xl transition-all",
         mini
           ? `sticky-note ${getStickyTint(prompt.content)}`
-          : "border border-border bg-card hover:ring-1 hover:ring-primary/30"
+          : "border border-border bg-card hover:ring-1 hover:ring-primary/30",
+        clicked && "scale-[0.98] ring-2 ring-primary/40"
       )}
     >
       {/* Compact layout (mini window) - Sticky Note Style */}
