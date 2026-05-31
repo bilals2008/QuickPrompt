@@ -14,7 +14,7 @@ function App() {
     const el = containerRef.current
     if (!el) return
     const ro = new ResizeObserver(([entry]) => {
-      setSidebarVisible(entry.contentRect.width > 480)
+      setSidebarVisible(entry.contentRect.width > 640)
     })
     ro.observe(el)
     return () => ro.disconnect()
