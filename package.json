@@ -4,6 +4,7 @@
   "description": "A simple prompt manager - create, tag, and copy prompts instantly",
   "private": true,
   "version": "1.1.2",
+  "author": "Muhammad Bilal Hassan",
   "type": "module",
   "scripts": {
     "dev": "vite",
