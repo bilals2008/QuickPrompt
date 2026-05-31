@@ -283,3 +283,11 @@ ipcMain.handle("update:set-auto-check", (_event, enabled) => {
 ipcMain.handle("update:get-auto-check", () => {
   return getSetting("autoCheckUpdates", true)
 })
+
+ipcMain.handle("settings:get", (_event, key, fallback) => {
+  return getSetting(key, fallback)
+})
+
+ipcMain.handle("settings:set", (_event, key, value) => {
+  setSetting(key, value)
+})

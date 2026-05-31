@@ -29,3 +29,8 @@ contextBridge.exposeInMainWorld("updateAPI", {
     return () => ipcRenderer.removeListener("update:event", handler)
   },
 })
+
+contextBridge.exposeInMainWorld("settingsAPI", {
+  get: (key, fallback) => ipcRenderer.invoke("settings:get", key, fallback),
+  set: (key, value) => ipcRenderer.invoke("settings:set", key, value),
+})

@@ -6,6 +6,13 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   IconMoon,
   IconInfoCircle,
   IconPlayerPlay,
@@ -18,6 +25,11 @@ import {
   IconLoader2,
   IconCircleCheck,
   IconAlertCircle,
+  IconLayoutGrid,
+  IconList,
+  IconBell,
+  IconMouse,
+  IconX,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -161,11 +173,11 @@ function NavItem({ icon: Icon, label, active, onClick }) {
 
 function SettingRow({ icon: Icon, label, description, children }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2">
-      <div className="flex items-center gap-3 min-w-0">
+    <div className="flex items-center justify-between gap-3 py-2">
+      <div className="flex items-center gap-2.5 min-w-0">
         {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
         <div className="min-w-0">
-          <p className="text-sm font-medium">{label}</p>
+          <p className="text-sm font-medium truncate">{label}</p>
           {description && (
             <p className="text-xs text-muted-foreground truncate">{description}</p>
           )}
@@ -186,9 +198,18 @@ export default function Settings() {
   const [autoCheck, setAutoCheck] = useState(true)
   const [checking, setChecking] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [closeBehavior, setCloseBehavior] = useState("tray")
+  const [autoCopy, setAutoCopy] = useState(false)
+  const [defaultView, setDefaultView] = useState("grid")
+  const [notifications, setNotifications] = useState(true)
 
   useEffect(() => {
     window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
+
+    window.settingsAPI?.get("closeBehavior", "tray").then((v) => setCloseBehavior(v))
+    window.settingsAPI?.get("autoCopy", false).then((v) => setAutoCopy(v))
+    window.settingsAPI?.get("defaultView", "grid").then((v) => setDefaultView(v))
+    window.settingsAPI?.get("notifications", true).then((v) => setNotifications(v))
 
     const unsubscribe = window.updateAPI?.onEvent((event) => {
       setUpdateStatus(event.status)
@@ -240,6 +261,26 @@ export default function Settings() {
     window.updateAPI?.setAutoCheck(checked)
   }
 
+  function handleCloseBehaviorChange(value) {
+    setCloseBehavior(value)
+    window.settingsAPI?.set("closeBehavior", value)
+  }
+
+  function handleAutoCopyToggle(checked) {
+    setAutoCopy(checked)
+    window.settingsAPI?.set("autoCopy", checked)
+  }
+
+  function handleDefaultViewChange(value) {
+    setDefaultView(value)
+    window.settingsAPI?.set("defaultView", value)
+  }
+
+  function handleNotificationsToggle(checked) {
+    setNotifications(checked)
+    window.settingsAPI?.set("notifications", checked)
+  }
+
   const showSidebar = sidebarVisible
 
   return (
@@ -278,19 +319,19 @@ export default function Settings() {
           <div className="p-4 sm:p-6">
 
             {!showSidebar && (
-              <div className="mb-4 flex justify-center gap-2">
+              <div className="mb-4 flex justify-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
                 {sections.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setActiveSection(s.id)}
                     className={cn(
-                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer whitespace-nowrap shrink-0",
                       activeSection === s.id
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     )}
                   >
-                    <s.icon size={14} />
+                    <s.icon size={13} />
                     {s.label}
                   </button>
                 ))}
@@ -299,29 +340,65 @@ export default function Settings() {
 
             {activeSection === "general" && (
               <section>
-                <div className="mb-4">
+                <div className="mb-3">
                   <h2 className="text-sm font-semibold text-foreground">General</h2>
                   <p className="text-xs text-muted-foreground">Application preferences</p>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4">
+                <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
                   <SettingRow
-                    icon={IconMessage}
-                    label="Default editor"
-                    description="New prompt dialog opens by default"
+                    icon={IconX}
+                    label="Close behavior"
+                    description="Minimize to tray or quit"
                   >
-                    <span className="rounded-md border border-border bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground tracking-wide cursor-default">
-                      Coming soon
-                    </span>
+                    <Select value={closeBehavior} onValueChange={handleCloseBehaviorChange}>
+                      <SelectTrigger className="w-[130px] h-8 text-xs cursor-pointer">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tray">Minimize to tray</SelectItem>
+                        <SelectItem value="quit">Quit app</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </SettingRow>
                   <Separator className="my-1" />
                   <SettingRow
-                    icon={IconPlayerPlay}
-                    label="Launch at startup"
-                    description="Open QuickPrompt when you log in"
+                    icon={IconMouse}
+                    label="Auto-copy on click"
+                    description="Copy prompt when clicked"
                   >
-                    <span className="rounded-md border border-border bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground tracking-wide cursor-default">
-                      Coming soon
-                    </span>
+                    <Switch
+                      checked={autoCopy}
+                      onCheckedChange={handleAutoCopyToggle}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconLayoutGrid}
+                    label="Default view"
+                    description="Grid or list on startup"
+                  >
+                    <Select value={defaultView} onValueChange={handleDefaultViewChange}>
+                      <SelectTrigger className="w-[110px] h-8 text-xs cursor-pointer">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="grid">Grid</SelectItem>
+                        <SelectItem value="list">List</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconBell}
+                    label="Notifications"
+                    description="Show toast notifications"
+                  >
+                    <Switch
+                      checked={notifications}
+                      onCheckedChange={handleNotificationsToggle}
+                      className="cursor-pointer"
+                    />
                   </SettingRow>
                 </div>
               </section>
@@ -329,15 +406,15 @@ export default function Settings() {
 
             {activeSection === "appearance" && (
               <section>
-                <div className="mb-4">
+                <div className="mb-3">
                   <h2 className="text-sm font-semibold text-foreground">Appearance</h2>
                   <p className="text-xs text-muted-foreground">Choose your theme</p>
                 </div>
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {themeCategories.map((category) => (
                     <div key={category.label}>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">{category.label}</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{category.label}</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                         {category.themes.map((t) => (
                           <button
                             key={t.id}

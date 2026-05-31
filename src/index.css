@@ -421,6 +421,14 @@ html *::after {
   }
 }
 
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Sticky Note Styles for Mini Window */
 .sticky-note {
   position: relative;
