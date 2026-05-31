@@ -600,27 +600,40 @@ export default function Settings() {
                     <IconInfoCircle className="size-5 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-semibold text-foreground">About</h2>
-                    <p className="text-xs text-muted-foreground">Application information</p>
+                    <h2 className="text-sm font-semibold text-foreground">About {pkg.productName}</h2>
+                    <p className="text-xs text-muted-foreground">Software information</p>
                   </div>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">v{pkg.version}</p>
+                <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-foreground">{pkg.productName}</p>
+                    <p className="text-xs text-muted-foreground">v{pkg.version}</p>
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {pkg.description}
+                    </p>
+                  </div>
+                  <Separator />
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">Version</p>
+                      <p className="text-xs text-foreground">{pkg.version}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">Developer</p>
+                      <p className="text-xs text-foreground">{pkg.author}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">License</p>
+                      <p className="text-xs text-foreground">MIT</p>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {pkg.description}
-                  </p>
-                 </div>
+                </div>
               </section>
             )}
 
-          </div>
-
-          <div className="px-6 pb-4 pt-2 text-center text-[11px] text-muted-foreground">
-            <p>Built by Muhammad Bilal Hassan</p>
           </div>
         </ScrollArea>
       </div>
