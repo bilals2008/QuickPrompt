@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, Notification } from "electron"
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, Notification, shell } from "electron"
 import path from "node:path"
 import fs from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -360,6 +360,16 @@ ipcMain.handle("get-app-version", () => {
   return app.getVersion()
 })
 
+ipcMain.handle("get-platform", () => {
+  return {
+    platform: process.platform,
+    isMac: process.platform === "darwin",
+    isWin: process.platform === "win32",
+    isLinux: process.platform === "linux",
+    notificationsSupported: Notification.isSupported(),
+  }
+})
+
 ipcMain.handle("db:health", () => {
   return { ready: dbReady, error: dbError }
 })
@@ -545,4 +555,20 @@ ipcMain.handle("notification:show", (_event, { title, body, silent } = {}) => {
   })
   n.show()
   return { success: true }
+})
+
+ipcMain.handle("window:show-popover", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
+  positionWindowNearTray()
+  mainWindow.show()
+  mainWindow.focus()
+  return { success: true }
+})
+
+ipcMain.handle("shell:open-external", (_event, url) => {
+  if (typeof url === "string" && /^https?:\/\//.test(url)) {
+    shell.openExternal(url)
+    return { success: true }
+  }
+  return { success: false }
 })

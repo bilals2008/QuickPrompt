@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from "react"
-import { Outlet, Link, useLocation } from "react-router-dom"
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
 import { Toaster } from "@/components/ui/sonner"
 import { IconSettings, IconHome2 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { SpotlightSearch } from "@/features/spotlight-search/SpotlightSearch"
 
 function App() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const containerRef = useRef(null)
 
@@ -20,8 +22,29 @@ function App() {
     return () => ro.disconnect()
   }, [])
 
+  useEffect(() => {
+    if (!window.electronAPI?.onNavigate) return
+    const unsubscribe = window.electronAPI.onNavigate((route) => {
+      if (typeof route === "string" && route.startsWith("/")) {
+        navigate(route)
+      }
+    })
+    return unsubscribe
+  }, [navigate])
+
+  useEffect(() => {
+    if (!window.electronAPI?.onNavigate) return
+    const unsubscribe = window.electronAPI.onNavigate((route) => {
+      if (typeof route === "string" && route.startsWith("/")) {
+        navigate(route)
+      }
+    })
+    return unsubscribe
+  }, [navigate])
+
   return (
     <TooltipProvider delayDuration={300}>
+      <SpotlightSearch />
       <div ref={containerRef} className="flex h-screen w-full bg-background overflow-hidden">
         {sidebarVisible && (
           <nav className="flex flex-col items-center gap-3 py-4 px-2 border-r border-border/30 bg-sidebar w-14 shrink-0">

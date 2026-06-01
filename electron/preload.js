@@ -2,10 +2,16 @@ import { contextBridge, ipcRenderer } from "electron"
 
 contextBridge.exposeInMainWorld("electronAPI", {
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  getPlatform: () => ipcRenderer.invoke("get-platform"),
   onGlobalSearch: (listener) => {
     const handler = () => listener()
     ipcRenderer.on("app:global-search", handler)
     return () => ipcRenderer.removeListener("app:global-search", handler)
+  },
+  onNavigate: (listener) => {
+    const handler = (_e, route) => listener(route)
+    ipcRenderer.on("app:navigate", handler)
+    return () => ipcRenderer.removeListener("app:navigate", handler)
   },
   hideWindow: () => ipcRenderer.invoke("app:hideWindow"),
 })
@@ -24,6 +30,7 @@ contextBridge.exposeInMainWorld("windowAPI", {
   toggleAlwaysOnTop: () => ipcRenderer.invoke("window:toggle-always-on-top"),
   getBounds: () => ipcRenderer.invoke("window:get-bounds"),
   setSize: (width, height) => ipcRenderer.invoke("window:set-size", width, height),
+  showPopover: () => ipcRenderer.invoke("window:show-popover"),
   onMaximizeChange: (listener) => {
     const handler = (_e, value) => listener(value)
     ipcRenderer.on("window:maximize-changed", handler)
@@ -65,4 +72,8 @@ contextBridge.exposeInMainWorld("settingsAPI", {
 contextBridge.exposeInMainWorld("notificationAPI", {
   show: ({ title, body, silent } = {}) =>
     ipcRenderer.invoke("notification:show", { title, body, silent }),
+})
+
+contextBridge.exposeInMainWorld("shellAPI", {
+  openExternal: (url) => ipcRenderer.invoke("shell:open-external", url),
 })
