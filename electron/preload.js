@@ -47,6 +47,13 @@ contextBridge.exposeInMainWorld("shellAPI", {
   openExternal: (url) => ipcRenderer.invoke("shell:open-external", url),
 })
 
+contextBridge.exposeInMainWorld("importExportAPI", {
+  saveFile: ({ content, format, suggestedName }) =>
+    ipcRenderer.invoke("import-export:save-file", { content, format, suggestedName }),
+  openFile: ({ format } = {}) =>
+    ipcRenderer.invoke("import-export:open-file", { format }),
+})
+
 contextBridge.exposeInMainWorld("db", {
   health: () => ipcRenderer.invoke("db:health"),
   createPrompt: (data) => ipcRenderer.invoke("db:createPrompt", data),

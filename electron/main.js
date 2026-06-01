@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, globalShortcut, Notification, screen, shell } from "electron"
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, globalShortcut, Notification, screen, shell, dialog } from "electron"
 import path from "node:path"
 import fs from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -602,4 +602,60 @@ ipcMain.handle("shell:open-external", (_event, url) => {
     return { success: true }
   }
   return { success: false }
+})
+
+const IMPORT_EXPORT_FILTERS = {
+  json: { name: "JSON", extensions: ["json"] },
+  csv: { name: "CSV", extensions: ["csv"] },
+  markdown: { name: "Markdown", extensions: ["md", "markdown"] },
+}
+
+ipcMain.handle("import-export:save-file", async (_event, { content, format, suggestedName } = {}) => {
+  if (typeof content !== "string" || content.length === 0) {
+    return { success: false, reason: "empty-content" }
+  }
+  const filter = IMPORT_EXPORT_FILTERS[format]
+  if (!filter) return { success: false, reason: "unknown-format" }
+
+  const defaultName = (typeof suggestedName === "string" && suggestedName)
+    ? suggestedName
+    : `quickprompts-${new Date().toISOString().slice(0, 10)}`
+
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: "Export prompts",
+    defaultPath: defaultName,
+    filters: [filter, { name: "All files", extensions: ["*"] }],
+  })
+
+  if (result.canceled || !result.filePath) {
+    return { success: false, reason: "canceled" }
+  }
+
+  try {
+    fs.writeFileSync(result.filePath, content, "utf-8")
+    return { success: true, filePath: result.filePath }
+  } catch (err) {
+    return { success: false, reason: "write-failed", error: err.message }
+  }
+})
+
+ipcMain.handle("import-export:open-file", async (_event, { format } = {}) => {
+  const filters = Object.values(IMPORT_EXPORT_FILTERS)
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Import prompts",
+    properties: ["openFile"],
+    filters,
+  })
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false, reason: "canceled" }
+  }
+
+  const filePath = result.filePaths[0]
+  try {
+    const content = fs.readFileSync(filePath, "utf-8")
+    return { success: true, filePath, content, format: format || null }
+  } catch (err) {
+    return { success: false, reason: "read-failed", error: err.message }
+  }
 })
