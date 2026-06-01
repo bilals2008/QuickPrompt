@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList } from "@tabler/icons-react"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PromptCardItem, parsePrompt } from "@/components/prompt-card"
@@ -16,7 +16,6 @@ export default function HomePage() {
   const [prompts, setPrompts] = useState([])
   const [allTags, setAllTags] = useState([])
   const [search, setSearch] = useState("")
-  const [searchOpen, setSearchOpen] = useState(false)
   const [viewMode, setViewMode] = useState("grid")
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -24,6 +23,26 @@ export default function HomePage() {
   const [autoCopy, setAutoCopy] = useState(false)
   const [notifications, setNotifications] = useState(false)
   const searchRef = useRef(null)
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const tag = (e.target?.tagName || "").toLowerCase()
+        const isEditable =
+          tag === "input" ||
+          tag === "textarea" ||
+          tag === "select" ||
+          e.target?.isContentEditable
+        if (!isEditable) {
+          e.preventDefault()
+          searchRef.current?.focus()
+          searchRef.current?.select?.()
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -54,11 +73,6 @@ export default function HomePage() {
     window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
     window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
   }, [loadPrompts, loadTags])
-
-  useEffect(() => {
-    if (!searchOpen) return
-    searchRef.current?.focus()
-  }, [searchOpen])
 
   function copyPrompt(text) {
     navigator.clipboard.writeText(text)
@@ -111,86 +125,129 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-border/30 gap-3">
-        <div className="min-w-0">
-          {sidebarVisible ? (
-            <>
-              <h1 className="text-lg font-semibold text-foreground truncate">QuickPrompt</h1>
-              <p className="text-xs text-muted-foreground truncate hidden sm:block">Create, tag, and copy prompts instantly</p>
-            </>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-foreground">{prompts.length}</span>
-                <span className="text-xs text-muted-foreground font-medium">prompts</span>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {!sidebarVisible && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 cursor-pointer"
-              onClick={() => navigate("/settings")}
-            >
-              <IconSettings size={16} />
-            </Button>
-          )}
-          {prompts.length > 0 && (
-            <>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 cursor-pointer"
-                    onClick={() => {
-                      const newMode = viewMode === "grid" ? "list" : "grid"
-                      setViewMode(newMode)
-                      window.settingsAPI?.set("defaultView", newMode)
-                    }}
-                  >
-                    {viewMode === "grid" ? <IconLayoutList size={16} /> : <IconLayoutGrid size={16} />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {viewMode === "grid" ? "List view" : "Grid view"}
-                </TooltipContent>
-              </Tooltip>
+      <header className="border-b border-border/30 px-6 pt-4 pb-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            {sidebarVisible ? (
+              <>
+                <h1 className="truncate text-lg font-semibold text-foreground tracking-tight">
+                  QuickPrompt
+                </h1>
+                <p className="hidden truncate text-xs text-muted-foreground sm:block">
+                  Create, tag, and copy prompts instantly
+                </p>
+              </>
+            ) : (
+              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
+                Prompts{" "}
+                <span className="font-normal text-muted-foreground">
+                  ({prompts.length})
+                </span>
+              </h1>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {!sidebarVisible && (
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn("h-9 w-9 cursor-pointer", showFavoritesOnly && "text-amber-400")}
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className="h-9 w-9 cursor-pointer"
+                onClick={() => navigate("/settings")}
               >
-                {showFavoritesOnly ? <IconStarFilled size={16} /> : <IconStar size={16} />}
+                <IconSettings size={16} />
               </Button>
-              {searchOpen ? (
-                <Input
-                  ref={searchRef}
-                  placeholder="Search prompts..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") { setSearchOpen(false); setSearch("") }
-                  }}
-                  className="h-9 w-40 text-sm"
-                />
-              ) : (
+            )}
+            {prompts.length > 0 && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 cursor-pointer"
+                      onClick={() => {
+                        const newMode = viewMode === "grid" ? "list" : "grid"
+                        setViewMode(newMode)
+                        window.settingsAPI?.set("defaultView", newMode)
+                      }}
+                    >
+                      {viewMode === "grid" ? (
+                        <IconLayoutList size={16} />
+                      ) : (
+                        <IconLayoutGrid size={16} />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {viewMode === "grid" ? "List view" : "Grid view"}
+                  </TooltipContent>
+                </Tooltip>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 cursor-pointer"
-                  onClick={() => setSearchOpen(true)}
+                  className={cn(
+                    "h-9 w-9 cursor-pointer",
+                    showFavoritesOnly && "text-amber-400"
+                  )}
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
                 >
-                  <IconSearch size={16} />
+                  {showFavoritesOnly ? (
+                    <IconStarFilled size={16} />
+                  ) : (
+                    <IconStar size={16} />
+                  )}
                 </Button>
-              )}
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
+
+        {prompts.length > 0 && (
+          <div
+            className={cn(
+              "group/search relative flex h-9 w-full items-center rounded-lg border border-border bg-background/60",
+              "transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40"
+            )}
+          >
+            <IconSearch
+              size={14}
+              stroke={2.2}
+              className="ml-3 shrink-0 text-muted-foreground"
+            />
+            <Input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault()
+                  setSearch("")
+                  searchRef.current?.blur()
+                }
+              }}
+              placeholder="Search prompts…"
+              className="h-8 w-full min-w-0 border-0 bg-transparent pl-2 pr-1 text-sm shadow-none focus-visible:ring-0 focus-visible:border-transparent"
+            />
+            {search ? (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => {
+                  setSearch("")
+                  searchRef.current?.focus()
+                }}
+                className="mr-1.5 size-6 cursor-pointer rounded-md text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <IconX size={12} stroke={2.4} />
+              </Button>
+            ) : (
+              <kbd className="mr-2.5 hidden h-5 select-none items-center rounded border border-border/60 bg-muted/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
+                /
+              </kbd>
+            )}
+          </div>
+        )}
       </header>
 
       <div className="flex-1 overflow-y-auto p-4">
