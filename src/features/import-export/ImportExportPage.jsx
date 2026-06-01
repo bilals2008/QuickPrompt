@@ -50,35 +50,33 @@ export default function ImportExportPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border/30 px-6 py-4">
-        <div className="min-w-0">
+      <header className="flex items-center justify-between gap-2 border-b border-border/30 px-6 py-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => navigate("/")}
+                className="shrink-0 cursor-pointer"
+                aria-label="Back to home"
+              >
+                <IconArrowLeft size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Back to prompts</TooltipContent>
+          </Tooltip>
           {sidebarVisible ? (
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => navigate("/")}
-                    className="cursor-pointer"
-                    aria-label="Back to home"
-                  >
-                    <IconArrowLeft size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Back to prompts</TooltipContent>
-              </Tooltip>
-              <div className="min-w-0">
-                <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
-                  Import &amp; Export
-                </h1>
-                <p className="truncate text-xs text-muted-foreground">
-                  Back up your library or move it between machines
-                </p>
-              </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
+                Import &amp; Export
+              </h1>
+              <p className="truncate text-xs text-muted-foreground">
+                Back up your library or move it between machines
+              </p>
             </div>
           ) : (
-            <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
+            <h1 className="truncate text-base font-semibold tracking-tight text-foreground">
               Import &amp; Export
             </h1>
           )}
