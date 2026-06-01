@@ -28,6 +28,7 @@ import {
   IconBell,
   IconMouse,
   IconX,
+  IconPin,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -200,6 +201,7 @@ export default function Settings() {
   const [autoCopy, setAutoCopy] = useState(true)
   const [defaultView, setDefaultView] = useState("grid")
   const [notifications, setNotifications] = useState(false)
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false)
 
   useEffect(() => {
     window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
@@ -208,6 +210,7 @@ export default function Settings() {
     window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
     window.settingsAPI?.get("defaultView", "grid").then((v) => setDefaultView(v))
     window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
+    window.windowAPI?.getAlwaysOnTop?.().then((v) => setAlwaysOnTop(Boolean(v)))
 
     const unsubscribe = window.updateAPI?.onEvent((event) => {
       setUpdateStatus(event.status)
@@ -277,6 +280,11 @@ export default function Settings() {
   function handleNotificationsToggle(checked) {
     setNotifications(checked)
     window.settingsAPI?.set("notifications", checked)
+  }
+
+  async function handleAlwaysOnTopToggle(checked) {
+    const res = await window.windowAPI?.setAlwaysOnTop?.(checked)
+    if (res?.success) setAlwaysOnTop(res.value)
   }
 
   const showSidebar = sidebarVisible
@@ -395,6 +403,18 @@ export default function Settings() {
                     <Switch
                       checked={notifications}
                       onCheckedChange={handleNotificationsToggle}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconPin}
+                    label="Always on top"
+                    description="Keep window above other apps"
+                  >
+                    <Switch
+                      checked={alwaysOnTop}
+                      onCheckedChange={handleAlwaysOnTopToggle}
                       className="cursor-pointer"
                     />
                   </SettingRow>
