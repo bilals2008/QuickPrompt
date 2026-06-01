@@ -264,6 +264,13 @@ function createWindow() {
   mainWindow.on("hide", refreshTrayMenu)
   mainWindow.on("focus", refreshTrayMenu)
 
+  mainWindow.on("maximize", () => {
+    mainWindow.webContents.send("window:maximize-changed", true)
+  })
+  mainWindow.on("unmaximize", () => {
+    mainWindow.webContents.send("window:maximize-changed", false)
+  })
+
   mainWindow.on("close", (event) => {
     if (!app.isQuitting) {
       event.preventDefault()
@@ -411,4 +418,99 @@ ipcMain.handle("settings:get", (_event, key, fallback) => {
 
 ipcMain.handle("settings:set", (_event, key, value) => {
   setSetting(key, value)
+})
+
+ipcMain.handle("window:minimize", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.minimize()
+  }
+})
+
+ipcMain.handle("window:toggle-maximize", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize()
+  } else {
+    mainWindow.maximize()
+  }
+  return { success: true, maximized: mainWindow.isMaximized() }
+})
+
+ipcMain.handle("window:is-maximized", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return false
+  return mainWindow.isMaximized()
+})
+
+ipcMain.handle("window:maximize", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.maximize()
+})
+
+ipcMain.handle("window:unmaximize", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.unmaximize()
+})
+
+ipcMain.handle("window:hide", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide()
+  }
+})
+
+ipcMain.handle("window:close-to-tray", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const closeBehavior = getSetting("closeBehavior", "tray")
+    if (closeBehavior === "quit") {
+      app.isQuitting = true
+      closeDatabase()
+      app.quit()
+    } else {
+      mainWindow.hide()
+    }
+  }
+})
+
+ipcMain.handle("window:quit", () => {
+  app.isQuitting = true
+  closeDatabase()
+  app.quit()
+})
+
+ipcMain.handle("window:set-always-on-top", (_event, value) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setAlwaysOnTop(Boolean(value))
+    setSetting("alwaysOnTop", Boolean(value))
+    return { success: true, value: mainWindow.isAlwaysOnTop() }
+  }
+  return { success: false }
+})
+
+ipcMain.handle("window:get-always-on-top", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow.isAlwaysOnTop()
+  }
+  return false
+})
+
+ipcMain.handle("window:toggle-always-on-top", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const next = !mainWindow.isAlwaysOnTop()
+    mainWindow.setAlwaysOnTop(next)
+    setSetting("alwaysOnTop", next)
+    return { success: true, value: next }
+  }
+  return { success: false, value: false }
+})
+
+ipcMain.handle("window:get-bounds", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow.getBounds()
+  }
+  return null
+})
+
+ipcMain.handle("window:set-size", (_event, width, height) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setSize(Math.round(width), Math.round(height))
+    return { success: true }
+  }
+  return { success: false }
 })

@@ -2,6 +2,33 @@ import { contextBridge, ipcRenderer } from "electron"
 
 contextBridge.exposeInMainWorld("electronAPI", {
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  onGlobalSearch: (listener) => {
+    const handler = () => listener()
+    ipcRenderer.on("app:global-search", handler)
+    return () => ipcRenderer.removeListener("app:global-search", handler)
+  },
+  hideWindow: () => ipcRenderer.invoke("app:hideWindow"),
+})
+
+contextBridge.exposeInMainWorld("windowAPI", {
+  minimize: () => ipcRenderer.invoke("window:minimize"),
+  maximize: () => ipcRenderer.invoke("window:maximize"),
+  unmaximize: () => ipcRenderer.invoke("window:unmaximize"),
+  toggleMaximize: () => ipcRenderer.invoke("window:toggle-maximize"),
+  isMaximized: () => ipcRenderer.invoke("window:is-maximized"),
+  hide: () => ipcRenderer.invoke("window:hide"),
+  closeToTray: () => ipcRenderer.invoke("window:close-to-tray"),
+  quit: () => ipcRenderer.invoke("window:quit"),
+  setAlwaysOnTop: (value) => ipcRenderer.invoke("window:set-always-on-top", value),
+  getAlwaysOnTop: () => ipcRenderer.invoke("window:get-always-on-top"),
+  toggleAlwaysOnTop: () => ipcRenderer.invoke("window:toggle-always-on-top"),
+  getBounds: () => ipcRenderer.invoke("window:get-bounds"),
+  setSize: (width, height) => ipcRenderer.invoke("window:set-size", width, height),
+  onMaximizeChange: (listener) => {
+    const handler = (_e, value) => listener(value)
+    ipcRenderer.on("window:maximize-changed", handler)
+    return () => ipcRenderer.removeListener("window:maximize-changed", handler)
+  },
 })
 
 contextBridge.exposeInMainWorld("db", {
