@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX } from "@tabler/icons-react"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PromptCardItem, parsePrompt } from "@/components/prompt-card"
@@ -147,6 +147,22 @@ export default function HomePage() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            {!sidebarVisible && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 cursor-pointer"
+                    onClick={() => navigate("/import-export")}
+                    aria-label="Import / Export"
+                  >
+                    <IconArrowsTransferUpDown size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Import / Export</TooltipContent>
+              </Tooltip>
+            )}
             {!sidebarVisible && (
               <Button
                 variant="ghost"

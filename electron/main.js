@@ -143,6 +143,12 @@ function buildTrayMenu() {
     },
     { type: "separator" },
     {
+      label: "Import / Export…",
+      click: () => {
+        showAndFocus("/import-export")
+      },
+    },
+    {
       label: "Settings",
       click: () => {
         showAndFocus("/settings")
