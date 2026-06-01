@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } from "electron"
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen } from "electron"
 import path from "node:path"
 import fs from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -24,7 +24,8 @@ process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(__dirnam
 let mainWindow
 let tray
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"]
-const isMac = process.platform === "darwin"
+const platform = process.platform
+const isMac = platform === "darwin"
 
 const settingsPath = path.join(app.getPath("userData"), "QuickPrompt", "settings.json")
 
@@ -91,41 +92,148 @@ autoUpdater.on("error", (err) => {
   mainWindow?.webContents.send("update:event", { status: "error", error: err.message })
 })
 
-function createTray() {
-  const iconPath = path.join(process.env.VITE_PUBLIC, "icon.png")
-  const icon = nativeImage.createFromPath(iconPath)
-  const trayIcon = isMac ? icon.resize({ width: 16, height: 16 }) : icon.resize({ width: 24, height: 24 })
-
-  tray = new Tray(trayIcon)
-  tray.setToolTip("QuickPrompt")
-
-  const contextMenu = Menu.buildFromTemplate([
+function buildTrayMenu() {
+  const alwaysOnTop = getSetting("alwaysOnTop", false)
+  return Menu.buildFromTemplate([
     {
-      label: "Open QuickPrompt",
+      label: mainWindow?.isVisible() ? "Hide QuickPrompt" : "Open QuickPrompt",
       click: toggleWindow,
+    },
+    {
+      label: "Quick Search",
+      accelerator: platform === "darwin" ? "Cmd+Alt+P" : "Ctrl+Alt+P",
+      click: () => {
+        showAndFocus()
+        mainWindow?.webContents.send("app:global-search")
+      },
     },
     { type: "separator" },
     {
-      label: "Quit",
+      label: "Always on Top",
+      type: "checkbox",
+      checked: alwaysOnTop,
+      click: (menuItem) => {
+        const next = menuItem.checked
+        setSetting("alwaysOnTop", next)
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.setAlwaysOnTop(next)
+        }
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Settings",
       click: () => {
-        closeDatabase()
+        showAndFocus("/settings")
+      },
+    },
+    {
+      label: "Check for Updates…",
+      click: async () => {
+        showAndFocus("/settings")
+        setTimeout(() => {
+          autoUpdater.checkForUpdates().catch(() => {})
+        }, 400)
+      },
+    },
+    { type: "separator" },
+    {
+      label: "About QuickPrompt",
+      click: () => {
+        showAndFocus("/settings")
+        setTimeout(() => {
+          mainWindow?.webContents.send("app:navigate", "/settings?section=about")
+        }, 200)
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Quit QuickPrompt",
+      accelerator: platform === "darwin" ? "Cmd+Q" : "Ctrl+Q",
+      click: () => {
         app.isQuitting = true
+        closeDatabase()
         app.quit()
       },
     },
   ])
+}
 
-  tray.setContextMenu(contextMenu)
+function refreshTrayMenu() {
+  if (tray && !tray.isDestroyed()) {
+    tray.setContextMenu(buildTrayMenu())
+  }
+}
 
-  tray.on("click", toggleWindow)
+function createTray() {
+  const iconPath = path.join(process.env.VITE_PUBLIC, "icon.png")
+  const icon = nativeImage.createFromPath(iconPath)
+  const trayIcon = isMac ? icon.resize({ width: 18, height: 18 }) : icon.resize({ width: 24, height: 24 })
+
+  tray = new Tray(trayIcon)
+  tray.setToolTip("QuickPrompt")
+  tray.setContextMenu(buildTrayMenu())
+
+  tray.on("click", () => {
+    if (isMac) {
+      toggleWindow()
+    } else {
+      positionWindowNearTray()
+      toggleWindow()
+    }
+  })
+
+  tray.on("right-click", () => {
+    refreshTrayMenu()
+  })
+}
+
+function positionWindowNearTray() {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  try {
+    const trayBounds = tray?.getBounds?.()
+    if (!trayBounds || (trayBounds.width === 0 && trayBounds.height === 0)) return
+    const winBounds = mainWindow.getBounds()
+    const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y })
+    const workArea = display.workArea
+    const margin = 8
+    const offset = 4
+
+    let x = Math.round(trayBounds.x + trayBounds.width / 2 - winBounds.width / 2)
+    let y
+    const trayCenterY = trayBounds.y + trayBounds.height / 2
+    const isTopHalf = trayCenterY < workArea.y + workArea.height / 2
+    y = isTopHalf
+      ? Math.round(trayBounds.y + trayBounds.height + offset)
+      : Math.round(trayBounds.y - winBounds.height - offset)
+
+    x = Math.max(workArea.x + margin, Math.min(x, workArea.x + workArea.width - winBounds.width - margin))
+    y = Math.max(workArea.y + margin, Math.min(y, workArea.y + workArea.height - winBounds.height - margin))
+
+    mainWindow.setPosition(x, y, false)
+  } catch (err) {
+    console.warn("[Main] popover positioning failed:", err.message)
+  }
+}
+
+function showAndFocus(route) {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (!mainWindow.isVisible()) {
+    positionWindowNearTray()
+  }
+  mainWindow.show()
+  mainWindow.focus()
+  if (route) {
+    mainWindow.webContents.send("app:navigate", route)
+  }
 }
 
 function toggleWindow() {
-  if (mainWindow.isVisible()) {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (mainWindow.isVisible() && mainWindow.isFocused()) {
     mainWindow.hide()
   } else {
-    mainWindow.show()
-    mainWindow.focus()
+    showAndFocus()
   }
 }
 
@@ -149,7 +257,12 @@ function createWindow() {
 
   mainWindow.on("ready-to-show", () => {
     mainWindow.show()
+    refreshTrayMenu()
   })
+
+  mainWindow.on("show", refreshTrayMenu)
+  mainWindow.on("hide", refreshTrayMenu)
+  mainWindow.on("focus", refreshTrayMenu)
 
   mainWindow.on("close", (event) => {
     if (!app.isQuitting) {
