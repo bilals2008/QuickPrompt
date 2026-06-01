@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, Notification, shell } from "electron"
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, globalShortcut, Notification, screen, shell } from "electron"
 import path from "node:path"
 import fs from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -26,6 +26,8 @@ let tray
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"]
 const platform = process.platform
 const isMac = platform === "darwin"
+const isWin = platform === "win32"
+const isLinux = platform === "linux"
 
 const settingsPath = path.join(app.getPath("userData"), "QuickPrompt", "settings.json")
 
@@ -54,6 +56,7 @@ function setSetting(key, value) {
   settings[key] = value
   writeSettings(settings)
 }
+
 let updateStatus = "idle"
 let updateInfo = null
 
@@ -273,6 +276,9 @@ function createWindow() {
     skipTaskbar: true,
   })
 
+  const alwaysOnTop = getSetting("alwaysOnTop", false)
+  mainWindow.setAlwaysOnTop(alwaysOnTop)
+
   mainWindow.on("ready-to-show", () => {
     mainWindow.show()
     refreshTrayMenu()
@@ -280,7 +286,6 @@ function createWindow() {
 
   mainWindow.on("show", refreshTrayMenu)
   mainWindow.on("hide", refreshTrayMenu)
-  mainWindow.on("focus", refreshTrayMenu)
 
   mainWindow.on("maximize", () => {
     mainWindow.webContents.send("window:maximize-changed", true)
@@ -301,6 +306,10 @@ function createWindow() {
         mainWindow.hide()
       }
     }
+  })
+
+  mainWindow.on("focus", () => {
+    refreshTrayMenu()
   })
 
   if (VITE_DEV_SERVER_URL) {
@@ -329,6 +338,7 @@ app.whenReady().then(async () => {
 
   createWindow()
   createTray()
+  registerGlobalShortcut()
 
   if (getSetting("autoCheckUpdates", true)) {
     setTimeout(() => {
@@ -353,8 +363,22 @@ app.on("before-quit", () => {
 })
 
 app.on("will-quit", () => {
+  globalShortcut.unregisterAll()
   if (tray) tray.destroy()
 })
+
+function registerGlobalShortcut() {
+  const accelerator = isMac ? "Cmd+Alt+P" : "Ctrl+Alt+P"
+  const ok = globalShortcut.register(accelerator, () => {
+    showAndFocus()
+    mainWindow?.webContents.send("app:global-search")
+  })
+  if (!ok) {
+    console.warn(`[Main] Failed to register global shortcut: ${accelerator}`)
+  } else {
+    console.log(`[Main] Global shortcut registered: ${accelerator}`)
+  }
+}
 
 ipcMain.handle("get-app-version", () => {
   return app.getVersion()
@@ -362,10 +386,10 @@ ipcMain.handle("get-app-version", () => {
 
 ipcMain.handle("get-platform", () => {
   return {
-    platform: process.platform,
-    isMac: process.platform === "darwin",
-    isWin: process.platform === "win32",
-    isLinux: process.platform === "linux",
+    platform,
+    isMac,
+    isWin,
+    isLinux,
     notificationsSupported: Notification.isSupported(),
   }
 })
@@ -448,6 +472,13 @@ ipcMain.handle("settings:set", (_event, key, value) => {
   setSetting(key, value)
 })
 
+ipcMain.handle("app:hideWindow", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide()
+  }
+  return { success: true }
+})
+
 ipcMain.handle("window:minimize", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.minimize()
@@ -483,6 +514,12 @@ ipcMain.handle("window:hide", () => {
   }
 })
 
+ipcMain.handle("window:quit", () => {
+  app.isQuitting = true
+  closeDatabase()
+  app.quit()
+})
+
 ipcMain.handle("window:close-to-tray", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     const closeBehavior = getSetting("closeBehavior", "tray")
@@ -494,12 +531,6 @@ ipcMain.handle("window:close-to-tray", () => {
       mainWindow.hide()
     }
   }
-})
-
-ipcMain.handle("window:quit", () => {
-  app.isQuitting = true
-  closeDatabase()
-  app.quit()
 })
 
 ipcMain.handle("window:set-always-on-top", (_event, value) => {
@@ -543,6 +574,14 @@ ipcMain.handle("window:set-size", (_event, width, height) => {
   return { success: false }
 })
 
+ipcMain.handle("window:show-popover", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
+  positionWindowNearTray()
+  mainWindow.show()
+  mainWindow.focus()
+  return { success: true }
+})
+
 ipcMain.handle("notification:show", (_event, { title, body, silent } = {}) => {
   if (!Notification.isSupported()) return { success: false, reason: "unsupported" }
   if (getSetting("notifications", false) === false) {
@@ -554,14 +593,6 @@ ipcMain.handle("notification:show", (_event, { title, body, silent } = {}) => {
     silent: Boolean(silent),
   })
   n.show()
-  return { success: true }
-})
-
-ipcMain.handle("window:show-popover", () => {
-  if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
-  positionWindowNearTray()
-  mainWindow.show()
-  mainWindow.focus()
   return { success: true }
 })
 

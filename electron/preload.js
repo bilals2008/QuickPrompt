@@ -38,6 +38,15 @@ contextBridge.exposeInMainWorld("windowAPI", {
   },
 })
 
+contextBridge.exposeInMainWorld("notificationAPI", {
+  show: ({ title, body, silent } = {}) =>
+    ipcRenderer.invoke("notification:show", { title, body, silent }),
+})
+
+contextBridge.exposeInMainWorld("shellAPI", {
+  openExternal: (url) => ipcRenderer.invoke("shell:open-external", url),
+})
+
 contextBridge.exposeInMainWorld("db", {
   health: () => ipcRenderer.invoke("db:health"),
   createPrompt: (data) => ipcRenderer.invoke("db:createPrompt", data),
@@ -67,13 +76,4 @@ contextBridge.exposeInMainWorld("updateAPI", {
 contextBridge.exposeInMainWorld("settingsAPI", {
   get: (key, fallback) => ipcRenderer.invoke("settings:get", key, fallback),
   set: (key, value) => ipcRenderer.invoke("settings:set", key, value),
-})
-
-contextBridge.exposeInMainWorld("notificationAPI", {
-  show: ({ title, body, silent } = {}) =>
-    ipcRenderer.invoke("notification:show", { title, body, silent }),
-})
-
-contextBridge.exposeInMainWorld("shellAPI", {
-  openExternal: (url) => ipcRenderer.invoke("shell:open-external", url),
 })
