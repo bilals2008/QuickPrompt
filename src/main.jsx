@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider.jsx"
 import App from "./App.jsx"
 import HomePage from "./pages/HomePage.jsx"
 import Settings from "./pages/Settings.jsx"
+import ImportExportPage from "./features/import-export/ImportExportPage.jsx"
 import "./index.css"
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -15,6 +16,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/" element={<App />}>
             <Route index element={<HomePage />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="import-export" element={<ImportExportPage />} />
           </Route>
         </Routes>
       </HashRouter>

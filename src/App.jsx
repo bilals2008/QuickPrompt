@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
 import { Toaster } from "@/components/ui/sonner"
-import { IconSettings, IconHome2 } from "@tabler/icons-react"
+import { IconSettings, IconHome2, IconArrowsTransferUpDown } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { SpotlightSearch } from "@/features/spotlight-search/SpotlightSearch"
@@ -65,6 +65,22 @@ function App() {
               <TooltipContent side="right" sideOffset={12}>Home</TooltipContent>
             </Tooltip>
             <div className="flex-1" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/import-export"
+                  className={cn(
+                    "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
+                    location.pathname === "/import-export"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                >
+                  <IconArrowsTransferUpDown size={18} />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={12}>Import / Export</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
