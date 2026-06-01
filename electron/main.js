@@ -267,7 +267,7 @@ function toggleWindow() {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 440,
-    height: 600,
+    height: 700,
     minWidth: 360,
     minHeight: 400,
     icon: path.join(process.env.VITE_PUBLIC, "icon.png"),
