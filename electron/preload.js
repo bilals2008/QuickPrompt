@@ -61,3 +61,8 @@ contextBridge.exposeInMainWorld("settingsAPI", {
   get: (key, fallback) => ipcRenderer.invoke("settings:get", key, fallback),
   set: (key, value) => ipcRenderer.invoke("settings:set", key, value),
 })
+
+contextBridge.exposeInMainWorld("notificationAPI", {
+  show: ({ title, body, silent } = {}) =>
+    ipcRenderer.invoke("notification:show", { title, body, silent }),
+})

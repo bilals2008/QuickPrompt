@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen } from "electron"
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, Notification } from "electron"
 import path from "node:path"
 import fs from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -60,37 +60,55 @@ let updateInfo = null
 autoUpdater.autoDownload = false
 autoUpdater.autoInstallOnAppQuit = true
 
+function notifyRenderer(event) {
+  mainWindow?.webContents.send("update:event", event)
+}
+
 autoUpdater.on("checking-for-update", () => {
   updateStatus = "checking"
-  mainWindow?.webContents.send("update:event", { status: "checking" })
+  notifyRenderer({ status: "checking" })
 })
 
 autoUpdater.on("update-available", (info) => {
   updateStatus = "available"
   updateInfo = { version: info.version, releaseNotes: info.releaseNotes }
-  mainWindow?.webContents.send("update:event", { status: "available", ...updateInfo })
+  notifyRenderer({ status: "available", ...updateInfo })
+  showNativeNotification("Update available", `QuickPrompt v${info.version} is available.`)
 })
 
 autoUpdater.on("download-progress", (progress) => {
   updateStatus = "downloading"
-  mainWindow?.webContents.send("update:event", { status: "downloading", percent: progress.percent })
+  notifyRenderer({ status: "downloading", percent: progress.percent })
 })
 
 autoUpdater.on("update-not-available", () => {
   updateStatus = "idle"
-  mainWindow?.webContents.send("update:event", { status: "idle" })
+  notifyRenderer({ status: "idle" })
 })
 
 autoUpdater.on("update-downloaded", (info) => {
   updateStatus = "downloaded"
   updateInfo = { version: info.version, releaseNotes: info.releaseNotes }
-  mainWindow?.webContents.send("update:event", { status: "downloaded", ...updateInfo })
+  notifyRenderer({ status: "downloaded", ...updateInfo })
+  showNativeNotification("Update ready", `v${info.version} downloaded. Restart to install.`)
 })
 
 autoUpdater.on("error", (err) => {
   updateStatus = "error"
-  mainWindow?.webContents.send("update:event", { status: "error", error: err.message })
+  notifyRenderer({ status: "error", error: err.message })
 })
+
+function showNativeNotification(title, body, onClick) {
+  if (!Notification.isSupported()) return
+  if (getSetting("notifications", false) === false) return
+  const n = new Notification({
+    title,
+    body,
+    silent: false,
+  })
+  if (onClick) n.on("click", onClick)
+  n.show()
+}
 
 function buildTrayMenu() {
   const alwaysOnTop = getSetting("alwaysOnTop", false)
@@ -513,4 +531,18 @@ ipcMain.handle("window:set-size", (_event, width, height) => {
     return { success: true }
   }
   return { success: false }
+})
+
+ipcMain.handle("notification:show", (_event, { title, body, silent } = {}) => {
+  if (!Notification.isSupported()) return { success: false, reason: "unsupported" }
+  if (getSetting("notifications", false) === false) {
+    return { success: false, reason: "disabled" }
+  }
+  const n = new Notification({
+    title: String(title || ""),
+    body: String(body || ""),
+    silent: Boolean(silent),
+  })
+  n.show()
+  return { success: true }
 })
