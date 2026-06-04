@@ -29,6 +29,7 @@ import {
   IconMouse,
   IconX,
   IconPin,
+  IconSparkles,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -417,6 +418,24 @@ export default function Settings() {
                       onCheckedChange={handleAlwaysOnTopToggle}
                       className="cursor-pointer"
                     />
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconSparkles}
+                    label="Reset onboarding"
+                    description="Show welcome screen again"
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={async () => {
+                        await window.settingsAPI?.set("onboardingComplete", false)
+                        toast.success("Onboarding reset. Restart app to see welcome screen.")
+                      }}
+                    >
+                      Reset
+                    </Button>
                   </SettingRow>
                 </div>
               </section>

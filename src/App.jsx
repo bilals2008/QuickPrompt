@@ -13,6 +13,14 @@ function App() {
   const containerRef = useRef(null)
 
   useEffect(() => {
+    window.settingsAPI?.get("onboardingComplete", false).then((complete) => {
+      if (!complete) {
+        navigate("/onboarding")
+      }
+    })
+  }, [navigate])
+
+  useEffect(() => {
     const el = containerRef.current
     if (!el) return
     const ro = new ResizeObserver(([entry]) => {

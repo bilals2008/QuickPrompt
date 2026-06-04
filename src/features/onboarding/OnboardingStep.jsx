@@ -1,0 +1,49 @@
+import { IconDeviceDesktop, IconTag, IconCopy } from "@tabler/icons-react"
+
+const steps = [
+  {
+    id: 1,
+    title: "Welcome to QuickPrompt",
+    description: "Your personal prompt manager. Create, organize, and access your prompts instantly.",
+    icon: IconDeviceDesktop,
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+  },
+  {
+    id: 2,
+    title: "Create & Tag Prompts",
+    description: "Save your favorite prompts with custom tags. Find them instantly with powerful search.",
+    icon: IconTag,
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
+  },
+  {
+    id: 3,
+    title: "Quick Copy & Use",
+    description: "One click to copy any prompt. Use it anywhere - ChatGPT, Claude, or any AI tool.",
+    icon: IconCopy,
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
+  },
+]
+
+export default function OnboardingStep({ stepIndex }) {
+  const step = steps[stepIndex]
+  const Icon = step.icon
+
+  return (
+    <div className="flex flex-col items-center justify-center text-center px-6">
+      <div className={`flex items-center justify-center w-20 h-20 rounded-2xl ${step.bgColor} mb-6`}>
+        <Icon className={`size-10 ${step.color}`} />
+      </div>
+      <h2 className="text-2xl font-bold text-foreground mb-3">
+        {step.title}
+      </h2>
+      <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
+        {step.description}
+      </p>
+    </div>
+  )
+}
+
+export { steps }
