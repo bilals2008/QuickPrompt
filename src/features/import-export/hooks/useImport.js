@@ -81,51 +81,6 @@ export function useImport() {
     }
   }, [])
 
-  const openWithDialog = useCallback(async () => {
-    if (!window.importExportAPI?.openFile) {
-      toast.error("File dialog API is not available")
-      return
-    }
-    setBusy(true)
-    try {
-      const res = await window.importExportAPI.openFile({})
-      if (!res?.success) {
-        if (res?.reason !== "canceled") {
-          toast.error(res?.error || "Could not open file")
-        }
-        return
-      }
-      const parsed = importFromUnknownFormat({
-        text: res.content,
-        filename: res.filePath,
-        hint: res.format,
-      })
-      if (!parsed.ok) {
-        setResult({
-          ...INITIAL_RESULT,
-          status: "error",
-          filename: res.filePath,
-          error: parsed.error,
-        })
-        toast.error(parsed.error || "Import failed")
-        return
-      }
-      setResult({
-        ...INITIAL_RESULT,
-        status: "preview",
-        format: parsed.format,
-        filename: res.filePath,
-        prompts: parsed.prompts,
-        total: parsed.total,
-        valid: parsed.valid,
-      })
-    } catch (err) {
-      toast.error(err?.message || "Import failed")
-    } finally {
-      setBusy(false)
-    }
-  }, [])
-
   const commit = useCallback(async () => {
     if (result.status !== "preview" || result.prompts.length === 0) return { success: false }
     setBusy(true)
@@ -172,7 +127,6 @@ export function useImport() {
     result,
     busy,
     parseFile,
-    openWithDialog,
     commit,
     reset,
   }

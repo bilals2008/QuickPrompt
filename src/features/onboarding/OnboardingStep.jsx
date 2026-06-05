@@ -1,4 +1,4 @@
-import { IconDeviceDesktop, IconTag, IconCopy } from "@tabler/icons-react"
+import { IconDeviceDesktop, IconTag, IconCopy, IconCommand } from "@tabler/icons-react"
 
 const steps = [
   {
@@ -24,6 +24,14 @@ const steps = [
     icon: IconCopy,
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
+  },
+  {
+    id: 4,
+    title: "Spotlight Search",
+    description: "Press ⌘ + K (or Ctrl + K) anywhere to instantly search and open any prompt with Spotlight.",
+    icon: IconCommand,
+    color: "text-cyan-500",
+    bgColor: "bg-cyan-500/10",
   },
 ]
 

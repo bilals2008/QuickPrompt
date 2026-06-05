@@ -92,7 +92,6 @@ export default function ImportExportPage() {
           >
             <ImportDropzone
               onFile={import_.parseFile}
-              onOpenDialog={import_.openWithDialog}
               busy={import_.busy}
               currentFormat={
                 import_.result.status === "preview" || import_.result.status === "done"
