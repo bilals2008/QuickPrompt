@@ -20,7 +20,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="forest"], [data-theme="ocean"], [data-theme="midnight"], [data-theme="sunset"], [data-theme="dracula"], [data-theme="tokyo-night"], [data-theme="cyberpunk"]));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="forest"], [data-theme="ocean"], [data-theme="midnight"], [data-theme="sunset"], [data-theme="dracula"], [data-theme="tokyo-night"], [data-theme="cyberpunk"], [data-theme="catppuccin"], [data-theme="gruvbox"]));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -272,6 +272,36 @@
   --sidebar-ring: #8b5cf6;
 }
 
+[data-theme="solarized"] {
+  --background: #fdf6e3;
+  --foreground: #586e75;
+  --card: #eee8d5;
+  --card-foreground: #586e75;
+  --popover: #eee8d5;
+  --popover-foreground: #586e75;
+  --primary: #268bd2;
+  --primary-foreground: #fdf6e3;
+  --secondary: #eee8d5;
+  --secondary-foreground: #586e75;
+  --muted: #eee8d5;
+  --muted-foreground: #93a1a1;
+  --accent: #e4ddc6;
+  --accent-foreground: #586e75;
+  --destructive: #dc322f;
+  --destructive-foreground: #fdf6e3;
+  --border: #ddd6c1;
+  --input: #ddd6c1;
+  --ring: #268bd2;
+  --sidebar: #eee8d5;
+  --sidebar-foreground: #586e75;
+  --sidebar-primary: #268bd2;
+  --sidebar-primary-foreground: #fdf6e3;
+  --sidebar-accent: #e4ddc6;
+  --sidebar-accent-foreground: #586e75;
+  --sidebar-border: #ddd6c1;
+  --sidebar-ring: #268bd2;
+}
+
 [data-theme="midnight"] {
   --background: #0f0f1a;
   --foreground: #e8e6f0;
@@ -390,6 +420,66 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #2a2a3a;
   --sidebar-ring: #00ff9f;
+}
+
+[data-theme="catppuccin"] {
+  --background: #1e1e2e;
+  --foreground: #cdd6f4;
+  --card: #313244;
+  --card-foreground: #cdd6f4;
+  --popover: #313244;
+  --popover-foreground: #cdd6f4;
+  --primary: #cba6f7;
+  --primary-foreground: #1e1e2e;
+  --secondary: #45475a;
+  --secondary-foreground: #cdd6f4;
+  --muted: #45475a;
+  --muted-foreground: #9399b2;
+  --accent: #585b70;
+  --accent-foreground: #cdd6f4;
+  --destructive: #f38ba8;
+  --destructive-foreground: #1e1e2e;
+  --border: #45475a;
+  --input: #45475a;
+  --ring: #cba6f7;
+  --sidebar: #181825;
+  --sidebar-foreground: #cdd6f4;
+  --sidebar-primary: #cba6f7;
+  --sidebar-primary-foreground: #1e1e2e;
+  --sidebar-accent: #585b70;
+  --sidebar-accent-foreground: #cdd6f4;
+  --sidebar-border: #45475a;
+  --sidebar-ring: #cba6f7;
+}
+
+[data-theme="gruvbox"] {
+  --background: #282828;
+  --foreground: #ebdbb2;
+  --card: #32302f;
+  --card-foreground: #ebdbb2;
+  --popover: #32302f;
+  --popover-foreground: #ebdbb2;
+  --primary: #fe8019;
+  --primary-foreground: #282828;
+  --secondary: #3c3836;
+  --secondary-foreground: #ebdbb2;
+  --muted: #3c3836;
+  --muted-foreground: #a89984;
+  --accent: #504945;
+  --accent-foreground: #fabd2f;
+  --destructive: #fb4934;
+  --destructive-foreground: #282828;
+  --border: #504945;
+  --input: #504945;
+  --ring: #fe8019;
+  --sidebar: #1d2021;
+  --sidebar-foreground: #ebdbb2;
+  --sidebar-primary: #fe8019;
+  --sidebar-primary-foreground: #282828;
+  --sidebar-accent: #504945;
+  --sidebar-accent-foreground: #fabd2f;
+  --sidebar-border: #504945;
+  --sidebar-ring: #fe8019;
 }
 
 * {
@@ -521,7 +611,9 @@ html *::after {
 [data-theme="sunset"] .sticky-tint-yellow,
 [data-theme="dracula"] .sticky-tint-yellow,
 [data-theme="tokyo-night"] .sticky-tint-yellow,
-[data-theme="cyberpunk"] .sticky-tint-yellow {
+[data-theme="cyberpunk"] .sticky-tint-yellow,
+[data-theme="catppuccin"] .sticky-tint-yellow,
+[data-theme="gruvbox"] .sticky-tint-yellow {
   background: linear-gradient(145deg, rgba(254, 240, 138, 0.15) 0%, rgba(253, 224, 71, 0.1) 100%);
 }
 
@@ -532,7 +624,9 @@ html *::after {
 [data-theme="sunset"] .sticky-tint-green,
 [data-theme="dracula"] .sticky-tint-green,
 [data-theme="tokyo-night"] .sticky-tint-green,
-[data-theme="cyberpunk"] .sticky-tint-green {
+[data-theme="cyberpunk"] .sticky-tint-green,
+[data-theme="catppuccin"] .sticky-tint-green,
+[data-theme="gruvbox"] .sticky-tint-green {
   background: linear-gradient(145deg, rgba(134, 239, 172, 0.15) 0%, rgba(74, 222, 128, 0.1) 100%);
 }
 
@@ -543,7 +637,9 @@ html *::after {
 [data-theme="sunset"] .sticky-tint-blue,
 [data-theme="dracula"] .sticky-tint-blue,
 [data-theme="tokyo-night"] .sticky-tint-blue,
-[data-theme="cyberpunk"] .sticky-tint-blue {
+[data-theme="cyberpunk"] .sticky-tint-blue,
+[data-theme="catppuccin"] .sticky-tint-blue,
+[data-theme="gruvbox"] .sticky-tint-blue {
   background: linear-gradient(145deg, rgba(147, 197, 253, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
 }
 
@@ -554,7 +650,9 @@ html *::after {
 [data-theme="sunset"] .sticky-tint-pink,
 [data-theme="dracula"] .sticky-tint-pink,
 [data-theme="tokyo-night"] .sticky-tint-pink,
-[data-theme="cyberpunk"] .sticky-tint-pink {
+[data-theme="cyberpunk"] .sticky-tint-pink,
+[data-theme="catppuccin"] .sticky-tint-pink,
+[data-theme="gruvbox"] .sticky-tint-pink {
   background: linear-gradient(145deg, rgba(244, 114, 182, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
 }
 
@@ -565,7 +663,9 @@ html *::after {
 [data-theme="sunset"] .sticky-tint-purple,
 [data-theme="dracula"] .sticky-tint-purple,
 [data-theme="tokyo-night"] .sticky-tint-purple,
-[data-theme="cyberpunk"] .sticky-tint-purple {
+[data-theme="cyberpunk"] .sticky-tint-purple,
+[data-theme="catppuccin"] .sticky-tint-purple,
+[data-theme="gruvbox"] .sticky-tint-purple {
   background: linear-gradient(145deg, rgba(192, 132, 252, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
 }
 
@@ -576,7 +676,9 @@ html *::after {
 [data-theme="sunset"] .sticky-tint-orange,
 [data-theme="dracula"] .sticky-tint-orange,
 [data-theme="tokyo-night"] .sticky-tint-orange,
-[data-theme="cyberpunk"] .sticky-tint-orange {
+[data-theme="cyberpunk"] .sticky-tint-orange,
+[data-theme="catppuccin"] .sticky-tint-orange,
+[data-theme="gruvbox"] .sticky-tint-orange {
   background: linear-gradient(145deg, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.1) 100%);
 }
 
@@ -587,7 +689,9 @@ html *::after {
 [data-theme="sunset"] .sticky-tint-teal,
 [data-theme="dracula"] .sticky-tint-teal,
 [data-theme="tokyo-night"] .sticky-tint-teal,
-[data-theme="cyberpunk"] .sticky-tint-teal {
+[data-theme="cyberpunk"] .sticky-tint-teal,
+[data-theme="catppuccin"] .sticky-tint-teal,
+[data-theme="gruvbox"] .sticky-tint-teal {
   background: linear-gradient(145deg, rgba(45, 212, 191, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%);
 }
 
@@ -598,7 +702,9 @@ html *::after {
 [data-theme="sunset"] .sticky-tint-rose,
 [data-theme="dracula"] .sticky-tint-rose,
 [data-theme="tokyo-night"] .sticky-tint-rose,
-[data-theme="cyberpunk"] .sticky-tint-rose {
+[data-theme="cyberpunk"] .sticky-tint-rose,
+[data-theme="catppuccin"] .sticky-tint-rose,
+[data-theme="gruvbox"] .sticky-tint-rose {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.15) 0%, rgba(244, 63, 94, 0.1) 100%);
 }
 
