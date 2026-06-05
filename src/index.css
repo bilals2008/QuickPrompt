@@ -1,3 +1,4 @@
+/* File: src/index.css */
 @font-face {
   font-family: 'Outfit';
   font-style: normal;
@@ -622,5 +623,30 @@ html *::after {
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+.desktop-toast {
+  height: 36px !important;
+  padding: 0 14px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid var(--border) !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  pointer-events: auto !important;
+  white-space: nowrap !important;
+}
+
+@media (min-width: 1024px) {
+  .desktop-toast {
+    height: 38px !important;
+    padding: 0 16px !important;
+    font-size: 13px !important;
   }
 }

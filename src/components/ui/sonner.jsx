@@ -1,3 +1,4 @@
+// File: src/components/ui/sonner.jsx
 import { useTheme } from "@/hooks/use-theme"
 import { Toaster as Sonner } from "sonner";
 import { IconCircleCheck, IconInfoCircle, IconAlertTriangle, IconCircleX, IconLoader2 } from "@tabler/icons-react"
@@ -14,21 +15,23 @@ const Toaster = ({
     <Sonner
       theme={sonnerTheme}
       className="toaster group"
+      position="bottom-center"
+      duration={2500}
       icons={{
         success: (
-          <IconCircleCheck className="size-4" />
+          <IconCircleCheck className="size-3.5" />
         ),
         info: (
-          <IconInfoCircle className="size-4" />
+          <IconInfoCircle className="size-3.5" />
         ),
         warning: (
-          <IconAlertTriangle className="size-4" />
+          <IconAlertTriangle className="size-3.5" />
         ),
         error: (
-          <IconCircleX className="size-4" />
+          <IconCircleX className="size-3.5" />
         ),
         loading: (
-          <IconLoader2 className="size-4 animate-spin" />
+          <IconLoader2 className="size-3.5 animate-spin" />
         ),
       }}
       style={
@@ -41,7 +44,7 @@ const Toaster = ({
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast: "desktop-toast",
         },
       }}
       {...props} />
