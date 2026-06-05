@@ -1,4 +1,5 @@
-import { Command as CommandPrimitive } from "cmdk"
+import { Command as CommandPrimitive, useCommandState } from "cmdk"
+import { useRef } from "react"
 import { IconSearch } from "@tabler/icons-react"
 
 import { cn } from "@/lib/utils"
@@ -20,11 +21,28 @@ function Command({
 
 function CommandInput({
   className,
-  value,
-  onValueChange,
   onClear,
   ...props
 }) {
+  const search = useCommandState((state) => state.search)
+  const inputRef = useRef(null)
+
+  const handleClear = () => {
+    const input = inputRef.current
+    if (!input) return
+    const nativeSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      "value"
+    )?.set
+    if (nativeSetter) {
+      nativeSetter.call(input, "")
+    } else {
+      input.value = ""
+    }
+    input.dispatchEvent(new Event("input", { bubbles: true }))
+    onClear?.()
+  }
+
   return (
     <div
       data-slot="command-input-wrapper"
@@ -32,18 +50,18 @@ function CommandInput({
     >
       <IconSearch className="size-4 shrink-0 text-muted-foreground/60" />
       <CommandPrimitive.Input
+        ref={inputRef}
         data-slot="command-input"
+        autoFocus
         className={cn(
           "flex h-11 w-full rounded-md bg-transparent px-3 py-2 text-sm outline-hidden placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50 pr-10",
           className
         )}
-        value={value}
-        onValueChange={onValueChange}
         {...props} />
-      {value && onClear && (
+      {search && (
         <button
           type="button"
-          onClick={onClear}
+          onClick={handleClear}
           className="absolute right-3 size-6 cursor-pointer rounded-md text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Clear search"
         >
