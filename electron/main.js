@@ -77,6 +77,9 @@ autoUpdater.on("update-available", (info) => {
   updateInfo = { version: info.version, releaseNotes: info.releaseNotes }
   notifyRenderer({ status: "available", ...updateInfo })
   showNativeNotification("Update available", `QuickPrompt v${info.version} is available.`)
+  if (getSetting("autoDownloadUpdates", false)) {
+    autoUpdater.downloadUpdate().catch(() => {})
+  }
 })
 
 autoUpdater.on("download-progress", (progress) => {
@@ -468,6 +471,14 @@ ipcMain.handle("update:set-auto-check", (_event, enabled) => {
 
 ipcMain.handle("update:get-auto-check", () => {
   return getSetting("autoCheckUpdates", true)
+})
+
+ipcMain.handle("update:set-auto-download", (_event, enabled) => {
+  setSetting("autoDownloadUpdates", enabled)
+})
+
+ipcMain.handle("update:get-auto-download", () => {
+  return getSetting("autoDownloadUpdates", false)
 })
 
 ipcMain.handle("settings:get", (_event, key, fallback) => {

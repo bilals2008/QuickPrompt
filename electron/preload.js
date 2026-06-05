@@ -73,6 +73,8 @@ contextBridge.exposeInMainWorld("updateAPI", {
   getStatus: () => ipcRenderer.invoke("update:get-status"),
   setAutoCheck: (enabled) => ipcRenderer.invoke("update:set-auto-check", enabled),
   getAutoCheck: () => ipcRenderer.invoke("update:get-auto-check"),
+  setAutoDownload: (enabled) => ipcRenderer.invoke("update:set-auto-download", enabled),
+  getAutoDownload: () => ipcRenderer.invoke("update:get-auto-download"),
   onEvent: (callback) => {
     const handler = (_e, data) => callback(data)
     ipcRenderer.on("update:event", handler)
