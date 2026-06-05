@@ -1,4 +1,6 @@
 // File: src/features/import-export/lib/schemas.js
+import { parseTagsString } from "@/lib/tag-utils"
+
 const TAG_SEPARATOR = ","
 
 function asString(value, fallback = "") {
@@ -8,20 +10,7 @@ function asString(value, fallback = "") {
 }
 
 function asTagsString(value) {
-  if (Array.isArray(value)) {
-    return value
-      .map((tag) => String(tag).trim().toLowerCase())
-      .filter(Boolean)
-      .join(TAG_SEPARATOR)
-  }
-  if (typeof value === "string") {
-    return value
-      .split(TAG_SEPARATOR)
-      .map((tag) => tag.trim().toLowerCase())
-      .filter(Boolean)
-      .join(TAG_SEPARATOR)
-  }
-  return ""
+  return parseTagsString(value).join(TAG_SEPARATOR)
 }
 
 function asFavorite(value) {

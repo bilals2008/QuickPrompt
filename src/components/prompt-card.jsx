@@ -6,9 +6,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { EditPromptDialog } from "@/components/edit-prompt-dialog"
 import { cn } from "@/lib/utils"
 import { getPromptTitle, isExplicitTitle } from "@/lib/prompt-utils"
+import { parseTagsString } from "@/lib/tag-utils"
 
 const TAG_COLORS = [
   "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
@@ -49,6 +60,46 @@ function getTagColor(tag) {
 }
 
 const TAG_CLASS = "inline-flex items-center rounded-full px-1.5 py-[1px] text-[10px] font-medium border leading-tight"
+const MORE_CLASS = "inline-flex items-center rounded-full border border-border/60 bg-muted px-1.5 py-[1px] text-[10px] font-medium text-muted-foreground leading-tight cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground"
+
+function TagList({ tags, max = 3, wrap = true }) {
+  if (!tags || tags.length === 0) return null
+  const visible = tags.slice(0, max)
+  const hidden = tags.slice(max)
+  return (
+    <div className={cn("flex items-center gap-1", wrap ? "flex-wrap" : "flex-nowrap")}>
+      {visible.map((tag) => (
+        <span key={tag} className={`${TAG_CLASS} ${getTagColor(tag)}`}>
+          {tag}
+        </span>
+      ))}
+      {hidden.length > 0 && (
+        <Popover>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <span className={MORE_CLASS}>+{hidden.length}</span>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Show {hidden.length} more tag{hidden.length === 1 ? "" : "s"}</TooltipContent>
+          </Tooltip>
+          <PopoverContent side="bottom" align="start" className="w-auto max-w-[260px] p-2.5">
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {hidden.length} more tag{hidden.length === 1 ? "" : "s"}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {hidden.map((tag) => (
+                <span key={tag} className={`${TAG_CLASS} ${getTagColor(tag)}`}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
+  )
+}
 
 function formatTime(date) {
   const now = new Date()
@@ -117,13 +168,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
     </button>
   )
 
-  const tagBadges = prompt.tags.length > 0 ? (
-    prompt.tags.map((tag) => (
-      <span key={tag} className={`${TAG_CLASS} ${getTagColor(tag)}`}>
-        {tag}
-      </span>
-    ))
-  ) : null
+  const tagBadges = prompt.tags.length > 0 ? <TagList tags={prompt.tags} max={3} /> : null
 
   const copyBtn = (
     <button
@@ -190,12 +235,8 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         </p>
       </div>
       {tagBadges && (
-        <div className="items-center gap-1.5 shrink-0 flex">
-          {prompt.tags.slice(0, 2).map((tag) => (
-            <span key={tag} className={`${TAG_CLASS} ${getTagColor(tag)}`}>
-              {tag}
-            </span>
-          ))}
+        <div className="shrink-0">
+          <TagList tags={prompt.tags} max={2} wrap={false} />
         </div>
       )}
       <span className="shrink-0 text-xs text-muted-foreground hidden sm:block">{formatTime(prompt.created_at)}</span>
@@ -239,16 +280,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
             </button>
           </div>
           {prompt.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {prompt.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className={`${TAG_CLASS} ${getTagColor(tag)} bg-background/40 backdrop-blur-sm`}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+            <TagList tags={prompt.tags} max={6} />
           )}
         </div>
       )}
@@ -286,11 +318,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
             </div>
             {starBtn}
           </div>
-          {tagBadges && (
-            <div className="flex flex-wrap gap-1">
-              {tagBadges}
-            </div>
-          )}
+          {tagBadges}
         </div>
       )}
       {!mini && (
@@ -312,6 +340,6 @@ export function parsePrompt(p) {
   return {
     ...p,
     title: typeof p?.title === "string" ? p.title : "",
-    tags: p.tags ? p.tags.split(",").filter(Boolean) : [],
+    tags: parseTagsString(p.tags),
   }
 }

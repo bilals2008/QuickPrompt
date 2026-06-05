@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { TagManager } from "@/components/tag-manager"
 import { cn } from "@/lib/utils"
+import { splitTagInput, parseTagsString } from "@/lib/tag-utils"
 
 const TAG_COLORS = [
   "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -82,6 +83,38 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
     input.focus()
   }
 
+  function commitTagsFromInput(completeTags) {
+    const fresh = completeTags.filter((t) => t && !selectedTags.includes(t))
+    if (fresh.length === 0) return
+    setSelectedTags((prev) => [...prev, ...fresh])
+    setAllTags((prev) => {
+      const next = [...prev]
+      for (const t of fresh) {
+        if (!next.includes(t)) next.push(t)
+      }
+      return next
+    })
+    for (const t of fresh) {
+      if (!allTags.includes(t)) {
+        window.db.createTag(t).catch((err) => {
+          console.error("Failed to create tag:", err)
+        })
+      }
+    }
+  }
+
+  function handleTagInputChange(e) {
+    const value = e.target.value
+    const { completeTags, remaining } = splitTagInput(value)
+    if (completeTags.length > 0) {
+      commitTagsFromInput(completeTags)
+      setTagInput(remaining)
+      if (inputRef.current) inputRef.current.value = remaining
+      return
+    }
+    setTagInput(value)
+  }
+
   function removeTag(tag) {
     setSelectedTags(selectedTags.filter((t) => t !== tag))
   }
@@ -91,25 +124,30 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
       toast.error("Please enter a prompt")
       return
     }
-    const pending = (inputRef.current?.value ?? tagInput).trim().toLowerCase()
-    let tagsToSave = selectedTags
-    let newTag = null
-    if (pending && !selectedTags.includes(pending)) {
-      tagsToSave = [...selectedTags, pending]
-      newTag = pending
-    }
+    const pendingRaw = (inputRef.current?.value ?? tagInput).trim()
+    const pendingTags = parseTagsString(pendingRaw)
+    const fresh = pendingTags.filter((t) => !selectedTags.includes(t))
+    const tagsToSave = [...selectedTags, ...fresh]
     try {
       await window.db.updatePrompt(prompt.id, {
         title: title.trim(),
         content: content.trim(),
         tags: tagsToSave.join(","),
       })
-      if (newTag && !allTags.includes(newTag)) {
-        window.db.createTag(newTag).catch((err) => {
-          console.error("Failed to create tag:", err)
-        })
-        setAllTags((prev) => (prev.includes(newTag) ? prev : [...prev, newTag]))
+      for (const newTag of fresh) {
+        if (!allTags.includes(newTag)) {
+          window.db.createTag(newTag).catch((err) => {
+            console.error("Failed to create tag:", err)
+          })
+        }
       }
+      setAllTags((prev) => {
+        const next = [...prev]
+        for (const t of fresh) {
+          if (!next.includes(t)) next.push(t)
+        }
+        return next
+      })
       onSaved?.()
       setTagInput("")
       if (inputRef.current) inputRef.current.value = ""
@@ -148,9 +186,9 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
             <div className="space-y-2">
               <Input
                 ref={inputRef}
-                placeholder="Add tag... enter to create"
+                placeholder="Add tag — space, comma, or enter"
                 value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
+                onChange={handleTagInputChange}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault()
@@ -217,9 +255,9 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
               <div className="flex items-center gap-2">
                 <Input
                   ref={inputRef}
-                  placeholder="Quick add... enter to create"
+                  placeholder="Type a tag — space, comma, or enter"
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
+                  onChange={handleTagInputChange}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault()

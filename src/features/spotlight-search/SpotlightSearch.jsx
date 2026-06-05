@@ -19,10 +19,10 @@ import {
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getPromptTitle } from "@/lib/prompt-utils"
+import { parseTagsString } from "@/lib/tag-utils"
 
 function parseTags(tags) {
-  if (!tags) return []
-  return tags.split(",").map((t) => t.trim().split(":")[0]).filter(Boolean)
+  return parseTagsString(tags).map((t) => t.split(":")[0]).filter(Boolean)
 }
 
 function useIsMini(breakpoint = 640) {
