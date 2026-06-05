@@ -197,6 +197,7 @@ export default function Settings() {
   const [updateStatus, setUpdateStatus] = useState("idle")
   const [updateInfo, setUpdateInfo] = useState(null)
   const [autoCheck, setAutoCheck] = useState(true)
+  const [autoDownload, setAutoDownload] = useState(false)
   const [checking, setChecking] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [closeBehavior, setCloseBehavior] = useState("tray")
@@ -207,6 +208,7 @@ export default function Settings() {
 
   useEffect(() => {
     window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
+    window.updateAPI?.getAutoDownload()?.then((v) => setAutoDownload(v))
     window.updateAPI?.getStatus()?.then((s) => {
       if (s?.status) setUpdateStatus(s.status)
       if (s?.version) setUpdateInfo({ version: s.version, releaseNotes: s.releaseNotes })
@@ -259,6 +261,11 @@ export default function Settings() {
   function handleAutoCheckToggle(checked) {
     setAutoCheck(checked)
     window.updateAPI?.setAutoCheck(checked)
+  }
+
+  function handleAutoDownloadToggle(checked) {
+    setAutoDownload(checked)
+    window.updateAPI?.setAutoDownload(checked)
   }
 
   function handleCloseBehaviorChange(value) {
@@ -577,6 +584,20 @@ export default function Settings() {
                     <Switch
                       checked={autoCheck}
                       onCheckedChange={handleAutoCheckToggle}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+
+                  <Separator />
+
+                  <SettingRow
+                    icon={IconDownload}
+                    label="Auto-download updates"
+                    description="Download updates automatically when available"
+                  >
+                    <Switch
+                      checked={autoDownload}
+                      onCheckedChange={handleAutoDownloadToggle}
                       className="cursor-pointer"
                     />
                   </SettingRow>
