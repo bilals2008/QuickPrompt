@@ -1,4 +1,5 @@
-import { IconDeviceDesktop, IconTag, IconCopy, IconCommand } from "@tabler/icons-react"
+// File: src/features/onboarding/OnboardingStep.jsx
+import { IconDeviceDesktop, IconCopy, IconCommand, IconArrowsTransferUpDown } from "@tabler/icons-react"
 
 const steps = [
   {
@@ -11,27 +12,27 @@ const steps = [
   },
   {
     id: 2,
-    title: "Create & Tag Prompts",
-    description: "Save your favorite prompts with custom tags. Find them instantly with powerful search.",
-    icon: IconTag,
+    title: "Create, Tag & Copy",
+    description: "Save prompts with custom tags and copy them in one click. Use anywhere - ChatGPT, Claude, or any AI tool.",
+    icon: IconCopy,
     color: "text-green-500",
     bgColor: "bg-green-500/10",
   },
   {
     id: 3,
-    title: "Quick Copy & Use",
-    description: "One click to copy any prompt. Use it anywhere - ChatGPT, Claude, or any AI tool.",
-    icon: IconCopy,
-    color: "text-amber-500",
-    bgColor: "bg-amber-500/10",
-  },
-  {
-    id: 4,
     title: "Spotlight Search",
     description: "Press ⌘ + K (or Ctrl + K) anywhere to instantly search and open any prompt with Spotlight.",
     icon: IconCommand,
     color: "text-cyan-500",
     bgColor: "bg-cyan-500/10",
+  },
+  {
+    id: 4,
+    title: "Import & Export",
+    description: "Back up your prompts anytime, or migrate from another tool. Your data is always yours.",
+    icon: IconArrowsTransferUpDown,
+    color: "text-violet-500",
+    bgColor: "bg-violet-500/10",
   },
 ]
 

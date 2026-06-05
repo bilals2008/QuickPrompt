@@ -405,6 +405,12 @@ body {
 }
 
 html,
+body,
+#root {
+  height: 100%;
+}
+
+html,
 html *,
 html *::before,
 html *::after {

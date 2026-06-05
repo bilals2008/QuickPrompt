@@ -35,13 +35,13 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-background">
-      <div className="w-full max-w-[400px] flex flex-col items-center">
-        <div className="flex-1 flex items-center justify-center py-12">
+    <div className="flex h-screen min-h-screen w-full flex-col items-center justify-center bg-background px-6">
+      <div className="flex w-full max-w-[400px] flex-1 flex-col items-center">
+        <div className="flex flex-1 items-center justify-center py-12">
           <OnboardingStep stepIndex={currentStep} />
         </div>
 
-        <div className="w-full px-6 pb-8">
+        <div className="w-full pb-8">
           <div className="flex items-center justify-center gap-2 mb-6">
             {steps.map((_, index) => (
               <button
