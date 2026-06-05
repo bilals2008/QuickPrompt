@@ -247,28 +247,28 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
 
       {/* Full layout (large window) */}
       {!mini && (
-        <div className="flex flex-1 flex-col">
-          <div className="flex flex-col gap-2 p-4">
-            <div className="flex items-start justify-between gap-2">
-              <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
-                {prompt.content}
-              </p>
-              {starBtn}
-            </div>
-            {tagBadges && (
-              <div className="flex flex-wrap gap-1">
-                {tagBadges}
-              </div>
-            )}
+        <div className="flex flex-col gap-2 p-3.5 pb-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="line-clamp-3 text-[13px] text-foreground/80 leading-relaxed font-medium">
+              {prompt.content}
+            </p>
+            {starBtn}
           </div>
-          <div className="mt-auto flex items-center justify-between border-t border-border/60 px-4 py-2">
-            <span className="text-[11px] text-muted-foreground">
-              {formatTime(prompt.created_at)}
-            </span>
-            <div className="flex items-center gap-1">
-              {copyBtn}
-              {menuBtn}
+          {tagBadges && (
+            <div className="flex flex-wrap gap-1">
+              {tagBadges}
             </div>
+          )}
+        </div>
+      )}
+      {!mini && (
+        <div className="flex items-center justify-between px-3.5 py-1.5 mt-auto">
+          <span className="text-[10px] text-muted-foreground font-medium">
+            {formatTime(prompt.created_at)}
+          </span>
+          <div className="flex items-center gap-0.5">
+            {copyBtn}
+            {menuBtn}
           </div>
         </div>
       )}

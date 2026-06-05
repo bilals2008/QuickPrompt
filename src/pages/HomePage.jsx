@@ -1,3 +1,4 @@
+// File: src/pages/HomePage.jsx
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
@@ -19,7 +20,7 @@ export default function HomePage() {
   const [viewMode, setViewMode] = useState("grid")
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(!sidebarVisible ? 8 : 16)
+  const [pageSize, setPageSize] = useState(!sidebarVisible ? 8 : 20)
   const [autoCopy, setAutoCopy] = useState(false)
   const [notifications, setNotifications] = useState(false)
   const searchRef = useRef(null)
@@ -279,7 +280,7 @@ export default function HomePage() {
             "grid gap-3",
             !sidebarVisible
               ? "grid-cols-1"
-              : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
           )}>
             {paginatedPrompts.map((prompt) => (
               <PromptCardItem
@@ -323,7 +324,7 @@ export default function HomePage() {
               totalItems={filteredPrompts.length}
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
-              pageSizeOptions={[8, 16, 24, 48]}
+              pageSizeOptions={[8, 16, 20, 25, 48]}
               mini={!sidebarVisible}
             />
           </div>
