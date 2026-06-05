@@ -7,9 +7,16 @@ function deriveTitle(content) {
   return firstLine || "Untitled"
 }
 
+function resolveTitle(prompt) {
+  if (prompt && typeof prompt.title === "string" && prompt.title.trim().length > 0) {
+    return prompt.title.trim()
+  }
+  return deriveTitle(prompt.content)
+}
+
 function buildSection(prompt) {
   const lines = []
-  const title = deriveTitle(prompt.content)
+  const title = resolveTitle(prompt)
   lines.push(`# ${title}`)
   lines.push("")
 

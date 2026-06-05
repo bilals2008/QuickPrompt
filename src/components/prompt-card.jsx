@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { EditPromptDialog } from "@/components/edit-prompt-dialog"
 import { cn } from "@/lib/utils"
+import { getPromptTitle, isExplicitTitle } from "@/lib/prompt-utils"
 
 const TAG_COLORS = [
   "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
@@ -62,10 +63,24 @@ function formatTime(date) {
   return new Date(date).toLocaleDateString()
 }
 
+function getBodyText(prompt) {
+  const content = typeof prompt?.content === "string" ? prompt.content : ""
+  if (!content) return ""
+  if (isExplicitTitle(prompt)) return content
+  const lines = content.split("\n")
+  const firstIdx = lines.findIndex((l) => l.trim().length > 0)
+  if (firstIdx === -1) return ""
+  return lines.slice(firstIdx + 1).join("\n").trim()
+}
+
 export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true }) {
   const [copied, setCopied] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [clicked, setClicked] = useState(false)
+
+  const title = getPromptTitle(prompt)
+  const bodyText = getBodyText(prompt)
+  const showBody = bodyText.length > 0
 
   const handleCopy = (e) => {
     e.stopPropagation()
@@ -167,8 +182,11 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         )}
       </button>
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-1 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{prompt.content}</span>
+        <p className="line-clamp-1 text-sm">
+          <span className="font-semibold text-foreground">{title}</span>
+          {showBody && (
+            <span className="text-muted-foreground"> — {bodyText}</span>
+          )}
         </p>
       </div>
       {tagBadges && (
@@ -197,11 +215,18 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
     >
       {/* Compact layout (mini window) - Sticky Note Style */}
       {mini && (
-        <div className="flex flex-col gap-2 p-3.5 pb-1">
+        <div className="flex flex-col gap-1.5 p-3.5 pb-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="line-clamp-3 text-[13px] text-foreground/80 leading-relaxed font-medium">
-              {prompt.content}
-            </p>
+            <div className="min-w-0 flex-1">
+              <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">
+                {title}
+              </h3>
+              {showBody && (
+                <p className="mt-1 line-clamp-3 text-[12px] text-foreground/70 leading-relaxed font-normal">
+                  {bodyText}
+                </p>
+              )}
+            </div>
             <button
               onClick={handleFavorite}
               className="shrink-0 cursor-pointer transition-colors hover:scale-110"
@@ -249,9 +274,16 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
       {!mini && (
         <div className="flex flex-col gap-2 p-3.5 pb-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="line-clamp-3 text-[13px] text-foreground/80 leading-relaxed font-medium">
-              {prompt.content}
-            </p>
+            <div className="min-w-0 flex-1">
+              <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">
+                {title}
+              </h3>
+              {showBody && (
+                <p className="mt-1 line-clamp-3 text-[12px] text-foreground/70 leading-relaxed font-normal">
+                  {bodyText}
+                </p>
+              )}
+            </div>
             {starBtn}
           </div>
           {tagBadges && (
@@ -279,6 +311,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
 export function parsePrompt(p) {
   return {
     ...p,
+    title: typeof p?.title === "string" ? p.title : "",
     tags: p.tags ? p.tags.split(",").filter(Boolean) : [],
   }
 }

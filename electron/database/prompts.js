@@ -1,13 +1,14 @@
 import crypto from 'node:crypto'
 import { getDatabase } from './db.js'
 
-export async function createPrompt({ content, model = '', tags = '', favorite = 0 }) {
+export async function createPrompt({ content, title = '', model = '', tags = '', favorite = 0 }) {
   const db = getDatabase()
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
+  const safeTitle = typeof title === 'string' ? title.trim() : ''
   await db.run(
-    'INSERT INTO prompts (id, content, model, tags, favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [id, content, model, tags, favorite, now, now]
+    'INSERT INTO prompts (id, title, content, model, tags, favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [id, safeTitle, content, model, tags, favorite, now, now]
   )
   return getPromptById(id)
 }
@@ -31,14 +32,21 @@ export async function toggleFavorite(id) {
   return db.get('SELECT * FROM prompts WHERE id = ?', [id])
 }
 
-export async function updatePrompt(id, { content, model, tags }) {
+export async function updatePrompt(id, { content, title, model, tags }) {
   const db = getDatabase()
   const sets = []
   const values = []
   if (content !== undefined) { sets.push('content = ?'); values.push(content) }
+  if (title !== undefined) {
+    const safeTitle = typeof title === 'string' ? title.trim() : ''
+    sets.push('title = ?')
+    values.push(safeTitle)
+  }
   if (model !== undefined) { sets.push('model = ?'); values.push(model) }
   if (tags !== undefined) { sets.push('tags = ?'); values.push(tags) }
   if (sets.length === 0) return getPromptById(id)
+  sets.push('updated_at = ?')
+  values.push(new Date().toISOString())
   values.push(id)
   await db.run(`UPDATE prompts SET ${sets.join(', ')} WHERE id = ?`, values)
   return getPromptById(id)
@@ -69,7 +77,7 @@ export async function searchPrompts(query) {
   const db = getDatabase()
   const q = `%${query}%`
   return db.all(
-    'SELECT * FROM prompts WHERE content LIKE ? OR model LIKE ? OR tags LIKE ? ORDER BY created_at DESC',
-    [q, q, q]
+    'SELECT * FROM prompts WHERE title LIKE ? OR content LIKE ? OR model LIKE ? OR tags LIKE ? ORDER BY created_at DESC',
+    [q, q, q, q]
   )
 }

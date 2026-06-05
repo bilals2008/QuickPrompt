@@ -37,11 +37,13 @@ function getTagColor(tag) {
 
 export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   const [open, setOpen] = useState(false)
+  const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
   const [allTags, setAllTags] = useState(externalTags || [])
   const inputRef = useRef(null)
+  const titleRef = useRef(null)
 
   useEffect(() => {
     if (open) {
@@ -50,7 +52,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   }, [open, externalTags])
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 100)
+    if (open) setTimeout(() => titleRef.current?.focus(), 100)
   }, [open])
 
   function addTag() {
@@ -87,10 +89,12 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
     }
     try {
       await window.db.createPrompt({
+        title: title.trim(),
         content: content.trim(),
         tags: selectedTags.join(","),
       })
       onSaved?.()
+      setTitle("")
       setContent("")
       setSelectedTags([])
       setTagInput("")
@@ -119,6 +123,14 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
             <DialogTitle className="text-sm font-semibold">New Prompt</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <Input
+              ref={titleRef}
+              id="title"
+              placeholder="Title (optional)"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="h-8 text-sm font-medium border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+            />
             <Textarea
               id="content"
               placeholder="Write your prompt here..."
@@ -172,6 +184,17 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
             <DialogTitle>New Prompt</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                ref={titleRef}
+                id="title"
+                placeholder="A short name for this prompt"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="font-medium"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="content">Prompt</Label>
               <Textarea

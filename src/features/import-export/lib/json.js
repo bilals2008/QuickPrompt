@@ -11,6 +11,7 @@ function buildEnvelope(prompts, { includeRaw = true } = {}) {
     count: prompts.length,
     prompts: includeRaw
       ? prompts.map((p) => ({
+          title: p.title ?? "",
           content: p.content ?? "",
           tags: p.tags ?? "",
           favorite: p.favorite ? 1 : 0,

@@ -1,8 +1,10 @@
+// File: electron/database/schema.js
 import { getDatabase } from './db.js'
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS prompts (
   id TEXT PRIMARY KEY,
+  title TEXT DEFAULT '',
   content TEXT NOT NULL,
   model TEXT DEFAULT '',
   tags TEXT DEFAULT '',
@@ -20,6 +22,7 @@ CREATE TABLE IF NOT EXISTS tags (
 const MIGRATIONS = [
   `ALTER TABLE prompts ADD COLUMN favorite INTEGER DEFAULT 0`,
   `ALTER TABLE prompts ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE prompts ADD COLUMN title TEXT DEFAULT ''`,
 ]
 
 export async function createTables() {

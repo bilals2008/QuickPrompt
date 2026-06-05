@@ -135,6 +135,7 @@ export function useImport() {
       for (const prompt of result.prompts) {
         try {
           await window.db.createPrompt({
+            title: prompt.title,
             content: prompt.content,
             tags: prompt.tags,
             model: prompt.model,

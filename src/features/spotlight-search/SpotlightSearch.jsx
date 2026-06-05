@@ -18,14 +18,7 @@ import {
 } from "@tabler/icons-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-
-function getPromptTitle(content) {
-  if (!content) return "Untitled"
-  const firstLine = content.split("\n").find((l) => l.trim().length > 0) || ""
-  const trimmed = firstLine.trim()
-  if (!trimmed) return "Untitled"
-  return trimmed.length > 60 ? trimmed.slice(0, 60) + "…" : trimmed
-}
+import { getPromptTitle } from "@/lib/prompt-utils"
 
 function parseTags(tags) {
   if (!tags) return []
@@ -91,7 +84,7 @@ export function SpotlightSearch() {
   const handleSelectPrompt = async (prompt) => {
     try {
       await navigator.clipboard.writeText(prompt.content)
-      toast.success(`Copied "${getPromptTitle(prompt.content)}" to clipboard!`)
+      toast.success(`Copied "${getPromptTitle(prompt)}" to clipboard!`)
       setOpen(false)
       if (window.electronAPI?.hideWindow) {
         await window.electronAPI.hideWindow()
@@ -125,7 +118,7 @@ export function SpotlightSearch() {
         </DialogDescription>
         <Command className="rounded-xl border-0 bg-transparent p-0">
           <CommandInput
-            placeholder="Search prompts by content, tags, or model..."
+            placeholder="Search prompts by title, content, tags, or model..."
             className="text-sm focus-visible:ring-0"
           />
           <CommandList className="my-1 max-h-[460px] scrollbar-none">
@@ -137,7 +130,7 @@ export function SpotlightSearch() {
             <CommandGroup heading="All Prompts" className="text-xs text-muted-foreground py-1">
               {sortedPrompts.map((prompt) => {
                 const tagsList = parseTags(prompt.tags)
-                const title = getPromptTitle(prompt.content)
+                const title = getPromptTitle(prompt)
 
                 return (
                   <CommandItem

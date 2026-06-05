@@ -1,3 +1,4 @@
+// File: src/features/import-export/lib/schemas.js
 const TAG_SEPARATOR = ","
 
 function asString(value, fallback = "") {
@@ -35,6 +36,11 @@ function asTimestamp(value) {
   return date.toISOString()
 }
 
+function asTitle(value) {
+  if (value === null || value === undefined) return ""
+  return asString(value).trim()
+}
+
 function clampContent(value) {
   const text = asString(value).trim()
   return text.length > 0 ? text : null
@@ -45,6 +51,7 @@ export function normalizeImportedPrompt(raw) {
   const content = clampContent(raw.content ?? raw.text ?? raw.body)
   if (!content) return null
   return {
+    title: asTitle(raw.title ?? raw.name ?? raw.heading),
     content,
     tags: asTagsString(raw.tags ?? raw.tag),
     model: asString(raw.model).trim(),
@@ -71,6 +78,9 @@ export function validatePromptForInsert(prompt) {
   }
   if (prompt && prompt.content && prompt.content.length > 10000) {
     errors.push("content exceeds 10000 characters")
+  }
+  if (prompt && prompt.title && prompt.title.length > 200) {
+    errors.push("title exceeds 200 characters")
   }
   return errors
 }

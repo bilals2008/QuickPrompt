@@ -38,14 +38,17 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
   const [internalOpen, setInternalOpen] = useState(false)
   const open = externalOpen !== undefined ? externalOpen : internalOpen
   const setOpen = externalOnOpenChange || setInternalOpen
+  const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
   const [allTags, setAllTags] = useState(externalTags || [])
   const inputRef = useRef(null)
+  const titleRef = useRef(null)
 
   useEffect(() => {
     if (open && prompt) {
+      setTitle(typeof prompt.title === "string" ? prompt.title : "")
       setContent(prompt.content || "")
       setSelectedTags(prompt.tags ? [...prompt.tags] : [])
       setAllTags(externalTags || [])
@@ -53,7 +56,7 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
   }, [open, prompt, externalTags])
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 100)
+    if (open) setTimeout(() => titleRef.current?.focus(), 100)
   }, [open])
 
   function addTag() {
@@ -90,6 +93,7 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
     }
     try {
       await window.db.updatePrompt(prompt.id, {
+        title: title.trim(),
         content: content.trim(),
         tags: selectedTags.join(","),
       })
@@ -110,6 +114,14 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
             <DialogTitle className="text-sm font-semibold">Edit Prompt</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <Input
+              ref={titleRef}
+              id="title"
+              placeholder="Title (optional)"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="h-8 text-sm font-medium border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+            />
             <Textarea
               id="content"
               placeholder="Write your prompt here..."
@@ -163,6 +175,17 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
             <DialogTitle>Edit Prompt</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                ref={titleRef}
+                id="title"
+                placeholder="A short name for this prompt"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="font-medium"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="content">Prompt</Label>
               <Textarea
