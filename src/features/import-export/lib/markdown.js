@@ -119,6 +119,6 @@ export function parseMarkdown(text) {
   }
 
   const rows = blocks.map(parseSection).filter((row) => row.content)
-  const prompts = normalizeAllImported(rows)
-  return { ok: true, prompts, total: rows.length, valid: prompts.length }
+  const { prompts, skipped } = normalizeAllImported(rows)
+  return { ok: true, prompts, skipped, total: rows.length, valid: prompts.length }
 }

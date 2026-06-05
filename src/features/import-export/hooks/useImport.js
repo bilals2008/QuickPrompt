@@ -8,6 +8,7 @@ const INITIAL_RESULT = {
   format: null,
   filename: null,
   prompts: [],
+  skipped: [],
   total: 0,
   valid: 0,
   error: null,
@@ -65,6 +66,7 @@ export function useImport() {
         format: parsed.format,
         filename: file.name,
         prompts: parsed.prompts,
+        skipped: parsed.skipped ?? [],
         total: parsed.total,
         valid: parsed.valid,
       })

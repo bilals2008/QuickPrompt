@@ -1,4 +1,11 @@
-import { IconCheck, IconAlertCircle, IconCircleCheck } from "@tabler/icons-react"
+import { useState } from "react"
+import {
+  IconCheck,
+  IconAlertCircle,
+  IconCircleCheck,
+  IconChevronDown,
+  IconChevronRight,
+} from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
@@ -7,9 +14,9 @@ import { FormatBadge } from "./FormatBadge"
 function StatusRow({ icon: Icon, label, value, tone = "default" }) {
   const toneClass =
     tone === "success"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-primary"
       : tone === "warning"
-      ? "text-amber-600 dark:text-amber-400"
+      ? "text-foreground"
       : tone === "danger"
       ? "text-destructive"
       : "text-muted-foreground"
@@ -20,6 +27,45 @@ function StatusRow({ icon: Icon, label, value, tone = "default" }) {
         <span>{label}</span>
       </div>
       <span className="font-mono text-foreground">{value}</span>
+    </div>
+  )
+}
+
+function SkippedDetails({ skipped }) {
+  const [open, setOpen] = useState(false)
+  if (!skipped || skipped.length === 0) return null
+
+  const MAX_VISIBLE = 5
+  const visible = open ? skipped : skipped.slice(0, MAX_VISIBLE)
+  const hidden = skipped.length - visible.length
+
+  return (
+    <div className="mt-2 rounded-md border border-border/60 bg-muted/30">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full cursor-pointer items-center justify-between px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/50"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-1.5">
+          {open ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
+          {open ? "Hide" : "Show"} reasons
+        </span>
+        <span className="font-mono">{skipped.length}</span>
+      </button>
+      {open && (
+        <ul className="space-y-1 border-t border-border/60 px-2.5 py-2 text-[11px]">
+          {visible.map((entry) => (
+            <li key={entry.index} className="flex gap-2">
+              <span className="shrink-0 font-mono text-muted-foreground/80">#{entry.index + 1}</span>
+              <span className="text-foreground/80">{entry.reason}</span>
+            </li>
+          ))}
+          {hidden > 0 && (
+            <li className="text-muted-foreground/80">…and {hidden} more</li>
+          )}
+        </ul>
+      )}
     </div>
   )
 }
@@ -52,6 +98,7 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
   }
 
   if (result.status === "preview") {
+    const skippedCount = Math.max(0, result.total - result.valid)
     return (
       <div className="rounded-lg border border-border/60 bg-card p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -69,13 +116,17 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
             value={result.valid}
             tone="success"
           />
-          <StatusRow
-            icon={IconAlertCircle}
-            label="Skipped (invalid)"
-            value={Math.max(0, result.total - result.valid)}
-            tone={result.total - result.valid > 0 ? "warning" : "default"}
-          />
+          {skippedCount > 0 && (
+            <StatusRow
+              icon={IconAlertCircle}
+              label="Skipped (invalid)"
+              value={skippedCount}
+              tone="warning"
+            />
+          )}
         </div>
+
+        {skippedCount > 0 && <SkippedDetails skipped={result.skipped} />}
 
         {result.filename && (
           <>
@@ -105,9 +156,9 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
 
   if (result.status === "done") {
     return (
-      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
         <div className="flex items-start gap-2">
-          <IconCircleCheck size={16} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <IconCircleCheck size={16} className="mt-0.5 shrink-0 text-primary" />
           <div className="min-w-0 flex-1 space-y-1">
             <p className="text-sm font-medium text-foreground">Import complete</p>
             <p className="text-xs text-muted-foreground">

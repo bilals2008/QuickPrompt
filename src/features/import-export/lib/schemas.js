@@ -47,28 +47,39 @@ function clampContent(value) {
 }
 
 export function normalizeImportedPrompt(raw) {
-  if (!raw || typeof raw !== "object") return null
-  const content = clampContent(raw.content ?? raw.text ?? raw.body)
-  if (!content) return null
+  if (!raw || typeof raw !== "object") {
+    return { prompt: null, reason: "Row is not an object" }
+  }
+  const content = clampContent(
+    raw.content ?? raw.text ?? raw.body ?? raw.prompt ?? raw.instruction ?? raw.message ?? raw.description,
+  )
+  if (!content) {
+    return { prompt: null, reason: "Missing a content field (tried: content, text, body, prompt, instruction, message, description)" }
+  }
   return {
-    title: asTitle(raw.title ?? raw.name ?? raw.heading),
-    content,
-    tags: asTagsString(raw.tags ?? raw.tag),
-    model: asString(raw.model).trim(),
-    favorite: asFavorite(raw.favorite ?? raw.isFavorite),
-    created_at: asTimestamp(raw.created_at ?? raw.createdAt),
-    updated_at: asTimestamp(raw.updated_at ?? raw.updatedAt ?? raw.created_at),
+    prompt: {
+      title: asTitle(raw.title ?? raw.name ?? raw.heading),
+      content,
+      tags: asTagsString(raw.tags ?? raw.tag),
+      model: asString(raw.model).trim(),
+      favorite: asFavorite(raw.favorite ?? raw.isFavorite),
+      created_at: asTimestamp(raw.created_at ?? raw.createdAt),
+      updated_at: asTimestamp(raw.updated_at ?? raw.updatedAt ?? raw.created_at),
+    },
+    reason: null,
   }
 }
 
 export function normalizeAllImported(rows) {
-  if (!Array.isArray(rows)) return []
-  const out = []
-  for (const row of rows) {
-    const prompt = normalizeImportedPrompt(row)
-    if (prompt) out.push(prompt)
-  }
-  return out
+  if (!Array.isArray(rows)) return { prompts: [], skipped: [] }
+  const prompts = []
+  const skipped = []
+  rows.forEach((row, index) => {
+    const result = normalizeImportedPrompt(row)
+    if (result.prompt) prompts.push(result.prompt)
+    else skipped.push({ index, reason: result.reason })
+  })
+  return { prompts, skipped }
 }
 
 export function validatePromptForInsert(prompt) {

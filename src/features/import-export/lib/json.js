@@ -44,6 +44,6 @@ export function parseJson(text) {
     return { ok: false, error: "Expected an array of prompts or an object with a 'prompts' array", prompts: [] }
   }
 
-  const prompts = normalizeAllImported(rawPrompts)
-  return { ok: true, prompts, total: rawPrompts.length, valid: prompts.length }
+  const { prompts, skipped } = normalizeAllImported(rawPrompts)
+  return { ok: true, prompts, skipped, total: rawPrompts.length, valid: prompts.length }
 }

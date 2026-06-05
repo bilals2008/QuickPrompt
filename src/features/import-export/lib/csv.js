@@ -95,6 +95,6 @@ export function parseCsv(text) {
     rows.push(row)
   }
 
-  const prompts = normalizeAllImported(rows)
-  return { ok: true, prompts, total: rows.length, valid: prompts.length }
+  const { prompts, skipped } = normalizeAllImported(rows)
+  return { ok: true, prompts, skipped, total: rows.length, valid: prompts.length }
 }
