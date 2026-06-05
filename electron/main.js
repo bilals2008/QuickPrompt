@@ -6,6 +6,7 @@ import { initDatabase, closeDatabase } from "./database/db.js"
 import {
   createPrompt,
   getAllPrompts,
+  getPromptsPaginated,
   updatePrompt,
   deletePrompt,
   getAllTags,
@@ -413,6 +414,10 @@ ipcMain.handle("db:createPrompt", async (_event, data) => {
 
 ipcMain.handle("db:getAllPrompts", async () => {
   return getAllPrompts()
+})
+
+ipcMain.handle("db:getPromptsPaginated", async (_event, options) => {
+  return getPromptsPaginated(options || {})
 })
 
 ipcMain.handle("db:updatePrompt", async (_event, id, data) => {

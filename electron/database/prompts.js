@@ -23,6 +23,40 @@ export async function getAllPrompts() {
   return db.all('SELECT * FROM prompts ORDER BY favorite DESC, created_at DESC')
 }
 
+export async function getPromptsPaginated({ limit = 100, offset = 0, search = '', favoritesOnly = false } = {}) {
+  const db = getDatabase()
+  const conditions = []
+  const params = []
+
+  const trimmedSearch = typeof search === 'string' ? search.trim() : ''
+  if (trimmedSearch) {
+    conditions.push('(title LIKE ? OR content LIKE ? OR tags LIKE ?)')
+    const q = `%${trimmedSearch}%`
+    params.push(q, q, q)
+  }
+
+  if (favoritesOnly) {
+    conditions.push('favorite = 1')
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+
+  const safeLimit = Math.max(1, Math.min(500, Math.floor(Number(limit) || 100)))
+  const safeOffset = Math.max(0, Math.floor(Number(offset) || 0))
+
+  const countRow = await db.get(
+    `SELECT COUNT(*) AS count FROM prompts ${whereClause}`,
+    params
+  )
+
+  const prompts = await db.all(
+    `SELECT * FROM prompts ${whereClause} ORDER BY favorite DESC, created_at DESC LIMIT ? OFFSET ?`,
+    [...params, safeLimit, safeOffset]
+  )
+
+  return { prompts, total: countRow?.count ?? 0 }
+}
+
 export async function toggleFavorite(id) {
   const db = getDatabase()
   const prompt = await db.get('SELECT favorite FROM prompts WHERE id = ?', [id])

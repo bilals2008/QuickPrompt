@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld("db", {
   health: () => ipcRenderer.invoke("db:health"),
   createPrompt: (data) => ipcRenderer.invoke("db:createPrompt", data),
   getAllPrompts: () => ipcRenderer.invoke("db:getAllPrompts"),
+  getPromptsPaginated: (options) => ipcRenderer.invoke("db:getPromptsPaginated", options),
   updatePrompt: (id, data) => ipcRenderer.invoke("db:updatePrompt", id, data),
   deletePrompt: (id) => ipcRenderer.invoke("db:deletePrompt", id),
   getAllTags: () => ipcRenderer.invoke("db:getAllTags"),

@@ -1,29 +1,43 @@
 // File: src/pages/HomePage.jsx
-import { useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown } from "@tabler/icons-react"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { PromptCardItem, parsePrompt } from "@/components/prompt-card"
+import { PromptCardItem } from "@/components/prompt-card"
 import { AddPromptDialog } from "@/components/add-prompt-dialog"
-import { DataPagination } from "@/components/data-pagination"
+import { usePromptLoader } from "@/hooks/usePromptLoader"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+
+const PROMPT_PAGE_SIZE = 100
 
 export default function HomePage() {
   const navigate = useNavigate()
   const { sidebarVisible } = useOutletContext()
-  const [prompts, setPrompts] = useState([])
   const [allTags, setAllTags] = useState([])
   const [search, setSearch] = useState("")
   const [viewMode, setViewMode] = useState("grid")
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(!sidebarVisible ? 8 : 20)
   const [autoCopy, setAutoCopy] = useState(false)
   const [notifications, setNotifications] = useState(false)
   const searchRef = useRef(null)
+
+  const {
+    items: prompts,
+    total,
+    loading,
+    initialLoading,
+    error,
+    hasMore,
+    loadMore,
+    refresh,
+  } = usePromptLoader({
+    search,
+    favoritesOnly: showFavoritesOnly,
+    pageSize: PROMPT_PAGE_SIZE,
+  })
 
   useEffect(() => {
     const onKey = (e) => {
@@ -45,15 +59,6 @@ export default function HomePage() {
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
-  const loadPrompts = useCallback(async () => {
-    try {
-      const data = await window.db.getAllPrompts()
-      setPrompts(data || [])
-    } catch (err) {
-      console.error("Failed to load prompts:", err)
-    }
-  }, [])
-
   const loadTags = useCallback(async () => {
     try {
       const data = await window.db.getAllTags()
@@ -64,7 +69,6 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    loadPrompts()
     loadTags()
     window.db?.health?.().then((h) => {
       if (!h.ready) toast.error("Database error: " + (h.error || "unknown"))
@@ -73,7 +77,7 @@ export default function HomePage() {
     window.settingsAPI?.get("defaultView", "grid").then((v) => setViewMode(v))
     window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
     window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
-  }, [loadPrompts, loadTags])
+  }, [loadTags])
 
   function copyPrompt(text) {
     navigator.clipboard.writeText(text)
@@ -83,7 +87,7 @@ export default function HomePage() {
   async function deletePrompt(id) {
     try {
       await window.db.deletePrompt(id)
-      await loadPrompts()
+      await refresh()
       if (notifications) toast.success("Prompt deleted")
     } catch (err) {
       if (notifications) toast.error("Failed to delete prompt")
@@ -94,35 +98,16 @@ export default function HomePage() {
   async function toggleFavoriteHandler(id) {
     try {
       await window.db.toggleFavorite(id)
-      await loadPrompts()
+      await refresh()
     } catch (err) {
       if (notifications) toast.error("Failed to update favorite")
       console.error(err)
     }
   }
 
-  const filteredPrompts = useMemo(() => {
-    return prompts
-      .map(parsePrompt)
-      .filter((p) => {
-        if (!search) return true
-        const q = search.toLowerCase()
-        return (
-          p.content.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.includes(q))
-        )
-      })
-      .filter((p) => (showFavoritesOnly ? p.favorite : true))
-  }, [prompts, search, showFavoritesOnly])
-
-  const paginatedPrompts = useMemo(() => {
-    const start = (currentPage - 1) * pageSize
-    return filteredPrompts.slice(start, start + pageSize)
-  }, [filteredPrompts, currentPage, pageSize])
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, showFavoritesOnly, pageSize])
+  const hasActiveFilters = Boolean(search.trim()) || showFavoritesOnly
+  const showEmptyState = !initialLoading && prompts.length === 0
+  const showNoResults = showEmptyState && hasActiveFilters
 
   return (
     <div className="flex flex-col h-full">
@@ -141,8 +126,8 @@ export default function HomePage() {
             ) : (
               <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
                 Prompts{" "}
-                <span className="font-normal text-muted-foreground">
-                  ({prompts.length})
+                <span className="font-normal text-muted-foreground tabular-nums">
+                  ({total.toLocaleString()})
                 </span>
               </h1>
             )}
@@ -174,7 +159,7 @@ export default function HomePage() {
                 <IconSettings size={16} />
               </Button>
             )}
-            {prompts.length > 0 && (
+            {total > 0 && (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -199,27 +184,35 @@ export default function HomePage() {
                     {viewMode === "grid" ? "List view" : "Grid view"}
                   </TooltipContent>
                 </Tooltip>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-9 w-9 cursor-pointer",
-                    showFavoritesOnly && "text-amber-400"
-                  )}
-                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                >
-                  {showFavoritesOnly ? (
-                    <IconStarFilled size={16} />
-                  ) : (
-                    <IconStar size={16} />
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "h-9 w-9 cursor-pointer",
+                        showFavoritesOnly && "text-amber-400"
+                      )}
+                      onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                      aria-label={showFavoritesOnly ? "Show all prompts" : "Show favorites only"}
+                    >
+                      {showFavoritesOnly ? (
+                        <IconStarFilled size={16} />
+                      ) : (
+                        <IconStar size={16} />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {showFavoritesOnly ? "Showing favorites" : "Show favorites only"}
+                  </TooltipContent>
+                </Tooltip>
               </>
             )}
           </div>
         </div>
 
-        {prompts.length > 0 && (
+        {total > 0 && (
           <div
             className={cn(
               "group/search relative flex h-9 w-full items-center rounded-lg border border-border bg-background/60",
@@ -268,11 +261,27 @@ export default function HomePage() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {filteredPrompts.length === 0 ? (
+        {error && prompts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <div className="sticky-note sticky-tint-yellow p-6 text-center">
-              <p className="text-lg font-semibold text-foreground/80">No prompts yet</p>
-              <p className="text-sm mt-2 text-foreground/60">Click the + button to add your first prompt</p>
+              <p className="text-lg font-semibold text-foreground/80">Failed to load prompts</p>
+              <p className="text-sm mt-2 text-foreground/60">{error.message || "Unknown error"}</p>
+              <Button variant="outline" size="sm" className="mt-4 cursor-pointer" onClick={refresh}>
+                Try again
+              </Button>
+            </div>
+          </div>
+        ) : showEmptyState ? (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <div className="sticky-note sticky-tint-yellow p-6 text-center">
+              <p className="text-lg font-semibold text-foreground/80">
+                {showNoResults ? "No prompts match your search" : "No prompts yet"}
+              </p>
+              <p className="text-sm mt-2 text-foreground/60">
+                {showNoResults
+                  ? "Try a different keyword or clear your filters"
+                  : "Click the + button to add your first prompt"}
+              </p>
             </div>
           </div>
         ) : viewMode === "grid" ? (
@@ -282,7 +291,7 @@ export default function HomePage() {
               ? "grid-cols-1"
               : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
           )}>
-            {paginatedPrompts.map((prompt) => (
+            {prompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}
                 prompt={prompt}
@@ -292,14 +301,14 @@ export default function HomePage() {
                 onToggleFavorite={toggleFavoriteHandler}
                 allTags={allTags}
                 mini={!sidebarVisible}
-                onSaved={loadPrompts}
+                onSaved={refresh}
                 autoCopy={autoCopy}
               />
             ))}
           </div>
         ) : (
           <div className="flex flex-col gap-2 w-full">
-            {paginatedPrompts.map((prompt) => (
+            {prompts.map((prompt) => (
               <PromptCardItem
                 key={prompt.id}
                 prompt={prompt}
@@ -309,29 +318,49 @@ export default function HomePage() {
                 onToggleFavorite={toggleFavoriteHandler}
                 allTags={allTags}
                 mini={!sidebarVisible}
-                onSaved={loadPrompts}
+                onSaved={refresh}
                 autoCopy={autoCopy}
               />
             ))}
           </div>
         )}
 
-        {filteredPrompts.length > 20 && (
-          <div className={cn("mt-4", !sidebarVisible && "px-1")}>
-            <DataPagination
-              currentPage={currentPage}
-              pageSize={pageSize}
-              totalItems={filteredPrompts.length}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-              pageSizeOptions={[8, 16, 20, 25, 48]}
-              mini={!sidebarVisible}
-            />
+        {!showEmptyState && !error && (
+          <div className={cn("mt-6 flex flex-col items-center gap-2", !sidebarVisible && "px-1")}>
+            {hasMore ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 cursor-pointer gap-1.5 px-4 text-xs"
+                  onClick={loadMore}
+                  disabled={loading}
+                  aria-label="Load more prompts"
+                >
+                  {loading ? (
+                    <IconLoader2 size={14} className="animate-spin" />
+                  ) : (
+                    <IconArrowDown size={14} />
+                  )}
+                  {loading ? "Loading…" : "Load More"}
+                </Button>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  Showing {prompts.length.toLocaleString()} of {total.toLocaleString()} prompts
+                </p>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="h-px w-12 bg-border/60" />
+                <p className="text-xs text-muted-foreground">
+                  All {total.toLocaleString()} {total === 1 ? "prompt" : "prompts"} loaded
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <AddPromptDialog onSaved={loadPrompts} allTags={allTags} mini={!sidebarVisible} />
+      <AddPromptDialog onSaved={refresh} allTags={allTags} mini={!sidebarVisible} />
     </div>
   )
 }

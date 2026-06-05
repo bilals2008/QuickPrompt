@@ -63,9 +63,10 @@ const TAG_CLASS = "inline-flex items-center rounded-full px-1.5 py-[1px] text-[1
 const MORE_CLASS = "inline-flex items-center rounded-full border border-border/60 bg-muted px-1.5 py-[1px] text-[10px] font-medium text-muted-foreground leading-tight cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground"
 
 function TagList({ tags, max = 3, wrap = true }) {
-  if (!tags || tags.length === 0) return null
-  const visible = tags.slice(0, max)
-  const hidden = tags.slice(max)
+  const list = parseTagsString(tags)
+  if (!list || list.length === 0) return null
+  const visible = list.slice(0, max)
+  const hidden = list.slice(max)
   return (
     <div className={cn("flex items-center gap-1", wrap ? "flex-wrap" : "flex-nowrap")}>
       {visible.map((tag) => (
