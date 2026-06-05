@@ -159,7 +159,7 @@ export default function HomePage() {
                 <IconSettings size={16} />
               </Button>
             )}
-            {total > 0 && (
+        {(total > 0 || hasActiveFilters) && (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
