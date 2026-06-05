@@ -193,7 +193,7 @@ export default function Settings() {
   const navigate = useNavigate()
   const { sidebarVisible } = useOutletContext()
   const { theme, setTheme } = useTheme()
-  const [activeSection, setActiveSection] = useState("appearance")
+  const [activeSection, setActiveSection] = useState("general")
   const [updateStatus, setUpdateStatus] = useState("idle")
   const [updateInfo, setUpdateInfo] = useState(null)
   const [autoCheck, setAutoCheck] = useState(true)
