@@ -5,6 +5,7 @@ import { IconSettings, IconHome2, IconArrowsTransferUpDown } from "@tabler/icons
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { SpotlightSearch } from "@/features/spotlight-search/SpotlightSearch"
+import { toast } from "sonner"
 
 function App() {
   const location = useLocation()
@@ -41,14 +42,18 @@ function App() {
   }, [navigate])
 
   useEffect(() => {
-    if (!window.electronAPI?.onNavigate) return
-    const unsubscribe = window.electronAPI.onNavigate((route) => {
-      if (typeof route === "string" && route.startsWith("/")) {
-        navigate(route)
+    const unsubscribe = window.updateAPI?.onEvent((event) => {
+      if (event.status === "downloaded") {
+        toast.success(`Update v${event.version} ready to install`, {
+          action: {
+            label: "Restart",
+            onClick: () => window.updateAPI?.installUpdate(),
+          },
+        })
       }
     })
-    return unsubscribe
-  }, [navigate])
+    return () => unsubscribe?.()
+  }, [])
 
   return (
     <TooltipProvider delayDuration={300}>

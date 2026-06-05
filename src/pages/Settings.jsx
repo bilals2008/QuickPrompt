@@ -206,6 +206,10 @@ export default function Settings() {
 
   useEffect(() => {
     window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
+    window.updateAPI?.getStatus()?.then((s) => {
+      if (s?.status) setUpdateStatus(s.status)
+      if (s?.version) setUpdateInfo({ version: s.version, releaseNotes: s.releaseNotes })
+    })
 
     window.settingsAPI?.get("closeBehavior", "tray").then((v) => setCloseBehavior(v))
     window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
@@ -220,9 +224,6 @@ export default function Settings() {
       }
       if (event.status === "available") {
         toast.success(`Update available: v${event.version}`)
-      }
-      if (event.status === "downloaded") {
-        toast.success(`Update downloaded: v${event.version}. Restart to install.`)
       }
       if (event.status === "error") {
         toast.error("Update check failed")
@@ -241,10 +242,6 @@ export default function Settings() {
     } finally {
       setChecking(false)
     }
-  }
-
-  function handleInstallUpdate() {
-    window.updateAPI?.installUpdate()
   }
 
   async function handleDownloadUpdate() {
@@ -601,16 +598,7 @@ export default function Settings() {
                       Check for Updates
                     </Button>
 
-                    {updateStatus === "downloaded" && (
-                      <Button
-                        size="sm"
-                        className="cursor-pointer"
-                        onClick={handleInstallUpdate}
-                      >
-                        <IconDownload className="size-3.5 mr-1.5" />
-                        Install & Restart
-                      </Button>
-                    )}
+
 
                     {updateStatus === "available" && (
                       <Button
