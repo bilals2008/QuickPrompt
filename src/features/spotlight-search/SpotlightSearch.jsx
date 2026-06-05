@@ -40,7 +40,12 @@ function useIsMini(breakpoint = 640) {
 export function SpotlightSearch() {
   const [open, setOpen] = useState(false)
   const [prompts, setPrompts] = useState([])
+  const [searchValue, setSearchValue] = useState("")
   const isMini = useIsMini()
+
+  const handleClearSearch = () => {
+    setSearchValue("")
+  }
 
   useEffect(() => {
     if (!window.electronAPI?.onGlobalSearch) return
@@ -116,10 +121,13 @@ export function SpotlightSearch() {
         <DialogDescription className="sr-only">
           Quickly search prompts, copy to clipboard, and minimize the window.
         </DialogDescription>
-        <Command className="rounded-xl border-0 bg-transparent p-0">
+        <Command className="rounded-xl border-0 bg-transparent p-0" value={searchValue} onValueChange={setSearchValue}>
           <CommandInput
             placeholder="Search prompts by title, content, tags, or model..."
             className="text-sm focus-visible:ring-0"
+            value={searchValue}
+            onValueChange={setSearchValue}
+            onClear={handleClearSearch}
           />
           <CommandList className="my-1 max-h-[460px] scrollbar-none">
             <CommandEmpty className="py-12 text-center">

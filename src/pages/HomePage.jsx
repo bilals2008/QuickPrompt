@@ -18,10 +18,13 @@ export default function HomePage() {
   const { sidebarVisible } = useOutletContext()
   const [allTags, setAllTags] = useState([])
   const [search, setSearch] = useState("")
+  const [searchInput, setSearchInput] = useState("")
   const [viewMode, setViewMode] = useState("grid")
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [autoCopy, setAutoCopy] = useState(false)
   const [notifications, setNotifications] = useState(false)
+  const [hasEverHadPrompts, setHasEverHadPrompts] = useState(false)
+  const [totalPromptsInDb, setTotalPromptsInDb] = useState(0)
   const searchRef = useRef(null)
 
   const {
@@ -70,6 +73,9 @@ export default function HomePage() {
 
   useEffect(() => {
     loadTags()
+    window.db?.getAllPrompts?.().then((data) => {
+      setTotalPromptsInDb(Array.isArray(data) ? data.length : 0)
+    })
     window.db?.health?.().then((h) => {
       if (!h.ready) toast.error("Database error: " + (h.error || "unknown"))
     })
@@ -104,6 +110,15 @@ export default function HomePage() {
       console.error(err)
     }
   }
+
+  useEffect(() => {
+    if (total > 0) setHasEverHadPrompts(true)
+  }, [total])
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 200)
+    return () => clearTimeout(t)
+  }, [searchInput])
 
   const hasActiveFilters = Boolean(search.trim()) || showFavoritesOnly
   const showEmptyState = !initialLoading && prompts.length === 0
@@ -159,7 +174,7 @@ export default function HomePage() {
                 <IconSettings size={16} />
               </Button>
             )}
-        {(total > 0 || hasActiveFilters) && (
+        {(total > 0 || hasActiveFilters || hasEverHadPrompts) && (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -212,7 +227,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {total > 0 && (
+        {(totalPromptsInDb > 0 || searchInput) && (
           <div
             className={cn(
               "group/search relative flex h-9 w-full items-center rounded-lg border border-border bg-background/60",
@@ -226,11 +241,12 @@ export default function HomePage() {
             />
             <Input
               ref={searchRef}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Escape") {
                   e.preventDefault()
+                  setSearchInput("")
                   setSearch("")
                   searchRef.current?.blur()
                 }
@@ -238,11 +254,12 @@ export default function HomePage() {
               placeholder="Search prompts…"
               className="h-8 w-full min-w-0 border-0 bg-transparent pl-2 pr-1 text-sm shadow-none focus-visible:ring-0 focus-visible:border-transparent"
             />
-            {search ? (
+            {searchInput ? (
               <Button
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => {
+                  setSearchInput("")
                   setSearch("")
                   searchRef.current?.focus()
                 }}
