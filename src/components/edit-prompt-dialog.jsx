@@ -91,13 +91,28 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
       toast.error("Please enter a prompt")
       return
     }
+    const pending = (inputRef.current?.value ?? tagInput).trim().toLowerCase()
+    let tagsToSave = selectedTags
+    let newTag = null
+    if (pending && !selectedTags.includes(pending)) {
+      tagsToSave = [...selectedTags, pending]
+      newTag = pending
+    }
     try {
       await window.db.updatePrompt(prompt.id, {
         title: title.trim(),
         content: content.trim(),
-        tags: selectedTags.join(","),
+        tags: tagsToSave.join(","),
       })
+      if (newTag && !allTags.includes(newTag)) {
+        window.db.createTag(newTag).catch((err) => {
+          console.error("Failed to create tag:", err)
+        })
+        setAllTags((prev) => (prev.includes(newTag) ? prev : [...prev, newTag]))
+      }
       onSaved?.()
+      setTagInput("")
+      if (inputRef.current) inputRef.current.value = ""
       setOpen(false)
       toast.success("Prompt updated!")
     } catch (err) {
@@ -117,7 +132,7 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
             <Input
               ref={titleRef}
               id="title"
-              placeholder="Title (optional)"
+              placeholder="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="h-8 text-sm font-medium border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
@@ -176,7 +191,7 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Label htmlFor="title">Title</Label>
               <Input
                 ref={titleRef}
                 id="title"
