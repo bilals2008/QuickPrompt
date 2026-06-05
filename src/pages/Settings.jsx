@@ -1,3 +1,4 @@
+// File: src/pages/Settings.jsx
 import { useState, useEffect } from "react"
 import { useNavigate, useOutletContext } from "react-router-dom"
 import { useTheme } from "@/components/theme-provider"
@@ -651,10 +652,6 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground">Developer</p>
                       <p className="text-xs text-foreground">{pkg.author}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">License</p>
-                      <p className="text-xs text-foreground">MIT</p>
                     </div>
                   </div>
                 </div>
