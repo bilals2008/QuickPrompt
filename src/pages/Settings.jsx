@@ -7,6 +7,11 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -38,15 +43,24 @@ import {
   IconHeading,
   IconTextCaption,
   IconCategory,
+  IconSearch,
+  IconArrowsSort,
+  IconCloudUpload,
+  IconFolder,
+  IconMaximize,
+  IconMinimize,
+  IconRuler,
+  IconPalette,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import pkg from "../../package.json"
-import { useCardDisplaySettings, DEFAULT_CARD_DISPLAY } from "@/hooks/useCardDisplaySettings"
+import { useCardDisplaySettings, DEFAULT_CARD_DISPLAY, DENSITY_CLASSES } from "@/hooks/useCardDisplaySettings"
 
 const sections = [
   { id: "general", icon: IconPlayerPlay, label: "General" },
   { id: "customization", icon: IconCategory, label: "Customization" },
+  { id: "backup", icon: IconCloudUpload, label: "Backup" },
   { id: "appearance", icon: IconMoon, label: "Appearance" },
   { id: "updates", icon: IconRefresh, label: "Updates" },
   { id: "about", icon: IconInfoCircle, label: "About" },
@@ -210,17 +224,31 @@ function NavItem({ icon: Icon, label, active, onClick }) {
 
 function SettingRow({ icon: Icon, label, description, children }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 py-2">
-      <div className="flex items-center gap-2.5 min-w-0">
+    <div className="flex flex-row items-center justify-between gap-2 py-1.5 sm:py-2">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium truncate">{label}</p>
           {description && (
-            <p className="text-xs text-muted-foreground truncate">{description}</p>
+            <p className="text-xs text-muted-foreground truncate hidden sm:block">{description}</p>
           )}
         </div>
       </div>
-      <div className="shrink-0 self-end sm:self-auto">{children}</div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  )
+}
+
+function SectionHeading({ icon: Icon, title, description }) {
+  return (
+    <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3">
+      <div className="flex size-7 sm:size-9 items-center justify-center rounded-lg sm:rounded-xl bg-primary/10">
+        {Icon && <Icon className="size-4 sm:size-5 text-primary" />}
+      </div>
+      <div>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      </div>
     </div>
   )
 }
@@ -242,6 +270,13 @@ export default function Settings() {
   const [notifications, setNotifications] = useState(false)
   const [alwaysOnTop, setAlwaysOnTop] = useState(false)
   const [cardDisplay, setCardDisplay] = useCardDisplaySettings()
+  const [caseSensitiveSearch, setCaseSensitiveSearch] = useState(false)
+  const [searchInTagsOnly, setSearchInTagsOnly] = useState(false)
+  const [defaultWindowSize, setDefaultWindowSize] = useState("medium")
+  const [startMinimized, setStartMinimized] = useState(false)
+  const [autoBackup, setAutoBackup] = useState(false)
+  const [backupLocation, setBackupLocation] = useState("")
+  const [defaultSortOrder, setDefaultSortOrder] = useState("newest")
 
   useEffect(() => {
     window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
@@ -255,6 +290,13 @@ export default function Settings() {
     window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
     window.settingsAPI?.get("defaultView", "grid").then((v) => setDefaultView(v))
     window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
+    window.settingsAPI?.get("caseSensitive", false).then((v) => setCaseSensitiveSearch(Boolean(v)))
+    window.settingsAPI?.get("searchInTagsOnly", false).then((v) => setSearchInTagsOnly(Boolean(v)))
+    window.settingsAPI?.get("defaultWindowSize", "medium").then((v) => setDefaultWindowSize(v))
+    window.settingsAPI?.get("startMinimized", false).then((v) => setStartMinimized(Boolean(v)))
+    window.settingsAPI?.get("autoBackup", false).then((v) => setAutoBackup(Boolean(v)))
+    window.settingsAPI?.get("backupLocation", "").then((v) => setBackupLocation(v || ""))
+    window.settingsAPI?.get("defaultSortOrder", "newest").then((v) => setDefaultSortOrder(v))
     window.windowAPI?.getAlwaysOnTop?.().then((v) => setAlwaysOnTop(Boolean(v)))
 
     const unsubscribe = window.updateAPI?.onEvent((event) => {
@@ -328,6 +370,44 @@ export default function Settings() {
   async function handleAlwaysOnTopToggle(checked) {
     const res = await window.windowAPI?.setAlwaysOnTop?.(checked)
     if (res?.success) setAlwaysOnTop(res.value)
+  }
+
+  function handleCaseSensitive(checked) {
+    setCaseSensitiveSearch(checked)
+    window.settingsAPI?.set("caseSensitive", checked)
+  }
+
+  function handleSearchInTagsOnly(checked) {
+    setSearchInTagsOnly(checked)
+    window.settingsAPI?.set("searchInTagsOnly", checked)
+  }
+
+  function handleDefaultWindowSize(value) {
+    setDefaultWindowSize(value)
+    window.settingsAPI?.set("defaultWindowSize", value)
+  }
+
+  function handleStartMinimized(checked) {
+    setStartMinimized(checked)
+    window.settingsAPI?.set("startMinimized", checked)
+  }
+
+  function handleAutoBackup(checked) {
+    setAutoBackup(checked)
+    window.settingsAPI?.set("autoBackup", checked)
+  }
+
+  async function handlePickBackupLocation() {
+    const res = await window.settingsAPI?.pickFolder()
+    if (res?.success) {
+      setBackupLocation(res.path)
+      window.settingsAPI?.set("backupLocation", res.path)
+    }
+  }
+
+  function handleDefaultSortOrder(value) {
+    setDefaultSortOrder(value)
+    window.settingsAPI?.set("defaultSortOrder", value)
   }
 
   const showSidebar = sidebarVisible
@@ -413,25 +493,32 @@ export default function Settings() {
         )}
 
         <ScrollArea className="flex-1">
-          <div className="p-3 sm:p-6">
+          <div className="p-2 sm:p-6">
 
             {!showSidebar && (
-              <div className="mb-4">
-                <div className="flex gap-1 overflow-x-auto scrollbar-none -mx-3 px-3 sm:-mx-6 sm:px-6">
+              <div className="mb-3">
+                <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-none -mx-3 px-3">
                   {sections.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setActiveSection(s.id)}
-                      className={cn(
-                        "flex items-center gap-1 rounded-lg px-1.5 sm:px-2.5 py-1.5 text-[11px] font-medium transition-all cursor-pointer whitespace-nowrap shrink-0",
-                        activeSection === s.id
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                      )}
-                    >
-                      <s.icon size={12} />
-                      <span>{s.label}</span>
-                    </button>
+                    <Tooltip key={s.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setActiveSection(s.id)}
+                          className={cn(
+                            "flex items-center justify-center rounded-lg p-2.5 transition-all cursor-pointer shrink-0",
+                            "sm:w-auto sm:px-3 sm:py-2 sm:gap-1.5",
+                            activeSection === s.id
+                              ? "bg-primary/15 text-primary"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                          )}
+                        >
+                          <s.icon size={18} className="sm:size-5" />
+                          <span className="hidden sm:inline text-xs font-medium">{s.label}</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        {s.label}
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
               </div>
@@ -439,11 +526,8 @@ export default function Settings() {
 
             {activeSection === "general" && (
               <section>
-                <div className="mb-3">
-                  <h2 className="text-sm font-semibold text-foreground">General</h2>
-                  <p className="text-xs text-muted-foreground">Application preferences</p>
-                </div>
-                <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
+                <SectionHeading icon={IconPlayerPlay} title="General" description="Application preferences" />
+                <div className="rounded-xl border border-border bg-card p-2 sm:p-4">
                   <SettingRow
                     icon={IconX}
                     label="Close behavior"
@@ -513,6 +597,76 @@ export default function Settings() {
                   </SettingRow>
                   <Separator className="my-1" />
                   <SettingRow
+                    icon={IconSearch}
+                    label="Case-sensitive search"
+                    description="Match exact case when searching prompts"
+                  >
+                    <Switch
+                      checked={caseSensitiveSearch}
+                      onCheckedChange={handleCaseSensitive}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconTag}
+                    label="Search in tags only"
+                    description="Only search within tags, not title or content"
+                  >
+                    <Switch
+                      checked={searchInTagsOnly}
+                      onCheckedChange={handleSearchInTagsOnly}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconArrowsSort}
+                    label="Default sort order"
+                    description="How prompts are sorted by default"
+                  >
+                    <Select value={defaultSortOrder} onValueChange={handleDefaultSortOrder}>
+                      <SelectTrigger className="max-w-[140px] w-full h-8 text-xs cursor-pointer">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">Newest first</SelectItem>
+                        <SelectItem value="oldest">Oldest first</SelectItem>
+                        <SelectItem value="alpha">Alphabetical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconMaximize}
+                    label="Default window size"
+                    description="Window size on app startup"
+                  >
+                    <Select value={defaultWindowSize} onValueChange={handleDefaultWindowSize}>
+                      <SelectTrigger className="max-w-[140px] w-full h-8 text-xs cursor-pointer">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mini">Mini (360px)</SelectItem>
+                        <SelectItem value="medium">Medium (440px)</SelectItem>
+                        <SelectItem value="full">Full (700px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconMinimize}
+                    label="Start minimized to tray"
+                    description="App launches in the background without showing the window"
+                  >
+                    <Switch
+                      checked={startMinimized}
+                      onCheckedChange={handleStartMinimized}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
                     icon={IconSparkles}
                     label="Reset onboarding"
                     description="Show welcome screen again"
@@ -535,16 +689,11 @@ export default function Settings() {
 
             {activeSection === "customization" && (
               <section>
-                <div className="mb-3">
-                  <h2 className="text-sm font-semibold text-foreground">App Customization</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Choose which elements show on prompt cards and dialogs
-                  </p>
-                </div>
+                <SectionHeading icon={IconCategory} title="App Customization" description="Control the look and behavior of prompt cards" />
 
-                <div className="mb-3 rounded-xl border border-border bg-card p-3 sm:p-4">
+                <div className="mb-2 sm:mb-3 rounded-xl border border-border bg-card p-2 sm:p-4">
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Prompt Cards
+                    Visibility — choose what shows on cards
                   </p>
                   {displayToggles.map((t, idx) => (
                     <div key={t.key}>
@@ -564,11 +713,72 @@ export default function Settings() {
                   ))}
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
+                <div className="mb-2 sm:mb-3 rounded-xl border border-border bg-card p-2 sm:p-4">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Layout & Style
+                  </p>
+                  <SettingRow
+                    icon={IconRuler}
+                    label="Card density"
+                    description="How much spacing around card content"
+                  >
+                    <Select
+                      value={cardDisplay.cardDensity || "normal"}
+                      onValueChange={(v) => handleCardDisplayToggle("cardDensity", v)}
+                    >
+                      <SelectTrigger className="max-w-[140px] w-full h-8 text-xs cursor-pointer">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compact">Compact</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="comfortable">Comfortable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconTextCaption}
+                    label="Max lines in card"
+                    description="Limit the prompt body text shown on cards"
+                  >
+                    <Select
+                      value={String(cardDisplay.maxLines || 3)}
+                      onValueChange={(v) => handleCardDisplayToggle("maxLines", Number(v))}
+                    >
+                      <SelectTrigger className="max-w-[100px] w-full h-8 text-xs cursor-pointer">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2">2 lines</SelectItem>
+                        <SelectItem value="3">3 lines</SelectItem>
+                        <SelectItem value="5">5 lines</SelectItem>
+                        <SelectItem value="0">No limit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconPalette}
+                    label="Match card color to tag"
+                    description="Card tint matches its first tag color instead of random"
+                  >
+                    <Switch
+                      checked={Boolean(cardDisplay.colorByTag)}
+                      onCheckedChange={(checked) => handleCardDisplayToggle("colorByTag", checked)}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+                </div>
+
+                <div className="rounded-xl border border-border bg-card p-2 sm:p-4">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Dialogs
+                  </p>
                   <SettingRow
                     icon={IconTag}
                     label="Show tag input"
-                    description="Allow adding and editing tags in the New/Edit prompt dialogs"
+                    description="Allow adding tags in the New/Edit prompt dialogs"
                   >
                     <Switch
                       checked={Boolean(cardDisplay.showTagInput)}
@@ -591,12 +801,63 @@ export default function Settings() {
               </section>
             )}
 
+            {activeSection === "backup" && (
+              <section>
+                <SectionHeading icon={IconCloudUpload} title="Backup" description="Automatically back up your prompts database" />
+                <div className="rounded-xl border border-border bg-card p-2 sm:p-4 space-y-1">
+                  <SettingRow
+                    icon={IconCloudUpload}
+                    label="Auto-backup"
+                    description="Periodically save a copy of your prompts database"
+                  >
+                    <Switch
+                      checked={autoBackup}
+                      onCheckedChange={handleAutoBackup}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <SettingRow
+                    icon={IconFolder}
+                    label="Backup location"
+                    description={backupLocation ? backupLocation : "No folder selected"}
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer text-xs h-8"
+                      onClick={handlePickBackupLocation}
+                    >
+                      {backupLocation ? "Change" : "Select folder"}
+                    </Button>
+                  </SettingRow>
+                  <Separator className="my-1" />
+                  <div className="pt-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer text-xs"
+                      disabled={!backupLocation}
+                      onClick={async () => {
+                        const res = await window.db?.backup()
+                        if (res?.success) {
+                          toast.success("Backup created!")
+                        } else {
+                          toast.error(res?.reason || "Backup failed")
+                        }
+                      }}
+                    >
+                      <IconDownload className="size-3 mr-1" />
+                      Backup now
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            )}
+
             {activeSection === "appearance" && (
               <section>
-                <div className="mb-3">
-                  <h2 className="text-sm font-semibold text-foreground">Appearance</h2>
-                  <p className="text-xs text-muted-foreground">Choose your theme</p>
-                </div>
+                <SectionHeading icon={IconMoon} title="Appearance" description="Choose your theme" />
                 <div className="space-y-4">
                   {themeCategories.map((category) => (
                     <div key={category.label}>
@@ -666,11 +927,8 @@ export default function Settings() {
 
             {activeSection === "updates" && (
               <section>
-                <div className="mb-4">
-                  <h2 className="text-sm font-semibold text-foreground">Updates</h2>
-                  <p className="text-xs text-muted-foreground">Manage application updates</p>
-                </div>
-                <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                <SectionHeading icon={IconRefresh} title="Updates" description="Manage application updates" />
+                <div className="rounded-xl border border-border bg-card p-2 sm:p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <IconRefresh className="size-4 text-muted-foreground" />
@@ -789,16 +1047,8 @@ export default function Settings() {
 
             {activeSection === "about" && (
               <section>
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-                    <IconInfoCircle className="size-5 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-foreground">About {pkg.productName}</h2>
-                    <p className="text-xs text-muted-foreground">Software information</p>
-                  </div>
-                </div>
-                <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <SectionHeading icon={IconInfoCircle} title={`About ${pkg.productName}`} description="Software information" />
+                <div className="rounded-xl border border-border bg-card p-2 sm:p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-foreground">{pkg.productName}</p>
                     <p className="text-xs text-muted-foreground">v{pkg.version}</p>
