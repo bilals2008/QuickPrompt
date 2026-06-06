@@ -8,7 +8,18 @@ export const DEFAULT_CARD_DISPLAY = {
   showStar: true,
   showCopyButton: true,
   showTimestamp: true,
+  cardDensity: "normal",
+  maxLines: 3,
+  colorByTag: false,
 }
+
+export const DENSITY_CLASSES = {
+  compact: { card: "p-2", gap: "gap-1", footer: "px-2 py-1.5" },
+  normal: { card: "p-3.5", gap: "gap-2", footer: "px-3.5 py-1.5" },
+  comfortable: { card: "p-5", gap: "gap-3", footer: "px-5 py-2" },
+}
+
+export const LINE_CLAMP_MAP = { "2": "line-clamp-2", "3": "line-clamp-3", "5": "line-clamp-5", "0": "" }
 
 const STORAGE_KEY = "cardDisplay"
 

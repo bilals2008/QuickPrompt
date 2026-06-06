@@ -12,7 +12,7 @@ function normalizePrompt(p) {
   }
 }
 
-export function usePromptLoader({ search = "", favoritesOnly = false, pageSize = DEFAULT_PAGE_SIZE } = {}) {
+export function usePromptLoader({ search = "", favoritesOnly = false, pageSize = DEFAULT_PAGE_SIZE, caseSensitive = false, tagsOnly = false, sortOrder = "newest" } = {}) {
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -22,7 +22,7 @@ export function usePromptLoader({ search = "", favoritesOnly = false, pageSize =
   const requestIdRef = useRef(0)
   const loadingRef = useRef(false)
   const doneRef = useRef(false)
-  const filterKey = `${search} ${favoritesOnly} ${pageSize}`
+  const filterKey = `${search} ${favoritesOnly} ${pageSize} ${caseSensitive} ${tagsOnly} ${sortOrder}`
 
   const fetchPage = useCallback(
     async (offset, { append }) => {
@@ -36,6 +36,9 @@ export function usePromptLoader({ search = "", favoritesOnly = false, pageSize =
           offset,
           search,
           favoritesOnly,
+          caseSensitive,
+          tagsOnly,
+          sortOrder,
         })
 
         if (myRequest !== requestIdRef.current) return
@@ -73,7 +76,7 @@ export function usePromptLoader({ search = "", favoritesOnly = false, pageSize =
         }
       }
     },
-    [search, favoritesOnly, pageSize]
+    [search, favoritesOnly, pageSize, caseSensitive, tagsOnly, sortOrder]
   )
 
   useEffect(() => {
