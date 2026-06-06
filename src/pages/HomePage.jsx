@@ -27,6 +27,9 @@ export default function HomePage() {
   const [hasEverHadPrompts, setHasEverHadPrompts] = useState(false)
   const [totalPromptsInDb, setTotalPromptsInDb] = useState(0)
   const [cardDisplay] = useCardDisplaySettings()
+  const [caseSensitive, setCaseSensitive] = useState(false)
+  const [tagsOnly, setTagsOnly] = useState(false)
+  const [sortOrder, setSortOrder] = useState("newest")
   const searchRef = useRef(null)
 
   const {
@@ -42,6 +45,9 @@ export default function HomePage() {
     search,
     favoritesOnly: showFavoritesOnly,
     pageSize: PROMPT_PAGE_SIZE,
+    caseSensitive,
+    tagsOnly,
+    sortOrder,
   })
 
   useEffect(() => {
@@ -85,6 +91,9 @@ export default function HomePage() {
     window.settingsAPI?.get("defaultView", "grid").then((v) => setViewMode(v))
     window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
     window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
+    window.settingsAPI?.get("caseSensitive", false).then((v) => setCaseSensitive(Boolean(v)))
+    window.settingsAPI?.get("searchInTagsOnly", false).then((v) => setTagsOnly(Boolean(v)))
+    window.settingsAPI?.get("defaultSortOrder", "newest").then((v) => setSortOrder(v))
   }, [loadTags])
 
   function copyPrompt(text) {

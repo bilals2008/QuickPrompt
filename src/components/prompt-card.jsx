@@ -20,6 +20,7 @@ import { EditPromptDialog } from "@/components/edit-prompt-dialog"
 import { cn } from "@/lib/utils"
 import { getPromptTitle, isExplicitTitle } from "@/lib/prompt-utils"
 import { parseTagsString } from "@/lib/tag-utils"
+import { DENSITY_CLASSES, LINE_CLAMP_MAP } from "@/hooks/useCardDisplaySettings"
 
 const TAG_COLORS = [
   "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
@@ -43,10 +44,11 @@ const STICKY_TINTS = [
   "sticky-tint-rose",
 ]
 
-function getStickyTint(content) {
+function getStickyTint(content, tag) {
+  const source = tag || content
   let hash = 0
-  for (let i = 0; i < content.length; i++) {
-    hash = content.charCodeAt(i) + ((hash << 5) - hash)
+  for (let i = 0; i < source.length; i++) {
+    hash = source.charCodeAt(i) + ((hash << 5) - hash)
   }
   return STICKY_TINTS[Math.abs(hash) % STICKY_TINTS.length]
 }
@@ -132,6 +134,12 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   const showStar = display?.showStar ?? true
   const showCopyButton = display?.showCopyButton ?? true
   const showTimestamp = display?.showTimestamp ?? true
+  const cardDensity = display?.cardDensity ?? "normal"
+  const colorByTag = display?.colorByTag ?? false
+  const maxLines = display?.maxLines ?? 3
+  const densityClasses = DENSITY_CLASSES[cardDensity] || DENSITY_CLASSES.normal
+  const bodyClamp = maxLines === 0 ? "" : LINE_CLAMP_MAP[maxLines] || `line-clamp-${maxLines}`
+  const tintTag = colorByTag && prompt.tags.length > 0 ? prompt.tags[0] : null
   const [copied, setCopied] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [clicked, setClicked] = useState(false)
@@ -259,14 +267,16 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
       className={cn(
         "group flex cursor-pointer flex-col rounded-xl transition-all",
         mini
-          ? `sticky-note ${getStickyTint(prompt.content)}`
-          : "border border-border bg-card hover:ring-1 hover:ring-primary/30",
+          ? `sticky-note ${getStickyTint(prompt.content, tintTag)}`
+          : colorByTag
+            ? `border border-border/60 ${getStickyTint(prompt.content, tintTag)} hover:ring-1 hover:ring-primary/30`
+            : "border border-border bg-card hover:ring-1 hover:ring-primary/30",
         clicked && "scale-[0.98] ring-2 ring-primary/40"
       )}
     >
       {/* Compact layout (mini window) - Sticky Note Style */}
       {mini && (
-        <div className="flex flex-col gap-1.5 p-3.5 pb-1">
+        <div className={cn("flex flex-col pb-1", densityClasses.card, densityClasses.gap)}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               {showTitle && (
@@ -275,7 +285,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
                 </h3>
               )}
               {showBody && (
-                <p className="mt-1 line-clamp-3 text-[12px] text-foreground/70 leading-relaxed font-normal">
+                <p className={cn("mt-1 text-[12px] text-foreground/70 leading-relaxed font-normal", bodyClamp)}>
                   {bodyText}
                 </p>
               )}
@@ -299,7 +309,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         </div>
       )}
       {mini && (
-        <div className="flex items-center justify-between px-3.5 py-1.5 mt-auto">
+        <div className={cn("flex items-center justify-between mt-auto", densityClasses.footer)}>
           {showTimestamp ? (
             <span className="text-[10px] text-foreground/40 font-medium">
               {formatTime(prompt.created_at)}
@@ -324,7 +334,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
 
       {/* Full layout (large window) */}
       {!mini && (
-        <div className="flex flex-col gap-2 p-3.5 pb-1">
+        <div className={cn("flex flex-col pb-1", densityClasses.card, densityClasses.gap)}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               {showTitle && (
@@ -333,7 +343,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
                 </h3>
               )}
               {showBody && hasBody && (
-                <p className="mt-1 line-clamp-3 text-[12px] text-foreground/70 leading-relaxed font-normal">
+                <p className={cn("mt-1 text-[12px] text-foreground/70 leading-relaxed font-normal", bodyClamp)}>
                   {bodyText}
                 </p>
               )}
@@ -344,7 +354,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         </div>
       )}
       {!mini && (
-        <div className="flex items-center justify-between px-3.5 py-1.5 mt-auto">
+        <div className={cn("flex items-center justify-between mt-auto", densityClasses.footer)}>
           {showTimestamp ? (
             <span className="text-[10px] text-muted-foreground font-medium">
               {formatTime(prompt.created_at)}
