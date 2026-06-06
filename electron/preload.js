@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld("windowAPI", {
   toggleAlwaysOnTop: () => ipcRenderer.invoke("window:toggle-always-on-top"),
   getBounds: () => ipcRenderer.invoke("window:get-bounds"),
   setSize: (width, height) => ipcRenderer.invoke("window:set-size", width, height),
+  setDefaultSize: (preset) => ipcRenderer.invoke("window:set-default-size", preset),
   showPopover: () => ipcRenderer.invoke("window:show-popover"),
   onMaximizeChange: (listener) => {
     const handler = (_e, value) => listener(value)
@@ -65,6 +66,7 @@ contextBridge.exposeInMainWorld("db", {
   createTag: (name) => ipcRenderer.invoke("db:createTag", name),
   searchPrompts: (query) => ipcRenderer.invoke("db:searchPrompts", query),
   toggleFavorite: (id) => ipcRenderer.invoke("db:toggleFavorite", id),
+  backup: () => ipcRenderer.invoke("db:backup"),
 })
 
 contextBridge.exposeInMainWorld("updateAPI", {
@@ -86,4 +88,5 @@ contextBridge.exposeInMainWorld("updateAPI", {
 contextBridge.exposeInMainWorld("settingsAPI", {
   get: (key, fallback) => ipcRenderer.invoke("settings:get", key, fallback),
   set: (key, value) => ipcRenderer.invoke("settings:set", key, value),
+  pickFolder: () => ipcRenderer.invoke("settings:pick-folder"),
 })

@@ -350,6 +350,10 @@ app.whenReady().then(async () => {
   createTray()
   registerGlobalShortcut()
 
+  if (getSetting("startMinimized", false)) {
+    mainWindow?.hide()
+  }
+
   if (getSetting("autoCheckUpdates", true)) {
     setTimeout(() => {
       if (mainWindow && !mainWindow.isDestroyed()) {
@@ -418,6 +422,22 @@ ipcMain.handle("db:getAllPrompts", async () => {
 
 ipcMain.handle("db:getPromptsPaginated", async (_event, options) => {
   return getPromptsPaginated(options || {})
+})
+
+ipcMain.handle("db:backup", async () => {
+  const src = path.join(app.getPath("userData"), "QuickPrompt", "quickprompt.db")
+  const destDir = getSetting("backupLocation", "")
+  if (!destDir || !fs.existsSync(destDir)) {
+    return { success: false, reason: "backup-location-not-set" }
+  }
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-")
+  const dest = path.join(destDir, `quickprompt-backup-${stamp}.db`)
+  try {
+    fs.copyFileSync(src, dest)
+    return { success: true, path: dest }
+  } catch (err) {
+    return { success: false, reason: err.message }
+  }
 })
 
 ipcMain.handle("db:updatePrompt", async (_event, id, data) => {
@@ -588,6 +608,15 @@ ipcMain.handle("window:get-bounds", () => {
   return null
 })
 
+ipcMain.handle("window:set-default-size", (_event, preset) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
+  const sizes = { mini: [360, 500], medium: [440, 700], full: [700, 700] }
+  const [w, h] = sizes[preset] || sizes.medium
+  mainWindow.setSize(w, h)
+  mainWindow.center()
+  return { success: true }
+})
+
 ipcMain.handle("window:set-size", (_event, width, height) => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.setSize(Math.round(width), Math.round(height))
@@ -616,6 +645,17 @@ ipcMain.handle("notification:show", (_event, { title, body, silent } = {}) => {
   })
   n.show()
   return { success: true }
+})
+
+ipcMain.handle("settings:pick-folder", async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ["openDirectory"],
+    title: "Select backup folder",
+  })
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false }
+  }
+  return { success: true, path: result.filePaths[0] }
 })
 
 ipcMain.handle("shell:open-external", (_event, url) => {

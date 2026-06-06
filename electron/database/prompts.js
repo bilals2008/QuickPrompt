@@ -23,16 +23,22 @@ export async function getAllPrompts() {
   return db.all('SELECT * FROM prompts ORDER BY favorite DESC, created_at DESC')
 }
 
-export async function getPromptsPaginated({ limit = 100, offset = 0, search = '', favoritesOnly = false } = {}) {
+export async function getPromptsPaginated({ limit = 100, offset = 0, search = '', favoritesOnly = false, caseSensitive = false, tagsOnly = false, sortOrder = 'newest' } = {}) {
   const db = getDatabase()
   const conditions = []
   const params = []
 
   const trimmedSearch = typeof search === 'string' ? search.trim() : ''
   if (trimmedSearch) {
-    conditions.push('(title LIKE ? OR content LIKE ? OR tags LIKE ?)')
-    const q = `%${trimmedSearch}%`
-    params.push(q, q, q)
+    const op = caseSensitive ? 'GLOB' : 'LIKE'
+    const q = caseSensitive ? `*${trimmedSearch}*` : `%${trimmedSearch}%`
+    if (tagsOnly) {
+      conditions.push(`tags ${op} ?`)
+      params.push(q)
+    } else {
+      conditions.push(`(title ${op} ? OR content ${op} ? OR tags ${op} ?)`)
+      params.push(q, q, q)
+    }
   }
 
   if (favoritesOnly) {
@@ -44,13 +50,17 @@ export async function getPromptsPaginated({ limit = 100, offset = 0, search = ''
   const safeLimit = Math.max(1, Math.min(500, Math.floor(Number(limit) || 100)))
   const safeOffset = Math.max(0, Math.floor(Number(offset) || 0))
 
+  let orderClause = 'ORDER BY favorite DESC, created_at DESC'
+  if (sortOrder === 'oldest') orderClause = 'ORDER BY favorite DESC, created_at ASC'
+  else if (sortOrder === 'alpha') orderClause = 'ORDER BY favorite DESC, title ASC'
+
   const countRow = await db.get(
     `SELECT COUNT(*) AS count FROM prompts ${whereClause}`,
     params
   )
 
   const prompts = await db.all(
-    `SELECT * FROM prompts ${whereClause} ORDER BY favorite DESC, created_at DESC LIMIT ? OFFSET ?`,
+    `SELECT * FROM prompts ${whereClause} ${orderClause} LIMIT ? OFFSET ?`,
     [...params, safeLimit, safeOffset]
   )
 
