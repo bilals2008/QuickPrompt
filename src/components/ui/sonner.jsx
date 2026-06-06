@@ -17,6 +17,7 @@ const Toaster = ({
       className="toaster group"
       position="bottom-center"
       duration={2500}
+      visibleToasts={3}
       icons={{
         success: (
           <IconCircleCheck className="size-3.5" />
@@ -39,12 +40,14 @@ const Toaster = ({
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)"
+          "--border-radius": "var(--radius)",
+          "--width": "320px",
+          "--mobile-width": "calc(100vw - 32px)",
         }
       }
       toastOptions={{
         classNames: {
-          toast: "desktop-toast",
+          toast: "desktop-toast text-xs sm:text-sm",
         },
       }}
       {...props} />
