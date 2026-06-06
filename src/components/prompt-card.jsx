@@ -125,14 +125,20 @@ function getBodyText(prompt) {
   return lines.slice(firstIdx + 1).join("\n").trim()
 }
 
-export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true }) {
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display }) {
+  const showTags = display?.showTags ?? true
+  const showTitle = display?.showTitle ?? true
+  const showBody = display?.showBody ?? true
+  const showStar = display?.showStar ?? true
+  const showCopyButton = display?.showCopyButton ?? true
+  const showTimestamp = display?.showTimestamp ?? true
   const [copied, setCopied] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [clicked, setClicked] = useState(false)
 
   const title = getPromptTitle(prompt)
   const bodyText = getBodyText(prompt)
-  const showBody = bodyText.length > 0
+  const hasBody = bodyText.length > 0
 
   const handleCopy = (e) => {
     e.stopPropagation()
@@ -220,28 +226,31 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         clicked && "scale-[0.98] ring-2 ring-primary/40"
       )}
     >
-      <button onClick={handleFavorite} className="shrink-0 cursor-pointer">
-        {prompt.favorite ? (
-          <IconStarFilled size={16} className="text-chart-3" />
-        ) : (
-          <IconStar size={16} className="text-muted-foreground hover:text-chart-3" />
-        )}
-      </button>
+      {showStar && (
+        <button onClick={handleFavorite} className="shrink-0 cursor-pointer">
+          {prompt.favorite ? (
+            <IconStarFilled size={16} className="text-chart-3" />
+          ) : (
+            <IconStar size={16} className="text-muted-foreground hover:text-chart-3" />
+          )}
+        </button>
+      )}
       <div className="min-w-0 flex-1">
         <p className="line-clamp-1 text-sm">
-          <span className="font-semibold text-foreground">{title}</span>
-          {showBody && (
-            <span className="text-muted-foreground"> — {bodyText}</span>
-          )}
+          {showTitle && <span className="font-semibold text-foreground">{title}</span>}
+          {showBody && hasBody && showTitle && <span className="text-muted-foreground"> — {bodyText}</span>}
+          {showBody && hasBody && !showTitle && <span className="text-foreground">{bodyText}</span>}
         </p>
       </div>
-      {tagBadges && (
+      {showTags && tagBadges && (
         <div className="shrink-0">
           <TagList tags={prompt.tags} max={2} wrap={false} />
         </div>
       )}
-      <span className="shrink-0 text-xs text-muted-foreground hidden sm:block">{formatTime(prompt.created_at)}</span>
-      {copyBtn}
+      {showTimestamp && (
+        <span className="shrink-0 text-xs text-muted-foreground hidden sm:block">{formatTime(prompt.created_at)}</span>
+      )}
+      {showCopyButton && copyBtn}
       {menuBtn}
     </div>
   ) : (
@@ -260,44 +269,54 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         <div className="flex flex-col gap-1.5 p-3.5 pb-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">
-                {title}
-              </h3>
+              {showTitle && (
+                <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">
+                  {title}
+                </h3>
+              )}
               {showBody && (
                 <p className="mt-1 line-clamp-3 text-[12px] text-foreground/70 leading-relaxed font-normal">
                   {bodyText}
                 </p>
               )}
             </div>
-            <button
-              onClick={handleFavorite}
-              className="shrink-0 cursor-pointer transition-colors hover:scale-110"
-            >
-              {prompt.favorite ? (
-                <IconStarFilled size={14} className="text-amber-500 drop-shadow-sm" />
-              ) : (
-                <IconStar size={14} className="text-foreground/30 hover:text-amber-500" />
-              )}
-            </button>
+            {showStar && (
+              <button
+                onClick={handleFavorite}
+                className="shrink-0 cursor-pointer transition-colors hover:scale-110"
+              >
+                {prompt.favorite ? (
+                  <IconStarFilled size={14} className="text-amber-500 drop-shadow-sm" />
+                ) : (
+                  <IconStar size={14} className="text-foreground/30 hover:text-amber-500" />
+                )}
+              </button>
+            )}
           </div>
-          {prompt.tags.length > 0 && (
+          {showTags && prompt.tags.length > 0 && (
             <TagList tags={prompt.tags} max={6} />
           )}
         </div>
       )}
       {mini && (
         <div className="flex items-center justify-between px-3.5 py-1.5 mt-auto">
-          <span className="text-[10px] text-foreground/40 font-medium">
-            {formatTime(prompt.created_at)}
-          </span>
+          {showTimestamp ? (
+            <span className="text-[10px] text-foreground/40 font-medium">
+              {formatTime(prompt.created_at)}
+            </span>
+          ) : (
+            <span />
+          )}
           <div className="flex items-center gap-0.5">
-            <button
-              onClick={handleCopy}
-              className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] text-foreground/50 font-medium transition-colors hover:bg-foreground/10 hover:text-foreground/80"
-            >
-              <IconCopy className="size-3" />
-              {copied ? "Copied!" : "Copy"}
-            </button>
+            {showCopyButton && (
+              <button
+                onClick={handleCopy}
+                className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] text-foreground/50 font-medium transition-colors hover:bg-foreground/10 hover:text-foreground/80"
+              >
+                <IconCopy className="size-3" />
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            )}
             {menuBtn}
           </div>
         </div>
@@ -308,27 +327,33 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         <div className="flex flex-col gap-2 p-3.5 pb-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">
-                {title}
-              </h3>
-              {showBody && (
+              {showTitle && (
+                <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">
+                  {title}
+                </h3>
+              )}
+              {showBody && hasBody && (
                 <p className="mt-1 line-clamp-3 text-[12px] text-foreground/70 leading-relaxed font-normal">
                   {bodyText}
                 </p>
               )}
             </div>
-            {starBtn}
+            {showStar && starBtn}
           </div>
-          {tagBadges}
+          {showTags && tagBadges}
         </div>
       )}
       {!mini && (
         <div className="flex items-center justify-between px-3.5 py-1.5 mt-auto">
-          <span className="text-[10px] text-muted-foreground font-medium">
-            {formatTime(prompt.created_at)}
-          </span>
+          {showTimestamp ? (
+            <span className="text-[10px] text-muted-foreground font-medium">
+              {formatTime(prompt.created_at)}
+            </span>
+          ) : (
+            <span />
+          )}
           <div className="flex items-center gap-0.5">
-            {copyBtn}
+            {showCopyButton && copyBtn}
             {menuBtn}
           </div>
         </div>

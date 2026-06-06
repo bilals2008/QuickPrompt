@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { PromptCardItem } from "@/components/prompt-card"
 import { AddPromptDialog } from "@/components/add-prompt-dialog"
 import { usePromptLoader } from "@/hooks/usePromptLoader"
+import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -25,6 +26,7 @@ export default function HomePage() {
   const [notifications, setNotifications] = useState(false)
   const [hasEverHadPrompts, setHasEverHadPrompts] = useState(false)
   const [totalPromptsInDb, setTotalPromptsInDb] = useState(0)
+  const [cardDisplay] = useCardDisplaySettings()
   const searchRef = useRef(null)
 
   const {
@@ -320,6 +322,7 @@ export default function HomePage() {
                 mini={!sidebarVisible}
                 onSaved={refresh}
                 autoCopy={autoCopy}
+                display={cardDisplay}
               />
             ))}
           </div>
@@ -337,6 +340,7 @@ export default function HomePage() {
                 mini={!sidebarVisible}
                 onSaved={refresh}
                 autoCopy={autoCopy}
+                display={cardDisplay}
               />
             ))}
           </div>

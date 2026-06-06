@@ -135,7 +135,7 @@ export function SpotlightSearch() {
                 return (
                   <CommandItem
                     key={prompt.id}
-                    value={`${title} ${prompt.content} ${prompt.tags} ${prompt.model}`}
+                    value={`${title} ${prompt.content} ${prompt.tags}`}
                     onSelect={() => handleSelectPrompt(prompt)}
                     className="flex items-center gap-3 px-3 my-1.5 py-2.5 rounded-lg"
                   >
@@ -151,14 +151,7 @@ export function SpotlightSearch() {
                         <span className="text-sm font-semibold truncate text-foreground">
                           {title}
                         </span>
-                        {prompt.model && !isMini && (
-                          <Badge
-                            variant="secondary"
-                            className="shrink-0 text-[10px] py-0 px-1.5 font-normal h-4 bg-muted text-muted-foreground border-border"
-                          >
-                            {prompt.model}
-                          </Badge>
-                        )}
+
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5 font-normal">
                         {prompt.content}

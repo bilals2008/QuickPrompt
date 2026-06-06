@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { TagManager } from "@/components/tag-manager"
+import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
 import { cn } from "@/lib/utils"
 import { splitTagInput, parseTagsString } from "@/lib/tag-utils"
 
@@ -43,8 +44,10 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
   const [allTags, setAllTags] = useState(externalTags || [])
+  const [cardDisplay] = useCardDisplaySettings()
   const inputRef = useRef(null)
   const titleRef = useRef(null)
+  const showTagInput = cardDisplay?.showTagInput ?? true
 
   useEffect(() => {
     if (open) {
@@ -192,40 +195,42 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
               rows={3}
               className="resize-none text-sm border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
             />
-            <div className="space-y-2">
-              <Input
-                ref={inputRef}
-                placeholder="Add tag — space, comma, or enter"
-                value={tagInput}
-                onChange={handleTagInputChange}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault()
-                    addTag()
-                  }
-                }}
-                className="h-8 text-xs placeholder:text-xs border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
-              />
-              {selectedTags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedTags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="outline"
-                      className={cn("text-[11px] font-medium gap-1 border leading-none px-2 py-0.5", getTagColor(tag))}
-                    >
-                      {tag}
-                      <span
-                        className="cursor-pointer hover:text-destructive leading-none ml-0.5"
-                        onClick={() => removeTag(tag)}
+            {showTagInput && (
+              <div className="space-y-2">
+                <Input
+                  ref={inputRef}
+                  placeholder="Add tag — space, comma, or enter"
+                  value={tagInput}
+                  onChange={handleTagInputChange}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      addTag()
+                    }
+                  }}
+                  className="h-8 text-xs placeholder:text-xs border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+                />
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className={cn("text-[11px] font-medium gap-1 border leading-none px-2 py-0.5", getTagColor(tag))}
                       >
-                        <IconX size={10} />
-                      </span>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+                        {tag}
+                        <span
+                          className="cursor-pointer hover:text-destructive leading-none ml-0.5"
+                          onClick={() => removeTag(tag)}
+                        >
+                          <IconX size={10} />
+                        </span>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <Button onClick={savePrompt} className="w-full cursor-pointer h-9 text-sm font-medium">
               Save
             </Button>
@@ -259,49 +264,51 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                 className="resize-none"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Tags</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  ref={inputRef}
-                  placeholder="Type a tag — space, comma, or enter"
-                  value={tagInput}
-                  onChange={handleTagInputChange}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault()
-                      addTag()
-                    }
-                  }}
-                  className="flex-1 text-xs placeholder:text-xs"
-                />
-                <TagManager
-                  selectedTags={selectedTags}
-                  onTagsChange={setSelectedTags}
-                  allTags={allTags}
-                />
-              </div>
-              {selectedTags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedTags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="outline"
-                      className={cn("text-xs font-normal gap-1 border", getTagColor(tag))}
-                    >
-                      <IconCheck size={10} />
-                      {tag}
-                      <span
-                        className="cursor-pointer hover:text-destructive"
-                        onClick={() => removeTag(tag)}
-                      >
-                        <IconX size={12} />
-                      </span>
-                    </Badge>
-                  ))}
+            {showTagInput && (
+              <div className="space-y-2">
+                <Label>Tags</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={inputRef}
+                    placeholder="Type a tag — space, comma, or enter"
+                    value={tagInput}
+                    onChange={handleTagInputChange}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        addTag()
+                      }
+                    }}
+                    className="flex-1 text-xs placeholder:text-xs"
+                  />
+                  <TagManager
+                    selectedTags={selectedTags}
+                    onTagsChange={setSelectedTags}
+                    allTags={allTags}
+                  />
                 </div>
-              )}
-            </div>
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className={cn("text-xs font-normal gap-1 border", getTagColor(tag))}
+                      >
+                        <IconCheck size={10} />
+                        {tag}
+                        <span
+                          className="cursor-pointer hover:text-destructive"
+                          onClick={() => removeTag(tag)}
+                        >
+                          <IconX size={12} />
+                        </span>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <Button onClick={savePrompt} className="w-full cursor-pointer">
               Save Prompt
             </Button>

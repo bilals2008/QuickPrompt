@@ -31,13 +31,22 @@ import {
   IconX,
   IconPin,
   IconSparkles,
+  IconTag,
+  IconStar,
+  IconCopy,
+  IconClock,
+  IconHeading,
+  IconTextCaption,
+  IconCategory,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import pkg from "../../package.json"
+import { useCardDisplaySettings, DEFAULT_CARD_DISPLAY } from "@/hooks/useCardDisplaySettings"
 
 const sections = [
   { id: "general", icon: IconPlayerPlay, label: "General" },
+  { id: "customization", icon: IconCategory, label: "Customization" },
   { id: "appearance", icon: IconMoon, label: "Appearance" },
   { id: "updates", icon: IconRefresh, label: "Updates" },
   { id: "about", icon: IconInfoCircle, label: "About" },
@@ -201,7 +210,7 @@ function NavItem({ icon: Icon, label, active, onClick }) {
 
 function SettingRow({ icon: Icon, label, description, children }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 py-2">
       <div className="flex items-center gap-2.5 min-w-0">
         {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
         <div className="min-w-0">
@@ -211,7 +220,7 @@ function SettingRow({ icon: Icon, label, description, children }) {
           )}
         </div>
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="shrink-0 self-end sm:self-auto">{children}</div>
     </div>
   )
 }
@@ -232,6 +241,7 @@ export default function Settings() {
   const [defaultView, setDefaultView] = useState("grid")
   const [notifications, setNotifications] = useState(false)
   const [alwaysOnTop, setAlwaysOnTop] = useState(false)
+  const [cardDisplay, setCardDisplay] = useCardDisplaySettings()
 
   useEffect(() => {
     window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
@@ -322,6 +332,54 @@ export default function Settings() {
 
   const showSidebar = sidebarVisible
 
+  const displayToggles = [
+    {
+      key: "showTitle",
+      icon: IconHeading,
+      label: "Show title",
+      description: "Display the title at the top of each prompt card",
+    },
+    {
+      key: "showBody",
+      icon: IconTextCaption,
+      label: "Show content",
+      description: "Display the prompt body/content on each card",
+    },
+    {
+      key: "showTags",
+      icon: IconTag,
+      label: "Show tags",
+      description: "Display tag badges on prompt cards",
+    },
+    {
+      key: "showStar",
+      icon: IconStar,
+      label: "Show favorite star",
+      description: "Show the star button to mark prompts as favorite",
+    },
+    {
+      key: "showCopyButton",
+      icon: IconCopy,
+      label: "Show copy button",
+      description: "Display the inline copy button on each card",
+    },
+    {
+      key: "showTimestamp",
+      icon: IconClock,
+      label: "Show timestamp",
+      description: "Show when each prompt was created (e.g. 5m ago)",
+    },
+  ]
+
+  async function handleCardDisplayToggle(key, checked) {
+    await setCardDisplay({ [key]: checked })
+  }
+
+  async function handleResetDisplay() {
+    await setCardDisplay({ ...DEFAULT_CARD_DISPLAY })
+    toast.success("Display settings reset to defaults")
+  }
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/30 bg-card/50 px-4">
@@ -355,25 +413,27 @@ export default function Settings() {
         )}
 
         <ScrollArea className="flex-1">
-          <div className="p-4 sm:p-6">
+          <div className="p-3 sm:p-6">
 
             {!showSidebar && (
-              <div className="mb-4 flex justify-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
-                {sections.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setActiveSection(s.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer whitespace-nowrap shrink-0",
-                      activeSection === s.id
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    )}
-                  >
-                    <s.icon size={13} />
-                    {s.label}
-                  </button>
-                ))}
+              <div className="mb-4">
+                <div className="flex gap-1 overflow-x-auto scrollbar-none -mx-3 px-3 sm:-mx-6 sm:px-6">
+                  {sections.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setActiveSection(s.id)}
+                      className={cn(
+                        "flex items-center gap-1 rounded-lg px-1.5 sm:px-2.5 py-1.5 text-[11px] font-medium transition-all cursor-pointer whitespace-nowrap shrink-0",
+                        activeSection === s.id
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      )}
+                    >
+                      <s.icon size={12} />
+                      <span>{s.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -390,7 +450,7 @@ export default function Settings() {
                     description="Minimize to tray or quit"
                   >
                     <Select value={closeBehavior} onValueChange={handleCloseBehaviorChange}>
-                      <SelectTrigger className="w-[130px] h-8 text-xs cursor-pointer">
+                      <SelectTrigger className="max-w-[140px] w-full h-8 text-xs cursor-pointer">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -418,7 +478,7 @@ export default function Settings() {
                     description="Grid or list on startup"
                   >
                     <Select value={defaultView} onValueChange={handleDefaultViewChange}>
-                      <SelectTrigger className="w-[110px] h-8 text-xs cursor-pointer">
+                      <SelectTrigger className="max-w-[120px] w-full h-8 text-xs cursor-pointer">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -469,6 +529,64 @@ export default function Settings() {
                       Reset
                     </Button>
                   </SettingRow>
+                </div>
+              </section>
+            )}
+
+            {activeSection === "customization" && (
+              <section>
+                <div className="mb-3">
+                  <h2 className="text-sm font-semibold text-foreground">App Customization</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Choose which elements show on prompt cards and dialogs
+                  </p>
+                </div>
+
+                <div className="mb-3 rounded-xl border border-border bg-card p-3 sm:p-4">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Prompt Cards
+                  </p>
+                  {displayToggles.map((t, idx) => (
+                    <div key={t.key}>
+                      {idx > 0 && <Separator className="my-1" />}
+                      <SettingRow
+                        icon={t.icon}
+                        label={t.label}
+                        description={t.description}
+                      >
+                        <Switch
+                          checked={Boolean(cardDisplay[t.key])}
+                          onCheckedChange={(checked) => handleCardDisplayToggle(t.key, checked)}
+                          className="cursor-pointer"
+                        />
+                      </SettingRow>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
+                  <SettingRow
+                    icon={IconTag}
+                    label="Show tag input"
+                    description="Allow adding and editing tags in the New/Edit prompt dialogs"
+                  >
+                    <Switch
+                      checked={Boolean(cardDisplay.showTagInput)}
+                      onCheckedChange={(checked) => handleCardDisplayToggle("showTagInput", checked)}
+                      className="cursor-pointer"
+                    />
+                  </SettingRow>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer"
+                    onClick={handleResetDisplay}
+                  >
+                    Reset to defaults
+                  </Button>
                 </div>
               </section>
             )}
