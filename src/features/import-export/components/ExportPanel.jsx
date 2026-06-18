@@ -27,18 +27,18 @@ export function ExportPanel({ onExport, busy, promptCount }) {
           <FormatBadge formatId={formatId} />
         </div>
         <Select value={formatId} onValueChange={setFormatId} disabled={busy}>
-          <SelectTrigger className="w-full cursor-pointer">
+          <SelectTrigger className="h-8 w-full cursor-pointer text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {FORMATS.map((format) => (
-              <SelectItem key={format.id} value={format.id} className="cursor-pointer">
+              <SelectItem key={format.id} value={format.id} className="cursor-pointer text-xs">
                 {format.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">{selected.description}</p>
+        <p className="text-[11px] leading-snug text-muted-foreground">{selected.description}</p>
       </div>
 
       <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs">
@@ -52,13 +52,13 @@ export function ExportPanel({ onExport, busy, promptCount }) {
         </div>
       </div>
 
-      <Button onClick={handleExport} disabled={busy || promptCount === 0} className="w-full cursor-pointer">
+      <Button onClick={handleExport} disabled={busy || promptCount === 0} className="h-8 w-full cursor-pointer text-xs">
         <IconDownload size={14} />
         {busy ? "Exporting…" : `Export as ${selected.label}`}
       </Button>
 
-      <div className="flex items-center gap-2 text-[11px] text-muted-foreground/80">
-        <IconFileExport size={12} />
+      <div className="flex items-start gap-2 text-[11px] text-muted-foreground/80">
+        <IconFileExport size={12} className="mt-0.5 shrink-0" />
         <span>A save dialog will open so you can pick the destination.</span>
       </div>
     </div>

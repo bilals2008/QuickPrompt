@@ -75,7 +75,7 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
 
   if (result.status === "error") {
     return (
-      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
         <div className="flex items-start gap-2">
           <IconAlertCircle size={16} className="mt-0.5 shrink-0 text-destructive" />
           <div className="min-w-0 flex-1 space-y-1">
@@ -89,7 +89,7 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
           </div>
         </div>
         <div className="mt-3 flex justify-end">
-          <Button variant="outline" size="sm" onClick={onReset} className="cursor-pointer">
+          <Button variant="outline" size="sm" onClick={onReset} className="h-7 cursor-pointer text-xs">
             Try again
           </Button>
         </div>
@@ -100,7 +100,7 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
   if (result.status === "preview") {
     const skippedCount = Math.max(0, result.total - result.valid)
     return (
-      <div className="rounded-lg border border-border/60 bg-card p-4">
+      <div className="rounded-lg border border-border/60 bg-card p-3">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <IconCheck size={16} className="text-primary" />
@@ -138,14 +138,14 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
         )}
 
         <div className="mt-4 flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onReset} disabled={busy} className="cursor-pointer">
+          <Button variant="ghost" size="sm" onClick={onReset} disabled={busy} className="h-7 cursor-pointer text-xs">
             Cancel
           </Button>
           <Button
             size="sm"
             onClick={onCommit}
             disabled={busy || result.valid === 0}
-            className="cursor-pointer"
+            className="h-7 cursor-pointer text-xs"
           >
             Import {result.valid} prompt{result.valid === 1 ? "" : "s"}
           </Button>
@@ -156,7 +156,7 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
 
   if (result.status === "done") {
     return (
-      <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
         <div className="flex items-start gap-2">
           <IconCircleCheck size={16} className="mt-0.5 shrink-0 text-primary" />
           <div className="min-w-0 flex-1 space-y-1">
@@ -168,7 +168,7 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
         </div>
         <div className="mt-3 flex items-center justify-between">
           <FormatBadge formatId={result.format} />
-          <Button variant="outline" size="sm" onClick={onImportMore} className="cursor-pointer">
+          <Button variant="outline" size="sm" onClick={onImportMore} className="h-7 cursor-pointer text-xs">
             Import another file
           </Button>
         </div>

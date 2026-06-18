@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { useOutletContext } from "react-router-dom"
 import { IconDownload, IconUpload, IconArrowLeft } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useNavigate } from "react-router-dom"
@@ -14,26 +13,26 @@ import { ExportPanel } from "./components/ExportPanel"
 
 function Section({ icon: Icon, title, description, children }) {
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
+      <div className="border-b border-border/60 bg-muted/30 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Icon size={16} />
           </div>
-          <div className="space-y-0.5">
-            <CardTitle>{title}</CardTitle>
-            {description && <CardDescription>{description}</CardDescription>}
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+            {description && <p className="truncate text-xs text-muted-foreground">{description}</p>}
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-4">{children}</CardContent>
-    </Card>
+      </div>
+      <div className="flex flex-col gap-4 p-4">{children}</div>
+    </div>
   )
 }
 
 export default function ImportExportPage() {
   const navigate = useNavigate()
-  const { sidebarVisible } = useOutletContext()
+  useOutletContext()
   const import_ = useImport()
   const exporter = useExport()
   const [promptCount, setPromptCount] = useState(0)
@@ -49,46 +48,34 @@ export default function ImportExportPage() {
   }, [import_.result.status])
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between gap-2 border-b border-border/30 px-6 py-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => navigate("/")}
-                className="shrink-0 cursor-pointer"
-                aria-label="Back to home"
-              >
-                <IconArrowLeft size={16} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Back to prompts</TooltipContent>
-          </Tooltip>
-          {sidebarVisible ? (
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
-                Import &amp; Export
-              </h1>
-              <p className="truncate text-xs text-muted-foreground">
-                Back up your library or move it between machines
-              </p>
-            </div>
-          ) : (
-            <h1 className="truncate text-base font-semibold tracking-tight text-foreground">
-              Import &amp; Export
-            </h1>
-          )}
+    <div className="flex h-full flex-col bg-background">
+      <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-border/40 bg-card/50 px-4">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              className="h-8 w-8 cursor-pointer shrink-0"
+              aria-label="Back to home"
+            >
+              <IconArrowLeft size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Back to prompts</TooltipContent>
+        </Tooltip>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <IconDownload className="size-4 text-muted-foreground" />
+          <h1 className="truncate text-sm font-semibold tracking-tight text-foreground">Import &amp; Export</h1>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-2">
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-xl space-y-5 p-4 sm:p-5">
           <Section
             icon={IconUpload}
             title="Import"
-            description="Restore from a backup or merge prompts from another tool"
+            description="Restore from a backup or merge prompts"
           >
             <ImportDropzone
               onFile={import_.parseFile}
@@ -103,7 +90,6 @@ export default function ImportExportPage() {
               }
               error={import_.result.status === "error" ? import_.result.error : null}
             />
-            <Separator />
             <ImportSummary
               result={import_.result}
               onCommit={import_.commit}
@@ -112,6 +98,8 @@ export default function ImportExportPage() {
               busy={import_.busy}
             />
           </Section>
+
+          <Separator className="bg-border/40" />
 
           <Section
             icon={IconDownload}
@@ -124,12 +112,12 @@ export default function ImportExportPage() {
               promptCount={promptCount}
             />
           </Section>
-        </div>
 
-        <p className="mx-auto mt-8 max-w-3xl text-center text-xs text-muted-foreground/80">
-          Imports always create new prompts — your existing data is untouched. To replace
-          the library, export first, then delete prompts you do not want to keep.
-        </p>
+          <p className="text-center text-[11px] leading-relaxed text-muted-foreground/80">
+            Imports always create new prompts — your existing data is untouched. To replace
+            the library, export first, then delete prompts you do not want to keep.
+          </p>
+        </div>
       </div>
     </div>
   )
