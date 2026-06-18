@@ -193,7 +193,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={3}
-              className="resize-none text-sm border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+              className="resize-none text-sm border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background max-h-48 overflow-y-auto"
             />
             {showTagInput && (
               <div className="space-y-2">
@@ -261,7 +261,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={5}
-                className="resize-none"
+                className="resize-none max-h-60 overflow-y-auto"
               />
             </div>
             {showTagInput && (
