@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { IconGripVertical } from "@tabler/icons-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PromptCardItem } from "@/components/prompt-card"
 import { cn } from "@/lib/utils"
 
@@ -16,23 +17,30 @@ export function SortablePromptCard({ id, prompt, viewMode, onCopy, onDelete, onT
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: transition || "transform 200ms cubic-bezier(0.25, 1, 0.5, 1)",
   }
 
   const dragHandle = (
-    <button
-      className={cn(
-        "flex shrink-0 cursor-grab items-center justify-center rounded-md p-0.5 text-muted-foreground",
-        "transition-colors hover:bg-accent hover:text-foreground",
-        "active:cursor-grabbing",
-        isDragging && "text-primary"
-      )}
-      {...attributes}
-      {...listeners}
-      aria-label="Drag to reorder"
-    >
-      <IconGripVertical className="size-3.5" />
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          className={cn(
+            "flex shrink-0 cursor-grab items-center justify-center rounded-md p-0.5 text-muted-foreground",
+            "transition-colors hover:bg-accent hover:text-foreground",
+            "active:cursor-grabbing",
+            isDragging && "text-primary"
+          )}
+          {...attributes}
+          {...listeners}
+          aria-label="Drag to reorder"
+        >
+          <IconGripVertical className="size-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={4}>
+        Drag to reorder
+      </TooltipContent>
+    </Tooltip>
   )
 
   return (
