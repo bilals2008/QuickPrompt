@@ -129,14 +129,9 @@ export async function searchPrompts(query) {
 
 export async function updatePromptOrder(updates) {
   const db = getDatabase()
-  const stmt = await db.prepare('UPDATE prompts SET sort_order = ?, updated_at = ? WHERE id = ?')
   const now = new Date().toISOString()
-  try {
-    for (const { id, sort_order } of updates) {
-      await stmt.run(sort_order, now, id)
-    }
-  } finally {
-    await stmt.finalize()
+  for (const { id, sort_order } of updates) {
+    await db.run('UPDATE prompts SET sort_order = ?, updated_at = ? WHERE id = ?', [sort_order, now, id])
   }
   return { success: true }
 }
