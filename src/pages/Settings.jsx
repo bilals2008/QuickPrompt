@@ -731,17 +731,24 @@ export default function Settings() {
                       label="Default sort order"
                       description="How prompts are sorted by default"
                     >
-                      <Select value={defaultSortOrder} onValueChange={handleDefaultSortOrder}>
-                        <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="newest">Newest first</SelectItem>
-                          <SelectItem value="oldest">Oldest first</SelectItem>
-                          <SelectItem value="alpha">Alphabetical</SelectItem>
-                          <SelectItem value="custom">Custom (manual)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex flex-col items-end gap-1.5">
+                        <Select value={defaultSortOrder} onValueChange={handleDefaultSortOrder}>
+                          <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="newest">Newest first</SelectItem>
+                            <SelectItem value="oldest">Oldest first</SelectItem>
+                            <SelectItem value="alpha">Alphabetical</SelectItem>
+                            <SelectItem value="custom">Drag & drop</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {defaultSortOrder === "custom" && (
+                          <p className="text-[11px] text-muted-foreground leading-tight text-right">
+                            Drag the grip handle on cards to reorder
+                          </p>
+                        )}
+                      </div>
                     </SettingRow>
                     <Separator />
                     <SettingRow
