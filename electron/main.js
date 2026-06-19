@@ -13,6 +13,7 @@ import {
   createTag,
   searchPrompts,
   toggleFavorite,
+  updatePromptOrder,
 } from "./database/prompts.js"
 import updater from "electron-updater"
 const { autoUpdater } = updater
@@ -462,6 +463,10 @@ ipcMain.handle("db:searchPrompts", async (_event, query) => {
 
 ipcMain.handle("db:toggleFavorite", async (_event, id) => {
   return toggleFavorite(id)
+})
+
+ipcMain.handle("db:updatePromptOrder", async (_event, updates) => {
+  return updatePromptOrder(updates)
 })
 
 ipcMain.handle("update:check", async () => {

@@ -127,7 +127,7 @@ function getBodyText(prompt) {
   return lines.slice(firstIdx + 1).join("\n").trim()
 }
 
-export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display }) {
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display, dragHandle }) {
   const showTags = display?.showTags ?? true
   const showTitle = display?.showTitle ?? true
   const showBody = display?.showBody ?? true
@@ -234,6 +234,11 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         clicked && "scale-[0.98] ring-2 ring-primary/40"
       )}
     >
+      {dragHandle && (
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          {dragHandle}
+        </div>
+      )}
       {showStar && (
         <button onClick={handleFavorite} className="shrink-0 cursor-pointer">
           {prompt.favorite ? (
@@ -278,6 +283,11 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
       {mini && (
         <div className={cn("flex flex-col pb-1", densityClasses.card, densityClasses.gap)}>
           <div className="flex items-start justify-between gap-2">
+            {dragHandle && (
+              <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                {dragHandle}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               {showTitle && (
                 <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">
@@ -336,6 +346,11 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
       {!mini && (
         <div className={cn("flex flex-col pb-1", densityClasses.card, densityClasses.gap)}>
           <div className="flex items-start justify-between gap-2">
+            {dragHandle && (
+              <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                {dragHandle}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               {showTitle && (
                 <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">

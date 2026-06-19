@@ -739,6 +739,7 @@ export default function Settings() {
                           <SelectItem value="newest">Newest first</SelectItem>
                           <SelectItem value="oldest">Oldest first</SelectItem>
                           <SelectItem value="alpha">Alphabetical</SelectItem>
+                          <SelectItem value="custom">Custom (manual)</SelectItem>
                         </SelectContent>
                       </Select>
                     </SettingRow>

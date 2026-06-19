@@ -66,6 +66,7 @@ contextBridge.exposeInMainWorld("db", {
   createTag: (name) => ipcRenderer.invoke("db:createTag", name),
   searchPrompts: (query) => ipcRenderer.invoke("db:searchPrompts", query),
   toggleFavorite: (id) => ipcRenderer.invoke("db:toggleFavorite", id),
+  updatePromptOrder: (updates) => ipcRenderer.invoke("db:updatePromptOrder", updates),
   backup: () => ipcRenderer.invoke("db:backup"),
 })
 

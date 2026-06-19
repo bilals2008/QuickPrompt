@@ -3,9 +3,12 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
 import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown } from "@tabler/icons-react"
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { SortableContext, arrayMove, rectSortingStrategy, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PromptCardItem } from "@/components/prompt-card"
+import { SortablePromptCard } from "@/components/sortable-prompt-card"
 import { AddPromptDialog } from "@/components/add-prompt-dialog"
 import { usePromptLoader } from "@/hooks/usePromptLoader"
 import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
@@ -31,6 +34,30 @@ export default function HomePage() {
   const [tagsOnly, setTagsOnly] = useState(false)
   const [sortOrder, setSortOrder] = useState("newest")
   const searchRef = useRef(null)
+  const isCustomSort = sortOrder === "custom"
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    })
+  )
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = prompts.findIndex((p) => p.id === active.id)
+    const newIndex = prompts.findIndex((p) => p.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(prompts, oldIndex, newIndex)
+    const updates = reordered.map((p, i) => ({ id: p.id, sort_order: i }))
+
+    window.db.updatePromptOrder(updates).catch((err) => {
+      console.error("Failed to save prompt order:", err)
+      if (notifications) toast.error("Failed to save order")
+    })
+  }
 
   const {
     items: prompts,
@@ -313,28 +340,81 @@ export default function HomePage() {
             </div>
           </div>
         ) : viewMode === "grid" ? (
-          <div className={cn(
-            "grid gap-3",
-            !sidebarVisible
-              ? "grid-cols-1"
-              : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
-          )}>
-            {prompts.map((prompt) => (
-              <PromptCardItem
-                key={prompt.id}
-                prompt={prompt}
-                viewMode="grid"
-                onCopy={copyPrompt}
-                onDelete={deletePrompt}
-                onToggleFavorite={toggleFavoriteHandler}
-                allTags={allTags}
-                mini={!sidebarVisible}
-                onSaved={refresh}
-                autoCopy={autoCopy}
-                display={cardDisplay}
-              />
-            ))}
-          </div>
+          isCustomSort ? (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={prompts.map((p) => p.id)} strategy={rectSortingStrategy}>
+                <div className={cn(
+                  "grid gap-3",
+                  !sidebarVisible
+                    ? "grid-cols-1"
+                    : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
+                )}>
+                  {prompts.map((prompt) => (
+                    <SortablePromptCard
+                      key={prompt.id}
+                      id={prompt.id}
+                      prompt={prompt}
+                      viewMode="grid"
+                      onCopy={copyPrompt}
+                      onDelete={deletePrompt}
+                      onToggleFavorite={toggleFavoriteHandler}
+                      allTags={allTags}
+                      mini={!sidebarVisible}
+                      onSaved={refresh}
+                      autoCopy={autoCopy}
+                      display={cardDisplay}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <div className={cn(
+              "grid gap-3",
+              !sidebarVisible
+                ? "grid-cols-1"
+                : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
+            )}>
+              {prompts.map((prompt) => (
+                <PromptCardItem
+                  key={prompt.id}
+                  prompt={prompt}
+                  viewMode="grid"
+                  onCopy={copyPrompt}
+                  onDelete={deletePrompt}
+                  onToggleFavorite={toggleFavoriteHandler}
+                  allTags={allTags}
+                  mini={!sidebarVisible}
+                  onSaved={refresh}
+                  autoCopy={autoCopy}
+                  display={cardDisplay}
+                />
+              ))}
+            </div>
+          )
+        ) : isCustomSort ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={prompts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-2 w-full">
+                {prompts.map((prompt) => (
+                  <SortablePromptCard
+                    key={prompt.id}
+                    id={prompt.id}
+                    prompt={prompt}
+                    viewMode="list"
+                    onCopy={copyPrompt}
+                    onDelete={deletePrompt}
+                    onToggleFavorite={toggleFavoriteHandler}
+                    allTags={allTags}
+                    mini={!sidebarVisible}
+                    onSaved={refresh}
+                    autoCopy={autoCopy}
+                    display={cardDisplay}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         ) : (
           <div className="flex flex-col gap-2 w-full">
             {prompts.map((prompt) => (

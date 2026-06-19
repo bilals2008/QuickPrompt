@@ -53,6 +53,7 @@ export async function getPromptsPaginated({ limit = 100, offset = 0, search = ''
   let orderClause = 'ORDER BY favorite DESC, created_at DESC'
   if (sortOrder === 'oldest') orderClause = 'ORDER BY favorite DESC, created_at ASC'
   else if (sortOrder === 'alpha') orderClause = 'ORDER BY favorite DESC, title ASC'
+  else if (sortOrder === 'custom') orderClause = 'ORDER BY favorite DESC, sort_order ASC, created_at DESC'
 
   const countRow = await db.get(
     `SELECT COUNT(*) AS count FROM prompts ${whereClause}`,
@@ -124,4 +125,18 @@ export async function searchPrompts(query) {
     'SELECT * FROM prompts WHERE title LIKE ? OR content LIKE ? OR model LIKE ? OR tags LIKE ? ORDER BY created_at DESC',
     [q, q, q, q]
   )
+}
+
+export async function updatePromptOrder(updates) {
+  const db = getDatabase()
+  const stmt = await db.prepare('UPDATE prompts SET sort_order = ?, updated_at = ? WHERE id = ?')
+  const now = new Date().toISOString()
+  try {
+    for (const { id, sort_order } of updates) {
+      await stmt.run(sort_order, now, id)
+    }
+  } finally {
+    await stmt.finalize()
+  }
+  return { success: true }
 }

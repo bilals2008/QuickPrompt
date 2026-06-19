@@ -23,6 +23,7 @@ const MIGRATIONS = [
   `ALTER TABLE prompts ADD COLUMN favorite INTEGER DEFAULT 0`,
   `ALTER TABLE prompts ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE prompts ADD COLUMN title TEXT DEFAULT ''`,
+  `ALTER TABLE prompts ADD COLUMN sort_order INTEGER DEFAULT 0`,
 ]
 
 export async function createTables() {
