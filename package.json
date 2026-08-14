@@ -3,7 +3,7 @@
   "productName": "QuickPrompt",
   "description": "A simple prompt manager - create, tag, and copy prompts instantly",
   "private": true,
-  "version": "1.8.0",
+  "version": "1.9.0",
   "author": "Muhammad Bilal Hassan",
   "type": "module",
   "scripts": {
