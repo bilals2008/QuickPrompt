@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { parseTagsString } from "@/lib/tag-utils"
+import { parseTagsString, splitTagInput } from "@/lib/tag-utils"
 
 export const VAULT_TYPES = [
   { id: "api_key", label: "API Key", icon: IconKey, color: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400" },
@@ -32,6 +32,25 @@ export const VAULT_TYPES = [
 
 export function getVaultType(id) {
   return VAULT_TYPES.find((t) => t.id === id) || VAULT_TYPES[VAULT_TYPES.length - 1]
+}
+
+const TAG_COLORS = [
+  "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+  "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+  "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400",
+  "bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400",
+  "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400",
+  "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400",
+  "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+  "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400",
+]
+
+function getTagColor(tag) {
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
 }
 
 export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini = false, hideTrigger = false }) {
@@ -70,14 +89,28 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
     }
   }, [isOpen, item])
 
-  useEffect(() => {
-    if (!tagInput) return
-    const pending = parseTagsString(tagInput)
-    if (pending.length > 0) {
-      setTags((prev) => [...new Set([...prev, ...pending])])
-      setTagInput("")
+  function addTag() {
+    const t = tagInput.trim().toLowerCase()
+    if (!t) return
+    setTagInput("")
+    if (tags.includes(t)) {
+      setTags(tags.filter((tag) => tag !== t))
+      return
     }
-  }, [tagInput])
+    setTags([...tags, t])
+  }
+
+  function handleTagInputChange(e) {
+    const value = e.target.value
+    const { completeTags, remaining } = splitTagInput(value)
+    if (completeTags.length > 0) {
+      const fresh = completeTags.filter((t) => !tags.includes(t))
+      if (fresh.length > 0) setTags((prev) => [...new Set([...prev, ...fresh])])
+      setTagInput(remaining)
+      return
+    }
+    setTagInput(value)
+  }
 
   async function handleSave() {
     if (!title.trim()) {
@@ -127,7 +160,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={isEditing ? "Leave blank to keep current value" : "Paste the secret value here…"}
-        className="pr-9 font-mono text-xs"
+        className="pr-9 font-mono text-xs border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
       />
       <button
         type="button"
@@ -165,6 +198,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. OpenAI API Key"
+              className="h-8 text-sm placeholder:text-sm border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
             />
           </div>
 
@@ -217,7 +251,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optional reminder, username, URL…"
               rows={3}
-              className="resize-none"
+              className="resize-none border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
             />
           </div>
 
@@ -225,22 +259,18 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
             <Label>Tags</Label>
             <Input
               value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
+              onChange={handleTagInputChange}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === ",") {
                   e.preventDefault()
-                  const pending = parseTagsString(tagInput)
-                  if (pending.length > 0) {
-                    setTags((prev) => [...new Set([...prev, ...pending])])
-                    setTagInput("")
-                  }
+                  addTag()
                 }
                 if (e.key === "Backspace" && !tagInput && tags.length > 0) {
                   setTags((prev) => prev.slice(0, -1))
                 }
               }}
-              placeholder="Type a tag and press Enter…"
-              className="text-xs placeholder:text-xs"
+              placeholder="Type a tag — space, comma, or enter"
+              className="h-8 text-xs placeholder:text-xs border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
             />
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -248,11 +278,11 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="cursor-default gap-1 text-[11px] font-medium border bg-muted/40"
+                    className={cn("cursor-default gap-1 text-[11px] font-medium border leading-none", getTagColor(tag))}
                   >
                     {tag}
                     <span
-                      className="cursor-pointer hover:text-destructive leading-none"
+                      className="cursor-pointer hover:text-destructive leading-none ml-0.5"
                       onClick={() => setTags(tags.filter((t) => t !== tag))}
                     >
                       <IconX size={10} />

@@ -209,8 +209,27 @@ export default function VaultPage() {
     note: "sticky-tint-rose",
   }
 
+  const TAG_COLORS = [
+    "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+    "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+    "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400",
+    "bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400",
+    "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400",
+    "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400",
+    "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+    "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400",
+  ]
+
   function getVaultTint(item) {
     return VAULT_TINTS[item.type] || "sticky-tint-yellow"
+  }
+
+  function getTagColor(tag) {
+    let hash = 0
+    for (let i = 0; i < tag.length; i++) {
+      hash = tag.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
   }
 
   function renderCard(item, dragHandle) {
@@ -283,13 +302,16 @@ export default function VaultPage() {
                 {item.tags.slice(0, 4).map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center rounded-full bg-black/10 px-1.5 py-[1px] text-[10px] font-medium leading-tight text-foreground/70"
+                    className={cn(
+                      "inline-flex items-center rounded-full border px-1.5 py-[1px] text-[10px] font-medium leading-tight",
+                      getTagColor(tag)
+                    )}
                   >
                     {tag}
                   </span>
                 ))}
                 {item.tags.length > 4 && (
-                  <span className="inline-flex items-center rounded-full bg-black/10 px-1.5 py-[1px] text-[10px] font-medium leading-tight text-foreground/70">
+                  <span className="inline-flex items-center rounded-full border border-border/60 bg-black/10 px-1.5 py-[1px] text-[10px] font-medium leading-tight text-foreground/70">
                     +{item.tags.length - 4}
                   </span>
                 )}
@@ -340,7 +362,8 @@ export default function VaultPage() {
     return (
       <div
         className={cn(
-          "group relative flex cursor-default flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-sm hover:ring-1 hover:ring-primary/30",
+          "group relative flex cursor-default flex-col overflow-hidden rounded-xl transition-all sticky-note",
+          getVaultTint(item),
           isCopied && "ring-1 ring-primary/40"
         )}
       >
@@ -381,16 +404,17 @@ export default function VaultPage() {
             </button>
           </div>
 
-          <div className="flex min-h-[32px] items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5">
+          <div className="flex min-h-[32px] items-center gap-2 rounded-lg bg-white/40 px-2 py-1.5 backdrop-blur-sm">
+            <Icon size={13} className="shrink-0 text-foreground/50" />
             <span className={cn(
               "min-w-0 flex-1 truncate font-mono text-xs",
-              isRevealed ? "text-foreground" : "text-foreground/80"
+              isRevealed ? "text-foreground" : "text-foreground/70"
             )}>
               {valueText}
             </span>
             <button
               onClick={() => handleToggleReveal(item)}
-              className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
+              className="shrink-0 cursor-pointer rounded-md p-1 text-foreground/50 transition-colors hover:bg-black/5 hover:text-foreground"
               aria-label={isRevealed ? "Hide value" : "Reveal value"}
             >
               {isRevealed ? <IconEyeOff size={14} /> : <IconEye size={14} />}
@@ -400,17 +424,23 @@ export default function VaultPage() {
           {(item.notes || item.tags.length > 0) && (
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               {item.notes && (
-                <p className="line-clamp-1 min-w-0 max-w-[60%] flex-1 text-[11px] text-muted-foreground">
+                <p className="line-clamp-1 min-w-0 max-w-[60%] flex-1 text-[11px] text-foreground/60">
                   {item.notes}
                 </p>
               )}
               {item.tags.slice(0, 2).map((tag) => (
-                <span key={tag} className="inline-flex items-center rounded bg-muted/60 px-1.5 py-[1px] text-[10px] font-medium text-muted-foreground leading-tight">
+                <span
+                  key={tag}
+                  className={cn(
+                    "inline-flex items-center rounded-full border px-1.5 py-[1px] text-[10px] font-medium leading-tight",
+                    getTagColor(tag)
+                  )}
+                >
                   {tag}
                 </span>
               ))}
               {item.tags.length > 2 && (
-                <span className="inline-flex items-center rounded bg-muted/60 px-1.5 py-[1px] text-[10px] font-medium text-muted-foreground leading-tight">
+                <span className="inline-flex items-center rounded-full border border-border/60 bg-black/10 px-1.5 py-[1px] text-[10px] font-medium leading-tight text-foreground/70">
                   +{item.tags.length - 2}
                 </span>
               )}
@@ -420,14 +450,14 @@ export default function VaultPage() {
           <div className="mt-auto flex items-center justify-between">
             <button
               onClick={() => copySecret(item.id)}
-              className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium text-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground/80"
             >
               <IconCopy className="size-3.5" />
               {isCopied ? "Copied!" : "Copy"}
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="More options">
+                <button className="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground/80" aria-label="More options">
                   <IconDotsVertical className="size-4" />
                 </button>
               </DropdownMenuTrigger>
