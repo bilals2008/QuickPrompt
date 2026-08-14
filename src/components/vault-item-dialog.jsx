@@ -1,0 +1,277 @@
+import { useState, useEffect, useRef } from "react"
+import { toast } from "sonner"
+import { IconLock, IconKey, IconShieldLock, IconNote, IconCreditCard, IconEye, IconEyeOff, IconPlus, IconX } from "@tabler/icons-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { parseTagsString } from "@/lib/tag-utils"
+
+export const VAULT_TYPES = [
+  { id: "api_key", label: "API Key", icon: IconKey, color: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400" },
+  { id: "password", label: "Password", icon: IconLock, color: "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400" },
+  { id: "token", label: "Token", icon: IconShieldLock, color: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400" },
+  { id: "card", label: "Card", icon: IconCreditCard, color: "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400" },
+  { id: "note", label: "Note", icon: IconNote, color: "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400" },
+]
+
+export function getVaultType(id) {
+  return VAULT_TYPES.find((t) => t.id === id) || VAULT_TYPES[VAULT_TYPES.length - 1]
+}
+
+export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini = false, hideTrigger = false }) {
+  const isEditing = Boolean(item)
+  const controlled = open !== undefined
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isOpen = controlled ? open : internalOpen
+  const [title, setTitle] = useState("")
+  const [type, setType] = useState("api_key")
+  const [value, setValue] = useState("")
+  const [notes, setNotes] = useState("")
+  const [tags, setTags] = useState([])
+  const [tagInput, setTagInput] = useState("")
+  const [showValue, setShowValue] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const titleRef = useRef(null)
+
+  function setOpen(next) {
+    if (controlled) {
+      onOpenChange?.(next)
+    } else {
+      setInternalOpen(next)
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      setTitle(item?.title || "")
+      setType(item?.type || "api_key")
+      setValue("")
+      setNotes(item?.notes || "")
+      setTags(Array.isArray(item?.tags) ? item.tags : [])
+      setTagInput("")
+      setShowValue(false)
+      setTimeout(() => titleRef.current?.focus(), 100)
+    }
+  }, [isOpen, item])
+
+  useEffect(() => {
+    if (!tagInput) return
+    const pending = parseTagsString(tagInput)
+    if (pending.length > 0) {
+      setTags((prev) => [...new Set([...prev, ...pending])])
+      setTagInput("")
+    }
+  }, [tagInput])
+
+  async function handleSave() {
+    if (!title.trim()) {
+      toast.error("Please enter a title")
+      return
+    }
+    if (!isEditing && !value.trim()) {
+      toast.error("Please enter a value")
+      return
+    }
+    const pendingTags = parseTagsString(tagInput)
+    const allTags = [...new Set([...tags, ...pendingTags])]
+    setSaving(true)
+    try {
+      if (isEditing) {
+        await window.vaultAPI.update(item.id, {
+          title: title.trim(),
+          type,
+          notes: notes.trim(),
+          tags: allTags.join(","),
+          ...(value ? { value } : {}),
+        })
+        toast.success("Credential updated")
+      } else {
+        await window.vaultAPI.create({
+          title: title.trim(),
+          type,
+          value: value.trim(),
+          notes: notes.trim(),
+          tags: allTags.join(","),
+        })
+        toast.success("Credential saved")
+      }
+      onSaved?.()
+      setOpen(false)
+    } catch (err) {
+      toast.error(err?.message || String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const valueInput = (
+    <div className="relative">
+      <Input
+        type={showValue ? "text" : "password"}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={isEditing ? "Leave blank to keep current value" : "Paste the secret value here…"}
+        className="pr-9 font-mono text-xs"
+      />
+      <button
+        type="button"
+        onClick={() => setShowValue(!showValue)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
+        aria-label={showValue ? "Hide value" : "Show value"}
+      >
+        {showValue ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+      </button>
+    </div>
+  )
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setOpen}>
+      {!isEditing && !hideTrigger && (
+        <DialogTrigger asChild>
+          <Button
+            className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all"
+            size="icon"
+          >
+            <IconPlus size={20} />
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent className={mini ? "sm:max-w-sm gap-3 sticky-dialog" : "sm:max-w-md"}>
+        <DialogHeader>
+          <DialogTitle>{isEditing ? "Edit Credential" : "Add Credential"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="vault-title">Title</Label>
+            <Input
+              ref={titleRef}
+              id="vault-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. OpenAI API Key"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="w-full cursor-pointer">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VAULT_TYPES.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex flex-wrap gap-1.5">
+              {VAULT_TYPES.map((t) => {
+                const Icon = t.icon
+                const active = type === t.id
+                return (
+                  <Badge
+                    key={t.id}
+                    variant="outline"
+                    onClick={() => setType(t.id)}
+                    className={cn(
+                      "cursor-pointer gap-1 text-[11px] font-medium transition-colors",
+                      t.color,
+                      active ? "ring-1 ring-current opacity-100" : "opacity-60 hover:opacity-100"
+                    )}
+                  >
+                    <Icon size={11} /> {t.label}
+                  </Badge>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="vault-value">{isEditing ? "Value (optional)" : "Value"}</Label>
+            {valueInput}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="vault-notes">Notes</Label>
+            <Textarea
+              id="vault-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Optional reminder, username, URL…"
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tags</Label>
+            <Input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault()
+                  const pending = parseTagsString(tagInput)
+                  if (pending.length > 0) {
+                    setTags((prev) => [...new Set([...prev, ...pending])])
+                    setTagInput("")
+                  }
+                }
+                if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+                  setTags((prev) => prev.slice(0, -1))
+                }
+              }}
+              placeholder="Type a tag and press Enter…"
+              className="text-xs placeholder:text-xs"
+            />
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="cursor-default gap-1 text-[11px] font-medium border bg-muted/40"
+                  >
+                    {tag}
+                    <span
+                      className="cursor-pointer hover:text-destructive leading-none"
+                      onClick={() => setTags(tags.filter((t) => t !== tag))}
+                    >
+                      <IconX size={10} />
+                    </span>
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Button onClick={handleSave} disabled={saving} className="w-full cursor-pointer">
+            {saving ? "Saving…" : isEditing ? "Save Changes" : "Save Credential"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function cn(...classes) {
+  return classes.filter(Boolean).join(" ")
+}

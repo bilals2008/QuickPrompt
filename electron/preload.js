@@ -70,6 +70,19 @@ contextBridge.exposeInMainWorld("db", {
   backup: () => ipcRenderer.invoke("db:backup"),
 })
 
+contextBridge.exposeInMainWorld("vaultAPI", {
+  health: () => ipcRenderer.invoke("vault:health"),
+  create: (data) => ipcRenderer.invoke("vault:create", data),
+  list: (options) => ipcRenderer.invoke("vault:list", options),
+  get: (id) => ipcRenderer.invoke("vault:get", id),
+  update: (id, data) => ipcRenderer.invoke("vault:update", id, data),
+  toggleFavorite: (id) => ipcRenderer.invoke("vault:toggleFavorite", id),
+  togglePin: (id) => ipcRenderer.invoke("vault:togglePin", id),
+  updateOrder: (updates) => ipcRenderer.invoke("vault:updateOrder", updates),
+  delete: (id) => ipcRenderer.invoke("vault:delete", id),
+  copy: (id) => ipcRenderer.invoke("vault:copy", id),
+})
+
 contextBridge.exposeInMainWorld("updateAPI", {
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   downloadUpdate: () => ipcRenderer.invoke("update:download"),

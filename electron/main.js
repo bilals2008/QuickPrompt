@@ -15,6 +15,17 @@ import {
   toggleFavorite,
   updatePromptOrder,
 } from "./database/prompts.js"
+import {
+  createVaultItem,
+  getAllVaultItems,
+  revealVaultValue,
+  updateVaultItem,
+  toggleVaultFavorite,
+  toggleVaultPin,
+  updateVaultOrder,
+  deleteVaultItem,
+  isEncryptionAvailable,
+} from "./database/vault.js"
 import updater from "electron-updater"
 const { autoUpdater } = updater
 
@@ -147,6 +158,16 @@ function buildTrayMenu() {
       },
     },
     { type: "separator" },
+    {
+      label: "Mini Vault",
+      accelerator: platform === "darwin" ? "Cmd+Alt+L" : "Ctrl+Alt+L",
+      click: () => {
+        showAndFocus("/vault")
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.setSize(440, 700)
+        }
+      },
+    },
     {
       label: "Import / Export…",
       click: () => {
@@ -467,6 +488,48 @@ ipcMain.handle("db:toggleFavorite", async (_event, id) => {
 
 ipcMain.handle("db:updatePromptOrder", async (_event, updates) => {
   return updatePromptOrder(updates)
+})
+
+ipcMain.handle("vault:health", () => {
+  return { ready: true, encryptionAvailable: isEncryptionAvailable() }
+})
+
+ipcMain.handle("vault:create", async (_event, data) => {
+  return createVaultItem(data || {})
+})
+
+ipcMain.handle("vault:list", async (_event, options) => {
+  return getAllVaultItems(options || {})
+})
+
+ipcMain.handle("vault:get", async (_event, id) => {
+  return revealVaultValue(id)
+})
+
+ipcMain.handle("vault:update", async (_event, id, data) => {
+  return updateVaultItem(id, data || {})
+})
+
+ipcMain.handle("vault:toggleFavorite", async (_event, id) => {
+  return toggleVaultFavorite(id)
+})
+
+ipcMain.handle("vault:togglePin", async (_event, id) => {
+  return toggleVaultPin(id)
+})
+
+ipcMain.handle("vault:updateOrder", async (_event, updates) => {
+  return updateVaultOrder(updates)
+})
+
+ipcMain.handle("vault:delete", async (_event, id) => {
+  return deleteVaultItem(id)
+})
+
+ipcMain.handle("vault:copy", async (_event, id) => {
+  const item = await revealVaultValue(id)
+  if (!item) return { success: false, reason: "not-found" }
+  return { success: true, value: item.value ?? "" }
 })
 
 ipcMain.handle("update:check", async () => {

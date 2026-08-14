@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider.jsx"
 import App from "./App.jsx"
 import HomePage from "./pages/HomePage.jsx"
 import Settings from "./pages/Settings.jsx"
+import VaultPage from "./pages/VaultPage.jsx"
 import ImportExportPage from "./features/import-export/ImportExportPage.jsx"
 import Onboarding from "./features/onboarding/Onboarding.jsx"
 import "./index.css"
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/" element={<App />}>
             <Route index element={<HomePage />} />
+            <Route path="vault" element={<VaultPage />} />
             <Route path="settings" element={<Settings />} />
             <Route path="import-export" element={<ImportExportPage />} />
           </Route>

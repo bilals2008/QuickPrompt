@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown } from "@tabler/icons-react"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown, IconShieldLock } from "@tabler/icons-react"
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { SortableContext, arrayMove, rectSortingStrategy, verticalListSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,23 @@ export default function HomePage() {
   const [sortOrder, setSortOrder] = useState("newest")
   const searchRef = useRef(null)
   const isCustomSort = sortOrder === "custom"
+  const [showVaultBadge, setShowVaultBadge] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const now = Date.now()
+    window.settingsAPI?.get("vaultSeenFirstAt", null).then((firstSeen) => {
+      if (cancelled) return
+      const first = firstSeen ?? now
+      if (!firstSeen) {
+        window.settingsAPI?.set("vaultSeenFirstAt", first)
+      }
+      setShowVaultBadge(now - first < 7 * 24 * 60 * 60 * 1000)
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  const vaultBadgeVisible = !sidebarVisible && showVaultBadge
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -189,6 +206,29 @@ export default function HomePage() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            {!sidebarVisible && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 cursor-pointer"
+                      onClick={() => navigate("/vault")}
+                      aria-label="Vault"
+                    >
+                      <IconShieldLock size={16} />
+                    </Button>
+                    {vaultBadgeVisible && (
+                      <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-3 min-w-3 items-center justify-center rounded bg-red-500/10 px-0.5 text-[6px] font-bold leading-none text-red-500 dark:bg-red-400/10 dark:text-red-400">
+                        NEW
+                      </span>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Vault</TooltipContent>
+              </Tooltip>
+            )}
             {!sidebarVisible && (
               <Tooltip>
                 <TooltipTrigger asChild>
