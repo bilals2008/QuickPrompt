@@ -187,23 +187,28 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
       )}
       <DialogContent className={mini ? "sm:max-w-sm gap-3 sticky-dialog" : "sm:max-w-md"}>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Credential" : "Add Credential"}</DialogTitle>
+          <DialogTitle className={mini ? "text-sm font-semibold" : undefined}>
+            {isEditing ? "Edit Credential" : "Add Credential"}
+          </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="vault-title">Title</Label>
+        <div className={mini ? "space-y-3" : "space-y-4"}>
+          <div className="space-y-1.5">
+            <Label htmlFor="vault-title" className={mini && "text-xs"}>Title</Label>
             <Input
               ref={titleRef}
               id="vault-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. OpenAI API Key"
-              className="h-8 text-sm placeholder:text-sm border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+              className={cn(
+                "h-8 border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background",
+                mini ? "text-xs placeholder:text-xs" : "text-sm placeholder:text-sm"
+              )}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Type</Label>
+          <div className="space-y-1.5">
+            <Label className={mini && "text-xs"}>Type</Label>
             <Select value={type} onValueChange={setType}>
               <SelectTrigger className="w-full cursor-pointer">
                 <SelectValue />
@@ -238,25 +243,28 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="vault-value">{isEditing ? "Value (optional)" : "Value"}</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="vault-value" className={mini && "text-xs"}>{isEditing ? "Value (optional)" : "Value"}</Label>
             {valueInput}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="vault-notes">Notes</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="vault-notes" className={mini && "text-xs"}>Notes</Label>
             <Textarea
               id="vault-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optional reminder, username, URL…"
-              rows={3}
-              className="resize-none border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+              rows={mini ? 2 : 3}
+              className={cn(
+                "resize-none border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background",
+                mini && "text-xs placeholder:text-xs"
+              )}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Tags</Label>
+          <div className="space-y-1.5">
+            <Label className={mini && "text-xs"}>Tags</Label>
             <Input
               value={tagInput}
               onChange={handleTagInputChange}
@@ -293,7 +301,11 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
             )}
           </div>
 
-          <Button onClick={handleSave} disabled={saving} className="w-full cursor-pointer">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className={cn("w-full cursor-pointer", mini && "h-8 text-xs font-medium")}
+          >
             {saving ? "Saving…" : isEditing ? "Save Changes" : "Save Credential"}
           </Button>
         </div>
