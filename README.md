@@ -48,14 +48,29 @@ Instead of losing prompts in notes or chat history, QuickPrompt keeps everything
 
 ## 🖼️ Screenshots
 
-> Add your app screenshots here
+### 🏠 Main View
 
-```
-/screenshots/home.png
-/screenshots/add-prompt.png
-/screenshots/themes.png
-/screenshots/tray-mode.png
-```
+![Workspace](screenshots/workspace.avif)
+![Grid View](screenshots/gridview.avif)
+
+### 📋 List View
+
+![List View](screenshots/listview.avif)
+
+### 🔍 Search & Quick Copy
+
+![Instant Search](screenshots/instantSearch.avif)
+![Instant Copy](screenshots/instantcopy.avif)
+
+### 🎨 Themes
+
+![Theme 1](screenshots/theming-1.avif)
+![Theme 2](screenshots/theming-2.avif)
+![Theme 3](screenshots/theming-3.avif)
+
+### 📦 Import / Export
+
+![Import / Export](screenshots/ImportExport.avif)
 
 ---
 
