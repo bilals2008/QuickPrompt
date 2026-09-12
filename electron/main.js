@@ -25,6 +25,10 @@ import {
   updateVaultOrder,
   deleteVaultItem,
   isEncryptionAvailable,
+  listAttachments,
+  createAttachment,
+  deleteAttachment,
+  getAttachmentData,
 } from "./database/vault.js"
 import updater from "electron-updater"
 const { autoUpdater } = updater
@@ -530,6 +534,22 @@ ipcMain.handle("vault:copy", async (_event, id) => {
   const item = await revealVaultValue(id)
   if (!item) return { success: false, reason: "not-found" }
   return { success: true, value: item.value ?? "" }
+})
+
+ipcMain.handle("vault:attachments:list", async (_event, vaultItemId) => {
+  return listAttachments(vaultItemId)
+})
+
+ipcMain.handle("vault:attachments:create", async (_event, { vaultItemId, filename, mimeType, data }) => {
+  return createAttachment({ vaultItemId, filename, mimeType, data })
+})
+
+ipcMain.handle("vault:attachments:delete", async (_event, id) => {
+  return deleteAttachment(id)
+})
+
+ipcMain.handle("vault:attachments:download", async (_event, id) => {
+  return getAttachmentData(id)
 })
 
 ipcMain.handle("update:check", async () => {

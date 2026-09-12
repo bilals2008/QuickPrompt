@@ -6,17 +6,13 @@ import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordi
 import {
   IconSearch, IconX, IconCopy, IconTrash, IconDotsVertical, IconEdit,
   IconStar, IconStarFilled, IconEye, IconEyeOff, IconShieldLock, IconLoader2,
-  IconMinimize, IconMaximize, IconArrowLeft, IconPin, IconPinFilled,
+  IconArrowLeft, IconPin, IconPinFilled, IconLink, IconPaperclip,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { VaultItemDialog, getVaultType } from "@/components/vault-item-dialog"
 import { SortableVaultCard } from "@/components/sortable-vault-card"
 import { cn } from "@/lib/utils"
@@ -27,6 +23,45 @@ function maskValue(value, type) {
   if (type === "password" || type === "card") return "••••••••••••"
   if (raw.length <= 8) return "•".repeat(raw.length)
   return `${raw.slice(0, 4)}${"•".repeat(8)}${raw.slice(-4)}`
+}
+
+const STICKY_TINTS = [
+  "sticky-tint-yellow",
+  "sticky-tint-green",
+  "sticky-tint-blue",
+  "sticky-tint-pink",
+  "sticky-tint-purple",
+  "sticky-tint-orange",
+  "sticky-tint-teal",
+  "sticky-tint-rose",
+]
+
+const TAG_COLORS = [
+  "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+  "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+  "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400",
+  "bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400",
+  "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400",
+  "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400",
+  "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+  "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400",
+]
+
+function getStickyTint(content) {
+  let hash = 0
+  const source = content || ""
+  for (let i = 0; i < source.length; i++) {
+    hash = source.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return STICKY_TINTS[Math.abs(hash) % STICKY_TINTS.length]
+}
+
+function getTagColor(tag) {
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
 }
 
 export default function VaultPage() {
@@ -42,6 +77,7 @@ export default function VaultPage() {
   const [editItem, setEditItem] = useState(null)
   const [encryptionAvailable, setEncryptionAvailable] = useState(true)
   const [sortOrder, setSortOrder] = useState("newest")
+  const [attachmentCounts, setAttachmentCounts] = useState({})
   const searchRef = useRef(null)
   const mini = !sidebarVisible
   const isCustomSort = sortOrder === "custom"
@@ -61,6 +97,16 @@ export default function VaultPage() {
         search,
       })
       setItems(Array.isArray(list) ? list : [])
+      const counts = {}
+      for (const item of (Array.isArray(list) ? list : [])) {
+        try {
+          const atts = await window.vaultAPI.listAttachments(item.id)
+          counts[item.id] = Array.isArray(atts) ? atts.length : 0
+        } catch {
+          counts[item.id] = 0
+        }
+      }
+      setAttachmentCounts(counts)
     } catch (err) {
       console.error("Failed to load vault:", err)
       toast.error("Failed to load vault")
@@ -72,10 +118,6 @@ export default function VaultPage() {
   useEffect(() => {
     load()
   }, [load])
-
-  useEffect(() => {
-    window.settingsAPI?.get("vaultSortOrder", "newest").then((v) => setSortOrder(v))
-  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 200)
@@ -166,24 +208,6 @@ export default function VaultPage() {
     }
   }
 
-  async function handleMiniToggle() {
-    try {
-      if (mini) {
-        await window.windowAPI.setDefaultSize("medium")
-      } else {
-        await window.windowAPI.setDefaultSize("mini")
-      }
-      if (window.windowAPI.showPopover) await window.windowAPI.showPopover()
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  function handleSortChange(value) {
-    setSortOrder(value)
-    window.settingsAPI?.set("vaultSortOrder", value)
-  }
-
   function handleDragEnd(event) {
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -201,35 +225,17 @@ export default function VaultPage() {
 
   const hasSearch = Boolean(search.trim())
 
-  const VAULT_TINTS = {
-    api_key: "sticky-tint-blue",
-    password: "sticky-tint-purple",
-    token: "sticky-tint-green",
-    card: "sticky-tint-yellow",
-    note: "sticky-tint-rose",
+  function getCardTint(item) {
+    if (item.color_bg) return null
+    return getStickyTint(item.title + item.type)
   }
 
-  const TAG_COLORS = [
-    "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
-    "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
-    "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400",
-    "bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400",
-    "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400",
-    "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400",
-    "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
-    "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400",
-  ]
-
-  function getVaultTint(item) {
-    return VAULT_TINTS[item.type] || "sticky-tint-yellow"
-  }
-
-  function getTagColor(tag) {
-    let hash = 0
-    for (let i = 0; i < tag.length; i++) {
-      hash = tag.charCodeAt(i) + ((hash << 5) - hash)
+  function getCardInlineStyle(item) {
+    if (!item.color_bg) return {}
+    return {
+      background: `linear-gradient(145deg, ${item.color_bg}dd 0%, ${item.color_bg}99 100%)`,
+      color: item.color_text || "var(--foreground)",
     }
-    return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
   }
 
   function renderCard(item, dragHandle) {
@@ -238,15 +244,19 @@ export default function VaultPage() {
     const isRevealed = Boolean(revealed[item.id])
     const isCopied = Boolean(copied[item.id])
     const valueText = isRevealed ? (values[item.id] || "—") : maskValue(item.hasValue ? "secret" : "", item.type)
+    const tint = getCardTint(item)
+    const inlineStyle = getCardInlineStyle(item)
+    const hasCustomColor = Boolean(item.color_bg)
 
     if (mini) {
       return (
         <div
           className={cn(
-            "group flex cursor-default flex-col rounded-xl transition-all sticky-note",
-            getVaultTint(item),
+            "group flex cursor-default flex-col rounded-xl transition-all",
+            hasCustomColor ? "sticky-note" : `sticky-note ${tint}`,
             isCopied && "ring-1 ring-primary/40"
           )}
+          style={inlineStyle}
         >
           <div className="flex flex-1 flex-col gap-2 p-3.5 pb-1">
             <div className="flex items-start justify-between gap-2">
@@ -257,7 +267,7 @@ export default function VaultPage() {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <h3 className="line-clamp-1 text-[13px] font-semibold leading-snug text-foreground flex items-center gap-1">
+                  <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug flex items-center gap-1">
                     {item.pinned && <IconPinFilled size={12} className="shrink-0 text-primary" />}
                     <span className="truncate">{item.title}</span>
                   </h3>
@@ -297,6 +307,13 @@ export default function VaultPage() {
               <p className="line-clamp-1 text-[11px] text-foreground/60">{item.notes}</p>
             )}
 
+            {item.url && (
+              <div className="flex items-center gap-1 text-[11px] text-foreground/60">
+                <IconLink size={10} className="shrink-0" />
+                <span className="truncate">{item.url.replace(/^https?:\/\//, '')}</span>
+              </div>
+            )}
+
             {item.tags.length > 0 && (
               <div className="flex flex-wrap items-center gap-1">
                 {item.tags.slice(0, 4).map((tag) => (
@@ -315,6 +332,13 @@ export default function VaultPage() {
                     +{item.tags.length - 4}
                   </span>
                 )}
+              </div>
+            )}
+
+            {attachmentCounts[item.id] > 0 && (
+              <div className="flex items-center gap-1 text-[10px] text-foreground/50">
+                <IconPaperclip size={10} />
+                <span>{attachmentCounts[item.id]} file(s)</span>
               </div>
             )}
           </div>
@@ -362,10 +386,11 @@ export default function VaultPage() {
     return (
       <div
         className={cn(
-          "group relative flex cursor-default flex-col overflow-hidden rounded-xl transition-all sticky-note",
-          getVaultTint(item),
+          "group relative flex cursor-default flex-col overflow-hidden rounded-xl transition-all",
+          hasCustomColor ? "sticky-note" : `border border-border bg-card hover:ring-1 hover:ring-primary/30`,
           isCopied && "ring-1 ring-primary/40"
         )}
+        style={inlineStyle}
       >
         <div className="flex flex-1 flex-col gap-2.5 p-3">
           {dragHandle && (
@@ -421,8 +446,23 @@ export default function VaultPage() {
             </button>
           </div>
 
-          {(item.notes || item.tags.length > 0) && (
+          {(item.notes || item.tags.length > 0 || item.url) && (
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              {item.url && (
+                <a
+                  href={item.url}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    window.shellAPI?.openExternal(item.url)
+                  }}
+                  className="flex items-center gap-1 min-w-0 max-w-[60%] flex-1 text-[11px] text-primary/70 hover:text-primary transition-colors"
+                  title={item.url}
+                >
+                  <IconLink size={10} className="shrink-0" />
+                  <span className="truncate">{item.url.replace(/^https?:\/\//, '')}</span>
+                </a>
+              )}
               {item.notes && (
                 <p className="line-clamp-1 min-w-0 max-w-[60%] flex-1 text-[11px] text-foreground/60">
                   {item.notes}
@@ -442,6 +482,12 @@ export default function VaultPage() {
               {item.tags.length > 2 && (
                 <span className="inline-flex items-center rounded-full border border-border/60 bg-black/10 px-1.5 py-[1px] text-[10px] font-medium leading-tight text-foreground/70">
                   +{item.tags.length - 2}
+                </span>
+              )}
+              {attachmentCounts[item.id] > 0 && (
+                <span className="flex items-center gap-1 text-[10px] text-foreground/50">
+                  <IconPaperclip size={10} />
+                  {attachmentCounts[item.id]}
                 </span>
               )}
             </div>
@@ -506,33 +552,6 @@ export default function VaultPage() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <Select value={sortOrder} onValueChange={handleSortChange}>
-              <SelectTrigger className="h-9 w-[120px] cursor-pointer text-xs" aria-label="Sort">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="oldest">Oldest</SelectItem>
-                <SelectItem value="alpha">Alphabetical</SelectItem>
-                <SelectItem value="custom">Drag &amp; drop</SelectItem>
-              </SelectContent>
-            </Select>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 cursor-pointer"
-                  onClick={handleMiniToggle}
-                  aria-label={mini ? "Expand window" : "Switch to mini window"}
-                >
-                  {mini ? <IconMaximize size={16} /> : <IconMinimize size={16} />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {mini ? "Expand window" : "Switch to mini window"}
-              </TooltipContent>
-            </Tooltip>
             {!sidebarVisible && (
               <Button
                 variant="ghost"
@@ -582,7 +601,7 @@ export default function VaultPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-20">
         {!encryptionAvailable && (
           <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
             <p className="font-semibold">Secure encryption unavailable</p>

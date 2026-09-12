@@ -257,29 +257,31 @@ export default function HomePage() {
             )}
         {(total > 0 || hasActiveFilters || hasEverHadPrompts) && (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 cursor-pointer"
-                      onClick={() => {
-                        const newMode = viewMode === "grid" ? "list" : "grid"
-                        setViewMode(newMode)
-                        window.settingsAPI?.set("defaultView", newMode)
-                      }}
-                    >
-                      {viewMode === "grid" ? (
-                        <IconLayoutList size={16} />
-                      ) : (
-                        <IconLayoutGrid size={16} />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {viewMode === "grid" ? "List view" : "Grid view"}
-                  </TooltipContent>
-                </Tooltip>
+                {sidebarVisible && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 cursor-pointer"
+                        onClick={() => {
+                          const newMode = viewMode === "grid" ? "list" : "grid"
+                          setViewMode(newMode)
+                          window.settingsAPI?.set("defaultView", newMode)
+                        }}
+                      >
+                        {viewMode === "grid" ? (
+                          <IconLayoutList size={16} />
+                        ) : (
+                          <IconLayoutGrid size={16} />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {viewMode === "grid" ? "List view" : "Grid view"}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

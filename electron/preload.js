@@ -81,6 +81,10 @@ contextBridge.exposeInMainWorld("vaultAPI", {
   updateOrder: (updates) => ipcRenderer.invoke("vault:updateOrder", updates),
   delete: (id) => ipcRenderer.invoke("vault:delete", id),
   copy: (id) => ipcRenderer.invoke("vault:copy", id),
+  listAttachments: (vaultItemId) => ipcRenderer.invoke("vault:attachments:list", vaultItemId),
+  createAttachment: (data) => ipcRenderer.invoke("vault:attachments:create", data),
+  deleteAttachment: (id) => ipcRenderer.invoke("vault:attachments:delete", id),
+  downloadAttachment: (id) => ipcRenderer.invoke("vault:attachments:download", id),
 })
 
 contextBridge.exposeInMainWorld("updateAPI", {

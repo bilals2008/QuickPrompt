@@ -26,11 +26,24 @@ CREATE TABLE IF NOT EXISTS vault_items (
   is_encrypted INTEGER DEFAULT 1,
   notes TEXT NOT NULL DEFAULT '',
   tags TEXT NOT NULL DEFAULT '',
+  url TEXT NOT NULL DEFAULT '',
   favorite INTEGER DEFAULT 0,
   pinned INTEGER DEFAULT 0,
   sort_order INTEGER DEFAULT 0,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS vault_attachments (
+  id TEXT PRIMARY KEY,
+  vault_item_id TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT '',
+  size INTEGER NOT NULL DEFAULT 0,
+  data BLOB NOT NULL,
+  is_encrypted INTEGER DEFAULT 1,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (vault_item_id) REFERENCES vault_items(id) ON DELETE CASCADE
 );
 `
 
@@ -42,6 +55,9 @@ const MIGRATIONS = [
   `ALTER TABLE vault_items ADD COLUMN tags TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE vault_items ADD COLUMN pinned INTEGER DEFAULT 0`,
   `ALTER TABLE vault_items ADD COLUMN sort_order INTEGER DEFAULT 0`,
+  `ALTER TABLE vault_items ADD COLUMN color_bg TEXT DEFAULT ''`,
+  `ALTER TABLE vault_items ADD COLUMN color_text TEXT DEFAULT ''`,
+  `ALTER TABLE vault_items ADD COLUMN url TEXT NOT NULL DEFAULT ''`,
 ]
 
 export async function createTables() {

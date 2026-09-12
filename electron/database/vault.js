@@ -41,31 +41,37 @@ function mapRow(row) {
     type: row.type,
     notes: row.notes,
     tags: row.tags ? String(row.tags).split(',').map((t) => t.trim().toLowerCase()).filter(Boolean) : [],
+    url: row.url || '',
     favorite: row.favorite,
     pinned: row.pinned,
     sort_order: row.sort_order,
+    color_bg: row.color_bg || '',
+    color_text: row.color_text || '',
     hasValue: Boolean(row.value && row.value.length > 0),
     created_at: row.created_at,
     updated_at: row.updated_at,
   }
 }
 
-export async function createVaultItem({ title = '', type = 'note', value = '', notes = '', tags = '' } = {}) {
+export async function createVaultItem({ title = '', type = 'note', value = '', notes = '', tags = '', url = '', color_bg = '', color_text = '' } = {}) {
   const db = getDatabase()
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
   const safeTitle = typeof title === 'string' ? title.trim() : ''
   const safeType = typeof type === 'string' && type ? type : 'note'
   const safeNotes = typeof notes === 'string' ? notes : ''
+  const safeUrl = typeof url === 'string' ? url.trim() : ''
+  const safeColorBg = typeof color_bg === 'string' ? color_bg : ''
+  const safeColorText = typeof color_text === 'string' ? color_text : ''
   const tagList = typeof tags === 'string'
     ? tags.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
     : (Array.isArray(tags) ? tags.map((t) => String(t).trim().toLowerCase()).filter(Boolean) : [])
   const safeTags = tagList.join(',')
   const { value: encoded, encrypted } = encryptValue(value)
   await db.run(
-    `INSERT INTO vault_items (id, title, type, value, is_encrypted, notes, tags, favorite, pinned, sort_order, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?)`,
-    [id, safeTitle, safeType, encoded, encrypted ? 1 : 0, safeNotes, safeTags, now, now]
+    `INSERT INTO vault_items (id, title, type, value, is_encrypted, notes, tags, url, favorite, pinned, sort_order, color_bg, color_text, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?, ?)`,
+    [id, safeTitle, safeType, encoded, encrypted ? 1 : 0, safeNotes, safeTags, safeUrl, safeColorBg, safeColorText, now, now]
   )
   return getVaultItem(id)
 }
@@ -130,7 +136,7 @@ export async function revealVaultValue(id) {
   }
 }
 
-export async function updateVaultItem(id, { title, type, value, notes, tags } = {}) {
+export async function updateVaultItem(id, { title, type, value, notes, tags, url, color_bg, color_text } = {}) {
   const db = getDatabase()
   const sets = []
   const params = []
@@ -149,6 +155,18 @@ export async function updateVaultItem(id, { title, type, value, notes, tags } = 
   if (tags !== undefined) {
     sets.push('tags = ?')
     params.push(sanitizeTags(tags).join(','))
+  }
+  if (url !== undefined) {
+    sets.push('url = ?')
+    params.push(typeof url === 'string' ? url.trim() : '')
+  }
+  if (color_bg !== undefined) {
+    sets.push('color_bg = ?')
+    params.push(typeof color_bg === 'string' ? color_bg : '')
+  }
+  if (color_text !== undefined) {
+    sets.push('color_text = ?')
+    params.push(typeof color_text === 'string' ? color_text : '')
   }
   if (value !== undefined) {
     const { value: encoded, encrypted } = encryptValue(value)
@@ -194,6 +212,76 @@ export async function updateVaultOrder(updates) {
 
 export async function deleteVaultItem(id) {
   const db = getDatabase()
+  await db.run('DELETE FROM vault_attachments WHERE vault_item_id = ?', [id])
   await db.run('DELETE FROM vault_items WHERE id = ?', [id])
   return { success: true }
+}
+
+export async function getAttachment(id) {
+  const db = getDatabase()
+  const row = await db.get('SELECT * FROM vault_attachments WHERE id = ?', [id])
+  if (!row) return null
+  return {
+    id: row.id,
+    vault_item_id: row.vault_item_id,
+    filename: row.filename,
+    mime_type: row.mime_type,
+    size: row.size,
+    created_at: row.created_at,
+  }
+}
+
+export async function getAttachmentData(id) {
+  const db = getDatabase()
+  const row = await db.get('SELECT * FROM vault_attachments WHERE id = ?', [id])
+  if (!row) return null
+  const decoded = row.is_encrypted ? decryptValue(row.data.toString('base64'), true) : row.data.toString('utf8')
+  return {
+    id: row.id,
+    vault_item_id: row.vault_item_id,
+    filename: row.filename,
+    mime_type: row.mime_type,
+    size: row.size,
+    data: decoded,
+    created_at: row.created_at,
+  }
+}
+
+export async function listAttachments(vaultItemId) {
+  const db = getDatabase()
+  const rows = await db.all('SELECT * FROM vault_attachments WHERE vault_item_id = ? ORDER BY created_at ASC', [vaultItemId])
+  return rows.map((r) => ({
+    id: r.id,
+    vault_item_id: r.vault_item_id,
+    filename: r.filename,
+    mime_type: r.mime_type,
+    size: r.size,
+    created_at: r.created_at,
+  }))
+}
+
+export async function createAttachment({ vaultItemId, filename, mimeType, data }) {
+  const db = getDatabase()
+  const id = crypto.randomUUID()
+  const now = new Date().toISOString()
+  const safeVaultItemId = typeof vaultItemId === 'string' ? vaultItemId.trim() : ''
+  const safeFilename = typeof filename === 'string' ? filename.trim() : 'file'
+  const safeMimeType = typeof mimeType === 'string' ? mimeType : ''
+  const rawBuf = Buffer.isBuffer(data) ? data : Buffer.from(String(data ?? ''), 'utf8')
+  const { value: encoded, encrypted } = encryptValue(rawBuf.toString('utf8'))
+  const encBuf = Buffer.from(encoded, 'utf8')
+  await db.run(
+    `INSERT INTO vault_attachments (id, vault_item_id, filename, mime_type, size, data, is_encrypted, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, safeVaultItemId, safeFilename, safeMimeType, rawBuf.length, encBuf, encrypted ? 1 : 0, now]
+  )
+  return getAttachment(id)
+}
+
+export async function deleteAttachment(id) {
+  const db = getDatabase()
+  const row = await db.get('SELECT id FROM vault_attachments WHERE id = ?', [id])
+  if (!row) return false
+  await db.run('DELETE FROM vault_attachments WHERE id = ?', [id])
+  return true
 }
