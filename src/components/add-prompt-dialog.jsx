@@ -55,7 +55,9 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
     if (open) {
       setAllTags(externalTags || [])
       setSelectedFolderId("")
-      window.folderAPI?.list().then((f) => setFolders(f || [])).catch(() => {})
+      window.folderAPI?.list().then((f) => {
+        setFolders(Array.isArray(f) ? f : [])
+      }).catch(() => setFolders([]))
     }
   }, [open, externalTags])
 
@@ -194,6 +196,18 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
               onChange={(e) => setTitle(e.target.value)}
               className="h-8 text-sm font-medium border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
             />
+            {folders.length > 0 && (
+              <select
+                value={selectedFolderId}
+                onChange={(e) => setSelectedFolderId(e.target.value)}
+                className="w-full h-8 text-xs border border-border/50 rounded-md px-2 outline-none focus:border-primary/50 bg-background/50"
+              >
+                <option value="">No folder</option>
+                {folders.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            )}
             <Textarea
               id="content"
               placeholder="Write your prompt here..."
@@ -260,7 +274,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                 className="font-medium"
               />
             </div>
-            {folders.length > 0 && (
+            {folders.length > 0 ? (
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <IconFolderFilled size={12} />
@@ -269,7 +283,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                 <select
                   value={selectedFolderId}
                   onChange={(e) => setSelectedFolderId(e.target.value)}
-                  className="w-full h-9 text-sm border border-border rounded-md px-2 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                  className="w-full h-9 text-sm border border-border rounded-md px-2 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 bg-background"
                 >
                   <option value="">No folder</option>
                   {folders.map((f) => (
@@ -277,7 +291,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                   ))}
                 </select>
               </div>
-            )}
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="content">Prompt</Label>
               <Textarea
