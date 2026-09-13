@@ -113,17 +113,17 @@ export function FolderTile({
             <IconDotsVertical size={12} className="text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={() => onOpen(folder)} className="gap-2 text-xs">
+        <DropdownMenuContent align="end" className="w-40" onPointerDown={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpen(folder) }} className="gap-2 text-xs">
             <IconFolderOpen size={12} /> Open
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onNewSubfolder(folder)} className="gap-2 text-xs">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onNewSubfolder(folder) }} className="gap-2 text-xs">
             <IconFolderPlus size={12} /> New subfolder
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onCustomize(folder)} className="gap-2 text-xs">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCustomize(folder) }} className="gap-2 text-xs">
             <IconPalette size={12} /> Customize
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onDetails(folder)} className="gap-2 text-xs">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDetails(folder) }} className="gap-2 text-xs">
             <IconInfoCircle size={12} /> Details
           </DropdownMenuItem>
           <DropdownMenuSeparator />
