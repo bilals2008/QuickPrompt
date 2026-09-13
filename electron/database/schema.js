@@ -42,8 +42,52 @@ CREATE TABLE IF NOT EXISTS vault_attachments (
   size INTEGER NOT NULL DEFAULT 0,
   data BLOB NOT NULL,
   is_encrypted INTEGER DEFAULT 1,
-  created_at TEXT NOT NULL,
+  created_at TEXT,
   FOREIGN KEY (vault_item_id) REFERENCES vault_items(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS folders (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  parent_id TEXT DEFAULT NULL,
+  icon TEXT DEFAULT 'folder',
+  color TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT '',
+  FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS prompt_folders (
+  id TEXT PRIMARY KEY,
+  prompt_id TEXT NOT NULL,
+  folder_id TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE CASCADE,
+  FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS vault_folders (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  parent_id TEXT DEFAULT NULL,
+  icon TEXT DEFAULT 'folder',
+  color TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT '',
+  FOREIGN KEY (parent_id) REFERENCES vault_folders(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS vault_item_folders (
+  id TEXT PRIMARY KEY,
+  vault_item_id TEXT NOT NULL,
+  folder_id TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (vault_item_id) REFERENCES vault_items(id) ON DELETE CASCADE,
+  FOREIGN KEY (folder_id) REFERENCES vault_folders(id) ON DELETE CASCADE
 );
 `
 
@@ -58,6 +102,9 @@ const MIGRATIONS = [
   `ALTER TABLE vault_items ADD COLUMN color_bg TEXT DEFAULT ''`,
   `ALTER TABLE vault_items ADD COLUMN color_text TEXT DEFAULT ''`,
   `ALTER TABLE vault_items ADD COLUMN url TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE folders ADD COLUMN icon TEXT DEFAULT 'folder'`,
+  `ALTER TABLE folders ADD COLUMN color TEXT DEFAULT ''`,
+  `ALTER TABLE folders ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''`,
 ]
 
 export async function createTables() {
