@@ -1,3 +1,63 @@
+# 🚀 QuickPrompt v2.1.0
+
+**Release Date:** September 13, 2026 ✨
+🏷️ Version: v2.1.0
+
+---
+
+## ✨ Added
+
+### 🎨 Themes & Appearance
+
+* New **Noir** theme with dark, moody styling
+* Default theme changed to **Volt** for a fresher look
+* Theme cleanup — kept only Light, Cyberpunk, Volt, and Noir
+
+### 🖱️ Interaction
+
+* Double-click any prompt card to view its full content in a dialog
+* Entrance animation for folder tiles in CollectionsPage and VaultPage
+
+### 📂 Folder Management
+
+* Dialog-based folder creation for a smoother workflow
+* Bulk selection mode for moving multiple items into folders at once
+
+### 🚀 Onboarding
+
+* Enhanced onboarding steps with new icons and clearer descriptions
+
+### 🏠 About
+
+* About section redesigned with improved layout and styling
+
+---
+
+## 🔄 Changed
+
+### ⚡ Default Theme
+
+* Default theme switched from Light to **Volt**
+
+---
+
+## 🐛 Fixed
+
+### 📝 UI Fixes
+
+* Select all button logic simplified in CollectionsPage and VaultPage
+* Dropdown menu actions no longer close prematurely
+
+---
+
+## 🙏 Thank You
+
+A polish release — new Noir theme, smoother folder management, better onboarding, and a handful of UX fixes. QuickPrompt keeps getting better thanks to your feedback! ✨
+
+---
+
+---
+
 # 🚀 QuickPrompt v2.0.0
 
 **Release Date:** September 13, 2026 ✨
