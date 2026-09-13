@@ -117,6 +117,15 @@ const themeCategories = [
         accent: "#c8ff00",
         text: "#d4e4e8",
       },
+      {
+        id: "noir",
+        label: "Noir",
+        desc: "Clean dark with coral accent",
+        bg: "#0a0a0a",
+        card: "#171717",
+        accent: "#ff6b6b",
+        text: "#fafafa",
+      },
     ],
   },
 ]

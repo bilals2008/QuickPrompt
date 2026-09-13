@@ -13,7 +13,7 @@ import "./index.css"
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ThemeProvider defaultTheme="dark">
+    <ThemeProvider defaultTheme="volt">
       <HashRouter>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />

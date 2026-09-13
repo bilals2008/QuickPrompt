@@ -20,7 +20,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"]));
+@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="noir"]));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -150,6 +150,36 @@
   --sidebar-accent-foreground: #c4d8dc;
   --sidebar-border: #122830;
   --sidebar-ring: #c8ff00;
+}
+
+[data-theme="noir"] {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #ff6b6b;
+  --primary-foreground: #0a0a0a;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #fafafa;
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
+  --destructive: #ff4444;
+  --destructive-foreground: #ffffff;
+  --border: #262626;
+  --input: #262626;
+  --ring: #ff6b6b;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #a3a3a3;
+  --sidebar-primary: #ff6b6b;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #262626;
+  --sidebar-ring: #ff6b6b;
 }
 
 * {
@@ -336,6 +366,38 @@ html *::after {
 
 [data-theme="volt"] .sticky-tint-rose {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.08) 100%);
+}
+
+[data-theme="noir"] .sticky-tint-yellow {
+  background: linear-gradient(145deg, rgba(254, 240, 138, 0.1) 0%, rgba(253, 224, 71, 0.06) 100%);
+}
+
+[data-theme="noir"] .sticky-tint-green {
+  background: linear-gradient(145deg, rgba(134, 239, 172, 0.1) 0%, rgba(74, 222, 128, 0.06) 100%);
+}
+
+[data-theme="noir"] .sticky-tint-blue {
+  background: linear-gradient(145deg, rgba(147, 197, 253, 0.1) 0%, rgba(96, 165, 250, 0.06) 100%);
+}
+
+[data-theme="noir"] .sticky-tint-pink {
+  background: linear-gradient(145deg, rgba(244, 114, 182, 0.1) 0%, rgba(236, 72, 153, 0.06) 100%);
+}
+
+[data-theme="noir"] .sticky-tint-purple {
+  background: linear-gradient(145deg, rgba(192, 132, 252, 0.1) 0%, rgba(168, 85, 247, 0.06) 100%);
+}
+
+[data-theme="noir"] .sticky-tint-orange {
+  background: linear-gradient(145deg, rgba(251, 146, 60, 0.1) 0%, rgba(249, 115, 22, 0.06) 100%);
+}
+
+[data-theme="noir"] .sticky-tint-teal {
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.1) 0%, rgba(20, 184, 166, 0.06) 100%);
+}
+
+[data-theme="noir"] .sticky-tint-rose {
+  background: linear-gradient(145deg, rgba(251, 113, 133, 0.1) 0%, rgba(244, 63, 94, 0.06) 100%);
 }
 
 @keyframes stickyAppear {

@@ -22,7 +22,7 @@ function FolderList({ folders, byId, emptyLabel, onSelect }) {
     return <p className="py-6 text-center text-xs text-muted-foreground">{emptyLabel}</p>
   }
   return (
-    <div className="flex flex-col">
+    <div className="flex max-h-[240px] flex-col overflow-y-auto pr-1">
       {folders.map((folder, idx) => (
         <div key={folder.id}>
           {idx > 0 && <Separator />}
