@@ -4,7 +4,7 @@ import { toast } from "sonner"
 import {
   IconFolderFilled, IconFolderPlus, IconSearch, IconX,
   IconChevronRight, IconDotsVertical, IconEdit,
-  IconTrash, IconCopy, IconStar,
+  IconTrash, IconCopy, IconStar, IconInfoCircle,
   IconStarFilled, IconRefresh, IconArrowLeft, IconFiles, IconPlus, IconCheck,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -36,6 +36,9 @@ export default function CollectionsPage() {
   const [addPromptsOpen, setAddPromptsOpen] = useState(false)
   const [allPrompts, setAllPrompts] = useState([])
   const [addSearch, setAddSearch] = useState("")
+  const [detailsFolder, setDetailsFolder] = useState(null)
+  const [detailsPrompts, setDetailsPrompts] = useState([])
+  const [detailsChildFolders, setDetailsChildFolders] = useState([])
   const createInputRef = useRef(null)
 
   const loadFolders = useCallback(async () => {
@@ -143,6 +146,18 @@ export default function CollectionsPage() {
     } catch { toast.error("Failed") }
   }
 
+  const openDetails = async (folder) => {
+    setDetailsFolder(folder)
+    try {
+      const [promptsResult, children] = await Promise.all([
+        window.folderAPI.getPrompts(folder.id),
+        window.folderAPI.children(folder.id),
+      ])
+      setDetailsPrompts(promptsResult?.prompts || [])
+      setDetailsChildFolders(children || [])
+    } catch { setDetailsPrompts([]); setDetailsChildFolders([]) }
+  }
+
   const copyPrompt = (text) => {
     navigator.clipboard.writeText(text)
     toast.success("Copied")
@@ -174,25 +189,25 @@ export default function CollectionsPage() {
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-border/30 px-4 py-2.5">
         {view === "prompts" ? (
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={goBackToFolders}>
-            <IconArrowLeft size={14} />
-          </Button>
+          <button onClick={goBackToFolders} className="shrink-0 p-1 rounded hover:bg-accent/50 transition-colors cursor-pointer">
+            <IconArrowLeft size={14} className="text-muted-foreground" />
+          </button>
         ) : (
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => navigate("/")}>
-            <IconArrowLeft size={14} />
-          </Button>
+          <button onClick={() => navigate("/")} className="shrink-0 p-1 rounded hover:bg-accent/50 transition-colors cursor-pointer">
+            <IconArrowLeft size={14} className="text-muted-foreground" />
+          </button>
         )}
-        <h1 className="text-sm font-semibold text-foreground shrink-0">
+        <h1 className="text-sm font-semibold text-foreground min-w-0 truncate">
           {view === "prompts" ? activeFolder?.name || "Folder" : "Collections"}
         </h1>
-        <div className="flex-1" />
-        <div className="relative flex items-center">
+        <div className="flex-1 min-w-0" />
+        <div className="relative flex items-center shrink-0">
           <IconSearch size={12} className="absolute left-2 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={view === "prompts" ? "Search in folder..." : "Search folders..."}
-            className="h-7 w-44 pl-7 pr-7 text-xs border-border/40 bg-background/60"
+            className="h-7 w-36 sm:w-44 pl-7 pr-7 text-xs border-border/40 bg-background/60"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-2 text-muted-foreground hover:text-foreground cursor-pointer">
@@ -322,6 +337,7 @@ export default function CollectionsPage() {
                   onOpen={openFolder}
                   onRename={renameFolder}
                   onDelete={deleteFolder}
+                  onDetails={openDetails}
                 />
               ))}
             </div>
@@ -347,7 +363,7 @@ export default function CollectionsPage() {
                         onOpen={openFolder}
                         onRename={renameFolder}
                         onDelete={deleteFolder}
-                        compact
+                        onDetails={openDetails}
                       />
                     ))}
                   </div>
@@ -405,6 +421,15 @@ export default function CollectionsPage() {
         search={addSearch}
         onSearchChange={setAddSearch}
         onAdd={addPromptsToFolder}
+      />
+
+      {/* Folder details dialog */}
+      <FolderDetailsDialog
+        folder={detailsFolder}
+        prompts={detailsPrompts}
+        childFolders={detailsChildFolders}
+        open={Boolean(detailsFolder)}
+        onOpenChange={(o) => { if (!o) setDetailsFolder(null) }}
       />
     </div>
   )
@@ -497,7 +522,7 @@ function AddPromptsDialog({ open, onOpenChange, allPrompts, folderPrompts, searc
   )
 }
 
-function FolderTile({ folder, index, onOpen, onRename, onDelete }) {
+function FolderTile({ folder, index, onOpen, onRename, onDelete, onDetails }) {
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(folder.name)
   const inputRef = useRef(null)
@@ -511,7 +536,7 @@ function FolderTile({ folder, index, onOpen, onRename, onDelete }) {
 
   return (
     <div
-      className="group relative flex flex-col items-center gap-1 rounded-lg border border-border/30 bg-card/50 cursor-pointer transition-all duration-200 hover:border-border/60 hover:bg-accent/30 hover:shadow-sm p-2"
+      className="group relative flex flex-col items-center gap-1 rounded-lg border border-border/30 bg-card/50 cursor-pointer transition-all duration-200 hover:border-border/60 hover:bg-accent/30 hover:shadow-sm p-2 overflow-hidden"
       style={{ animationDelay: `${Math.min(index * 30, 300)}ms`, animationFillMode: "backwards" }}
       onDoubleClick={() => onOpen(folder)}
     >
@@ -528,6 +553,9 @@ function FolderTile({ folder, index, onOpen, onRename, onDelete }) {
         <DropdownMenuContent align="end" className="w-36">
           <DropdownMenuItem onClick={() => { setRenaming(true); setRenameValue(folder.name); setTimeout(() => inputRef.current?.select(), 50) }} className="gap-2 text-xs">
             <IconEdit size={12} /> Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onDetails(folder)} className="gap-2 text-xs">
+            <IconInfoCircle size={12} /> Details
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onDelete(folder.id)} className="gap-2 text-xs text-destructive">
@@ -557,7 +585,7 @@ function FolderTile({ folder, index, onOpen, onRename, onDelete }) {
           autoFocus
         />
       ) : (
-        <p className="text-[10px] font-medium text-center w-full truncate text-muted-foreground group-hover:text-foreground transition-colors">
+        <p className="text-[10px] font-medium text-center w-full min-w-0 truncate text-muted-foreground group-hover:text-foreground transition-colors">
           {folder.name}
         </p>
       )}
@@ -608,5 +636,46 @@ function PromptRow({ prompt, index, onCopy, onRemove, onToggleFavorite, isSelect
         )}
       </div>
     </div>
+  )
+}
+
+function FolderDetailsDialog({ folder, prompts, childFolders, open, onOpenChange }) {
+  if (!folder) return null
+  const created = folder.created_at ? new Date(folder.created_at) : null
+  const modified = folder.updated_at ? new Date(folder.updated_at) : null
+  const fmt = (d) => d ? d.toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" }) : "—"
+  const parts = []
+  if (prompts.length > 0) parts.push(`${prompts.length} Prompt${prompts.length !== 1 ? "s" : ""}`)
+  if (childFolders.length > 0) parts.push(`${childFolders.length} Folder${childFolders.length !== 1 ? "s" : ""}`)
+  const contains = parts.length > 0 ? parts.join(", ") : "Empty"
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="p-0 w-80">
+        <DialogHeader className="px-4 pt-4 pb-3">
+          <DialogTitle className="text-sm flex items-center gap-2">
+            <IconFolderFilled size={18} className="text-yellow-500/80 shrink-0" />
+            <span className="truncate">{folder.name}</span>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="px-4 pb-4 space-y-2 text-xs">
+          <div className="flex items-center gap-3 py-1">
+            <span className="text-muted-foreground w-20 shrink-0">Type:</span>
+            <span className="text-foreground">File folder</span>
+          </div>
+          <div className="flex items-center gap-3 py-1">
+            <span className="text-muted-foreground w-20 shrink-0">Contains:</span>
+            <span className="text-foreground">{contains}</span>
+          </div>
+          <div className="flex items-center gap-3 py-1">
+            <span className="text-muted-foreground w-20 shrink-0">Created:</span>
+            <span className="text-foreground">{fmt(created)}</span>
+          </div>
+          <div className="flex items-center gap-3 py-1">
+            <span className="text-muted-foreground w-20 shrink-0">Modified:</span>
+            <span className="text-foreground">{fmt(modified)}</span>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
