@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { toast } from "sonner"
 import { IconLock, IconKey, IconShieldLock, IconNote, IconCreditCard, IconEye, IconEyeOff, IconPlus, IconX, IconPalette, IconLink, IconPaperclip, IconFile, IconDownload, IconFolderFilled } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -18,9 +18,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import { parseTagsString, splitTagInput } from "@/lib/tag-utils"
 import { getTagColor } from "@/lib/tag-colors"
 import { cn } from "@/lib/utils"
+
+// Radix Select does not allow an empty string value, so "no folder" needs a sentinel.
+const NO_FOLDER = "__none__"
 
 export const VAULT_TYPES = [
   { id: "api_key", label: "API Key", icon: IconKey, color: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400", activeColor: "bg-blue-500/20 text-blue-600 border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/25" },
@@ -73,7 +84,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
   const [attachments, setAttachments] = useState([])
   const [attachmentUploading, setAttachmentUploading] = useState(false)
   const [vaultFolders, setVaultFolders] = useState([])
-  const [selectedFolderId, setSelectedFolderId] = useState("")
+  const [selectedFolderId, setSelectedFolderId] = useState(NO_FOLDER)
   const titleRef = useRef(null)
   const valueRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -100,9 +111,16 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
       setColorText(item?.color_text || "")
       setColorPickerOpen(false)
       setAttachments([])
-      setSelectedFolderId("")
+      setSelectedFolderId(NO_FOLDER)
       if (item?.id) {
         window.vaultAPI?.listAttachments(item.id).then(setAttachments).catch(() => {})
+        // Pre-select the folder the item already lives in, if any.
+        window.vaultFolderAPI
+          ?.getItemFolders?.(item.id)
+          .then((folders) => {
+            if (Array.isArray(folders) && folders.length > 0) setSelectedFolderId(folders[0].id)
+          })
+          .catch(() => {})
       }
       window.vaultFolderAPI?.list().then((f) => setVaultFolders(f || [])).catch(() => {})
       setTimeout(() => titleRef.current?.focus(), 100)
@@ -172,7 +190,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
         savedId = created?.id
         toast.success("Credential saved")
       }
-      if (selectedFolderId && savedId) {
+      if (selectedFolderId !== NO_FOLDER && savedId) {
         await window.vaultFolderAPI?.addItem(savedId, selectedFolderId).catch(() => {})
       }
       onSaved?.()
@@ -186,6 +204,23 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
 
   const selectedType = getVaultType(type)
   const TypeIcon = selectedType.icon
+  const selectedFolder = vaultFolders.find((f) => f.id === selectedFolderId) || null
+
+  const folderDepth = useMemo(() => {
+    const byId = {}
+    for (const f of vaultFolders) byId[f.id] = f
+    const depth = {}
+    for (const f of vaultFolders) {
+      let d = 0
+      let current = f
+      while (current?.parent_id && byId[current.parent_id]) {
+        d += 1
+        current = byId[current.parent_id]
+      }
+      depth[f.id] = d
+    }
+    return depth
+  }, [vaultFolders])
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
@@ -223,7 +258,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
 
         <div className="px-4 py-3 space-y-3 overflow-y-auto flex-1 min-h-0">
           <div className="space-y-1.5">
-            <Label htmlFor="vault-title" className="text-[11px] font-medium text-muted-foreground">Title</Label>
+            <Label htmlFor="vault-title" className="text-[11px] font-medium text-foreground/70">Title</Label>
             <Input
               ref={titleRef}
               id="vault-title"
@@ -236,25 +271,43 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
 
           {vaultFolders.length > 0 && (
             <div className="space-y-1.5">
-              <Label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+              <Label className="text-[11px] font-medium text-foreground/70 flex items-center gap-1.5">
                 <IconFolderFilled size={11} />
                 Folder
               </Label>
-              <select
-                value={selectedFolderId}
-                onChange={(e) => setSelectedFolderId(e.target.value)}
-                className="w-full h-8 text-sm border border-border/60 bg-background/40 rounded-md px-2 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">No folder</option>
-                {vaultFolders.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
+              <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
+                <SelectTrigger className="h-8 w-full border-border/60 bg-background/40 text-sm cursor-pointer">
+                  <SelectValue>
+                    {selectedFolder && (
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <FolderGlyph folder={selectedFolder} size={13} />
+                        <span className="truncate">{selectedFolder.name}</span>
+                      </span>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  <SelectItem value={NO_FOLDER}>
+                    <span className="text-muted-foreground">No folder</span>
+                  </SelectItem>
+                  {vaultFolders.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      <span
+                        className="flex min-w-0 items-center gap-1.5"
+                        style={{ paddingLeft: `${folderDepth[f.id] * 12}px` }}
+                      >
+                        <FolderGlyph folder={f} size={13} />
+                        <span className="truncate">{f.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="vault-url" className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+            <Label htmlFor="vault-url" className="text-[11px] font-medium text-foreground/70 flex items-center gap-1.5">
               <IconLink size={11} />
               URL
             </Label>
@@ -268,7 +321,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-medium text-muted-foreground">Type</Label>
+            <Label className="text-[11px] font-medium text-foreground/70">Type</Label>
             <div className="grid grid-cols-5 gap-1">
               {VAULT_TYPES.map((t) => {
                 const Icon = t.icon
@@ -294,7 +347,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="vault-value" className="text-[11px] font-medium text-muted-foreground">
+            <Label htmlFor="vault-value" className="text-[11px] font-medium text-foreground/70">
               {isEditing ? "Value (optional)" : "Secret Value"}
             </Label>
             <div className="relative">
@@ -319,7 +372,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="vault-notes" className="text-[11px] font-medium text-muted-foreground">Notes</Label>
+            <Label htmlFor="vault-notes" className="text-[11px] font-medium text-foreground/70">Notes</Label>
             <Textarea
               id="vault-notes"
               value={notes}
@@ -331,7 +384,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-medium text-muted-foreground">Tags</Label>
+            <Label className="text-[11px] font-medium text-foreground/70">Tags</Label>
             <Input
               value={tagInput}
               onChange={handleTagInputChange}
@@ -371,7 +424,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
 
           {isEditing && (
             <div className="space-y-2">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Label className="text-xs font-medium text-foreground/70 flex items-center gap-1.5">
                 <IconPaperclip size={12} />
                 Attachments
               </Label>
@@ -491,7 +544,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-medium text-muted-foreground">Card Tint</Label>
+            <Label className="text-[11px] font-medium text-foreground/70">Card Tint</Label>
             <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
               <PopoverTrigger asChild>
                 <button
@@ -533,7 +586,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
               <PopoverContent className="w-52 p-3" align="start">
                 <div className="space-y-3">
                   <div className="space-y-2">
-                    <span className="text-[11px] font-medium text-muted-foreground">Quick pick</span>
+                    <span className="text-[11px] font-medium text-foreground/70">Quick pick</span>
                     <div className="grid grid-cols-4 gap-1.5">
                       {CARD_TINTS.map((c) => (
                         <button
@@ -554,7 +607,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <span className="text-[11px] font-medium text-muted-foreground">Custom hex</span>
+                    <span className="text-[11px] font-medium text-foreground/70">Custom hex</span>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"

@@ -1,10 +1,14 @@
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
+import { Input } from "@/components/ui/input"
 import { FOLDER_ICON_OPTIONS, FOLDER_COLOR_OPTIONS } from "@/lib/folder-appearance"
+
+const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
 
 /**
  * Compact icon + color picker shared by the folder customize dialogs (prompt
- * and vault folders) and the Settings > Folders section. Designed to stay
- * usable at the 360px mini width.
+ * and vault folders) and the Settings > Folders section. Includes a custom
+ * hex/color wheel option on top of the presets.
  */
 export function FolderAppearancePicker({
   icon,
@@ -13,6 +17,30 @@ export function FolderAppearancePicker({
   onColorChange,
   className,
 }) {
+  const [hexDraft, setHexDraft] = useState(color || "")
+
+  useEffect(() => {
+    setHexDraft(color || "")
+  }, [color])
+
+  const commitHex = () => {
+    const raw = hexDraft.trim()
+    if (raw === "") {
+      onColorChange("")
+      return
+    }
+    const withHash = raw.startsWith("#") ? raw : `#${raw}`
+    if (HEX_PATTERN.test(withHash)) {
+      const normalized = withHash.toLowerCase()
+      setHexDraft(normalized)
+      onColorChange(normalized)
+    } else {
+      setHexDraft(color || "")
+    }
+  }
+
+  const wheelValue = HEX_PATTERN.test(color || "") ? color : "#f59e0b"
+
   return (
     <div className={cn("space-y-4", className)}>
       <div>
@@ -65,6 +93,40 @@ export function FolderAppearancePicker({
               />
             )
           })}
+        </div>
+
+        {/* Custom color */}
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            type="color"
+            value={wheelValue}
+            onChange={(e) => onColorChange(e.target.value)}
+            aria-label="Pick a custom color"
+            className="size-7 shrink-0 cursor-pointer rounded-md border border-border/60 bg-transparent p-0.5"
+          />
+          <Input
+            value={hexDraft}
+            onChange={(e) => setHexDraft(e.target.value)}
+            onBlur={commitHex}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault()
+                commitHex()
+              }
+            }}
+            placeholder="Custom hex — #f59e0b"
+            className="h-7 flex-1 font-mono text-[11px]"
+            aria-label="Custom hex color"
+          />
+          {color && (
+            <button
+              type="button"
+              onClick={() => onColorChange("")}
+              className="shrink-0 cursor-pointer rounded-md px-1.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
     </div>
