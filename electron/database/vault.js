@@ -33,6 +33,34 @@ function decryptValue(encoded, wasEncrypted) {
   }
 }
 
+function parseMeta(raw) {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function serializeMeta(meta) {
+  if (meta === undefined) return undefined
+  if (meta === null) return ''
+  if (typeof meta === 'string') {
+    const parsed = parseMeta(meta)
+    return Object.keys(parsed).length > 0 ? JSON.stringify(parsed) : ''
+  }
+  if (typeof meta === 'object') {
+    const clean = {}
+    for (const [key, value] of Object.entries(meta)) {
+      if (value === undefined || value === null || value === '') continue
+      clean[key] = String(value)
+    }
+    return Object.keys(clean).length > 0 ? JSON.stringify(clean) : ''
+  }
+  return ''
+}
+
 function mapRow(row) {
   if (!row) return null
   return {
@@ -40,6 +68,7 @@ function mapRow(row) {
     title: row.title,
     type: row.type,
     notes: row.notes,
+    meta: parseMeta(row.meta),
     tags: row.tags ? String(row.tags).split(',').map((t) => t.trim().toLowerCase()).filter(Boolean) : [],
     url: row.url || '',
     favorite: row.favorite,
@@ -53,7 +82,7 @@ function mapRow(row) {
   }
 }
 
-export async function createVaultItem({ title = '', type = 'note', value = '', notes = '', tags = '', url = '', color_bg = '', color_text = '' } = {}) {
+export async function createVaultItem({ title = '', type = 'note', value = '', notes = '', meta = '', tags = '', url = '', color_bg = '', color_text = '' } = {}) {
   const db = getDatabase()
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
@@ -63,15 +92,16 @@ export async function createVaultItem({ title = '', type = 'note', value = '', n
   const safeUrl = typeof url === 'string' ? url.trim() : ''
   const safeColorBg = typeof color_bg === 'string' ? color_bg : ''
   const safeColorText = typeof color_text === 'string' ? color_text : ''
+  const safeMeta = serializeMeta(meta) ?? ''
   const tagList = typeof tags === 'string'
     ? tags.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
     : (Array.isArray(tags) ? tags.map((t) => String(t).trim().toLowerCase()).filter(Boolean) : [])
   const safeTags = tagList.join(',')
   const { value: encoded, encrypted } = encryptValue(value)
   await db.run(
-    `INSERT INTO vault_items (id, title, type, value, is_encrypted, notes, tags, url, favorite, pinned, sort_order, color_bg, color_text, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?, ?)`,
-    [id, safeTitle, safeType, encoded, encrypted ? 1 : 0, safeNotes, safeTags, safeUrl, safeColorBg, safeColorText, now, now]
+    `INSERT INTO vault_items (id, title, type, value, is_encrypted, notes, meta, tags, url, favorite, pinned, sort_order, color_bg, color_text, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?, ?)`,
+    [id, safeTitle, safeType, encoded, encrypted ? 1 : 0, safeNotes, safeMeta, safeTags, safeUrl, safeColorBg, safeColorText, now, now]
   )
   return getVaultItem(id)
 }
@@ -136,7 +166,7 @@ export async function revealVaultValue(id) {
   }
 }
 
-export async function updateVaultItem(id, { title, type, value, notes, tags, url, color_bg, color_text } = {}) {
+export async function updateVaultItem(id, { title, type, value, notes, meta, tags, url, color_bg, color_text } = {}) {
   const db = getDatabase()
   const sets = []
   const params = []
@@ -151,6 +181,10 @@ export async function updateVaultItem(id, { title, type, value, notes, tags, url
   if (notes !== undefined) {
     sets.push('notes = ?')
     params.push(typeof notes === 'string' ? notes : '')
+  }
+  if (meta !== undefined) {
+    sets.push('meta = ?')
+    params.push(serializeMeta(meta) ?? '')
   }
   if (tags !== undefined) {
     sets.push('tags = ?')

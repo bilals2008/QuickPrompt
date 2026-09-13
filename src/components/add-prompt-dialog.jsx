@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { TagManager } from "@/components/tag-manager"
+import { FolderSelect, NO_FOLDER } from "@/components/folders/FolderSelect"
 import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
 import { cn } from "@/lib/utils"
 import { splitTagInput, parseTagsString } from "@/lib/tag-utils"
@@ -45,7 +46,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   const [selectedTags, setSelectedTags] = useState([])
   const [allTags, setAllTags] = useState(externalTags || [])
   const [folders, setFolders] = useState([])
-  const [selectedFolderId, setSelectedFolderId] = useState("")
+  const [selectedFolderId, setSelectedFolderId] = useState(NO_FOLDER)
   const [cardDisplay] = useCardDisplaySettings()
   const inputRef = useRef(null)
   const titleRef = useRef(null)
@@ -54,7 +55,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   useEffect(() => {
     if (open) {
       setAllTags(externalTags || [])
-      setSelectedFolderId("")
+      setSelectedFolderId(NO_FOLDER)
       window.folderAPI?.list().then((f) => {
         setFolders(Array.isArray(f) ? f : [])
       }).catch(() => setFolders([]))
@@ -125,6 +126,13 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
     setSelectedTags(selectedTags.filter((t) => t !== tag))
   }
 
+  async function createFolderInline(name) {
+    const created = await window.folderAPI?.create({ name, parentId: null })
+    const list = await window.folderAPI?.list()
+    setFolders(Array.isArray(list) ? list : [])
+    return created
+  }
+
   async function savePrompt() {
     if (!content.trim()) {
       toast.error("Please enter a prompt")
@@ -140,7 +148,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
         content: content.trim(),
         tags: tagsToSave.join(","),
       })
-      if (selectedFolderId && created?.id) {
+      if (selectedFolderId !== NO_FOLDER && created?.id) {
         await window.folderAPI?.addPrompt(created.id, selectedFolderId).catch(() => {})
       }
       for (const newTag of fresh) {
@@ -196,18 +204,13 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
               onChange={(e) => setTitle(e.target.value)}
               className="h-8 text-sm font-medium border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
             />
-            {folders.length > 0 && (
-              <select
-                value={selectedFolderId}
-                onChange={(e) => setSelectedFolderId(e.target.value)}
-                className="w-full h-8 text-xs border border-border/50 rounded-md px-2 outline-none focus:border-primary/50 bg-background/50"
-              >
-                <option value="">No folder</option>
-                {folders.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            )}
+            <FolderSelect
+              value={selectedFolderId}
+              onChange={setSelectedFolderId}
+              folders={folders}
+              onCreate={createFolderInline}
+              triggerClassName="border-border/50 bg-background/50"
+            />
             <Textarea
               id="content"
               placeholder="Write your prompt here..."
@@ -274,24 +277,18 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                 className="font-medium"
               />
             </div>
-            {folders.length > 0 ? (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  <IconFolderFilled size={12} />
-                  Folder
-                </Label>
-                <select
-                  value={selectedFolderId}
-                  onChange={(e) => setSelectedFolderId(e.target.value)}
-                  className="w-full h-9 text-sm border border-border rounded-md px-2 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 bg-background"
-                >
-                  <option value="">No folder</option>
-                  {folders.map((f) => (
-                    <option key={f.id} value={f.id}>{f.name}</option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <IconFolderFilled size={12} />
+                Folder
+              </Label>
+              <FolderSelect
+                value={selectedFolderId}
+                onChange={setSelectedFolderId}
+                folders={folders}
+                onCreate={createFolderInline}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="content">Prompt</Label>
               <Textarea

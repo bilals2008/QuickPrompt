@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { IconLock, IconKey, IconShieldLock, IconNote, IconCreditCard, IconEye, IconEyeOff, IconPlus, IconX, IconPalette, IconLink, IconPaperclip, IconFile, IconDownload, IconFolderFilled } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -18,20 +18,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { FolderGlyph } from "@/components/folders/FolderGlyph"
+import { FolderSelect, NO_FOLDER } from "@/components/folders/FolderSelect"
 import { parseTagsString, splitTagInput } from "@/lib/tag-utils"
 import { getTagColor } from "@/lib/tag-colors"
+import { getVaultTypeFields, readVaultField, cardLast4 } from "@/lib/vault-types"
 import { cn } from "@/lib/utils"
-
-// Radix Select does not allow an empty string value, so "no folder" needs a sentinel.
-const NO_FOLDER = "__none__"
 
 export const VAULT_TYPES = [
   { id: "api_key", label: "API Key", icon: IconKey, color: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400", activeColor: "bg-blue-500/20 text-blue-600 border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/25" },
@@ -73,6 +64,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
   const [type, setType] = useState("api_key")
   const [value, setValue] = useState("")
   const [notes, setNotes] = useState("")
+  const [meta, setMeta] = useState({})
   const [url, setUrl] = useState("")
   const [tags, setTags] = useState([])
   const [tagInput, setTagInput] = useState("")
@@ -86,7 +78,6 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
   const [vaultFolders, setVaultFolders] = useState([])
   const [selectedFolderId, setSelectedFolderId] = useState(NO_FOLDER)
   const titleRef = useRef(null)
-  const valueRef = useRef(null)
   const fileInputRef = useRef(null)
 
   function setOpen(next) {
@@ -103,6 +94,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
       setType(item?.type || "api_key")
       setValue("")
       setNotes(item?.notes || "")
+      setMeta(item?.meta || {})
       setUrl(item?.url || "")
       setTags(Array.isArray(item?.tags) ? item.tags : [])
       setTagInput("")
@@ -155,38 +147,45 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
       toast.error("Please enter a title")
       return
     }
-    if (!isEditing && !value.trim()) {
-      toast.error("Please enter a value")
-      return
+    if (!isEditing) {
+      const missing = typeFields.find(
+        (f) => f.required && !readVaultField(form, f.key).trim()
+      )
+      if (missing) {
+        toast.error(`Please enter ${missing.label.toLowerCase()}`)
+        return
+      }
     }
     const pendingTags = parseTagsString(tagInput)
     const allTags = [...new Set([...tags, ...pendingTags])]
+
+    const nextMeta = { ...meta }
+    if (type === "card") {
+      const last4 = cardLast4(value)
+      if (last4) nextMeta.last4 = last4
+      else delete nextMeta.last4
+    } else {
+      delete nextMeta.last4
+    }
+
     setSaving(true)
     try {
       let savedId = item?.id
+      const base = {
+        title: title.trim(),
+        type,
+        notes: notes.trim(),
+        meta: nextMeta,
+        url: url.trim(),
+        tags: allTags.join(","),
+        color_bg: colorBg,
+        color_text: colorText,
+      }
       if (isEditing) {
-        await window.vaultAPI.update(item.id, {
-          title: title.trim(),
-          type,
-          notes: notes.trim(),
-          url: url.trim(),
-          tags: allTags.join(","),
-          color_bg: colorBg,
-          color_text: colorText,
-          ...(value ? { value } : {}),
-        })
+        await window.vaultAPI.update(item.id, { ...base, ...(value ? { value } : {}) })
         toast.success("Credential updated")
       } else {
-        const created = await window.vaultAPI.create({
-          title: title.trim(),
-          type,
-          value: value.trim(),
-          notes: notes.trim(),
-          url: url.trim(),
-          tags: allTags.join(","),
-          color_bg: colorBg,
-          color_text: colorText,
-        })
+        const created = await window.vaultAPI.create({ ...base, value: value.trim() })
         savedId = created?.id
         toast.success("Credential saved")
       }
@@ -204,23 +203,17 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
 
   const selectedType = getVaultType(type)
   const TypeIcon = selectedType.icon
-  const selectedFolder = vaultFolders.find((f) => f.id === selectedFolderId) || null
+  const typeFields = getVaultTypeFields(type)
+  const form = { value, notes, meta }
 
-  const folderDepth = useMemo(() => {
-    const byId = {}
-    for (const f of vaultFolders) byId[f.id] = f
-    const depth = {}
-    for (const f of vaultFolders) {
-      let d = 0
-      let current = f
-      while (current?.parent_id && byId[current.parent_id]) {
-        d += 1
-        current = byId[current.parent_id]
-      }
-      depth[f.id] = d
+  const setField = (key, nextValue) => {
+    if (key === "value") setValue(nextValue)
+    else if (key === "notes") setNotes(nextValue)
+    else if (key.startsWith("meta.")) {
+      const metaKey = key.slice(5)
+      setMeta((prev) => ({ ...prev, [metaKey]: nextValue }))
     }
-    return depth
-  }, [vaultFolders])
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
@@ -275,50 +268,23 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
                 <IconFolderFilled size={11} />
                 Folder
               </Label>
-              <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
-                <SelectTrigger className="h-8 w-full border-border/60 bg-background/40 text-sm cursor-pointer">
-                  <SelectValue>
-                    {selectedFolder && (
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        <FolderGlyph folder={selectedFolder} size={13} />
-                        <span className="truncate">{selectedFolder.name}</span>
-                      </span>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectItem value={NO_FOLDER}>
-                    <span className="text-muted-foreground">No folder</span>
-                  </SelectItem>
-                  {vaultFolders.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      <span
-                        className="flex min-w-0 items-center gap-1.5"
-                        style={{ paddingLeft: `${folderDepth[f.id] * 12}px` }}
-                      >
-                        <FolderGlyph folder={f} size={13} />
-                        <span className="truncate">{f.name}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FolderSelect
+                value={selectedFolderId}
+                onChange={setSelectedFolderId}
+                folders={vaultFolders}
+                onCreate={async (folderName) => {
+                  const created = await window.vaultFolderAPI.create({
+                    name: folderName,
+                    parentId: null,
+                  })
+                  const list = await window.vaultFolderAPI.list()
+                  setVaultFolders(list || [])
+                  return created
+                }}
+                triggerClassName="border-border/60 bg-background/40"
+              />
             </div>
           )}
-
-          <div className="space-y-1.5">
-            <Label htmlFor="vault-url" className="text-[11px] font-medium text-foreground/70 flex items-center gap-1.5">
-              <IconLink size={11} />
-              URL
-            </Label>
-            <Input
-              id="vault-url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com (optional)"
-              className="h-8 text-sm border-border/60 bg-background/40 focus:bg-background focus:border-primary/50 focus:ring-primary/20"
-            />
-          </div>
 
           <div className="space-y-1.5">
             <Label className="text-[11px] font-medium text-foreground/70">Type</Label>
@@ -330,7 +296,11 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setType(t.id)}
+                    onClick={() => {
+                      if (t.id === type) return
+                      setType(t.id)
+                      setMeta({})
+                    }}
                     className={cn(
                       "flex flex-col items-center gap-0.5 rounded-lg border px-1 py-1.5 text-[10px] font-medium transition-all cursor-pointer",
                       active
@@ -346,40 +316,74 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="vault-value" className="text-[11px] font-medium text-foreground/70">
-              {isEditing ? "Value (optional)" : "Secret Value"}
-            </Label>
-            <div className="relative">
-              <Input
-                ref={valueRef}
-                id="vault-value"
-                type={showValue ? "text" : "password"}
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder={isEditing ? "Leave blank to keep current" : "Paste your secret here..."}
-                className="h-8 pr-8 font-mono text-xs border-border/60 bg-background/40 focus:bg-background focus:border-primary/50 focus:ring-primary/20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowValue(!showValue)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                aria-label={showValue ? "Hide value" : "Show value"}
-              >
-                {showValue ? <IconEyeOff size={13} /> : <IconEye size={13} />}
-              </button>
-            </div>
-          </div>
+          {/* Fields adapt to the selected credential type */}
+          {typeFields.map((field) => {
+            const fieldId = `vault-field-${field.key.replace(/\./g, "-")}`
+            const fieldValue = readVaultField(form, field.key)
+            const optionalHint = isEditing && field.secret && field.key === "value"
+            return (
+              <div key={field.key} className="space-y-1.5">
+                <Label htmlFor={fieldId} className="text-[11px] font-medium text-foreground/70">
+                  {field.label}
+                  {field.required && <span className="ml-0.5 text-destructive">*</span>}
+                  {optionalHint && (
+                    <span className="ml-1 font-normal text-muted-foreground">(optional)</span>
+                  )}
+                </Label>
+                {field.multiline ? (
+                  <Textarea
+                    id={fieldId}
+                    value={fieldValue}
+                    onChange={(e) => setField(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    rows={2}
+                    className="resize-none text-sm border-border/60 bg-background/40 focus:bg-background focus:border-primary/50 focus:ring-primary/20"
+                  />
+                ) : field.secret ? (
+                  <div className="relative">
+                    <Input
+                      id={fieldId}
+                      type={showValue ? "text" : "password"}
+                      value={fieldValue}
+                      onChange={(e) => setField(field.key, e.target.value)}
+                      placeholder={
+                        optionalHint ? "Leave blank to keep current" : field.placeholder
+                      }
+                      className="h-8 pr-8 font-mono text-xs border-border/60 bg-background/40 focus:bg-background focus:border-primary/50 focus:ring-primary/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowValue(!showValue)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                      aria-label={showValue ? "Hide value" : "Show value"}
+                    >
+                      {showValue ? <IconEyeOff size={13} /> : <IconEye size={13} />}
+                    </button>
+                  </div>
+                ) : (
+                  <Input
+                    id={fieldId}
+                    value={fieldValue}
+                    onChange={(e) => setField(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    className="h-8 text-sm border-border/60 bg-background/40 focus:bg-background focus:border-primary/50 focus:ring-primary/20"
+                  />
+                )}
+              </div>
+            )
+          })}
 
           <div className="space-y-1.5">
-            <Label htmlFor="vault-notes" className="text-[11px] font-medium text-foreground/70">Notes</Label>
-            <Textarea
-              id="vault-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional — username, URL, reminder..."
-              rows={2}
-              className="resize-none text-sm border-border/60 bg-background/40 focus:bg-background focus:border-primary/50 focus:ring-primary/20"
+            <Label htmlFor="vault-url" className="text-[11px] font-medium text-foreground/70 flex items-center gap-1.5">
+              <IconLink size={11} />
+              URL
+            </Label>
+            <Input
+              id="vault-url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com (optional)"
+              className="h-8 text-sm border-border/60 bg-background/40 focus:bg-background focus:border-primary/50 focus:ring-primary/20"
             />
           </div>
 

@@ -25,6 +25,9 @@ import {
   IconStar,
   IconStarFilled,
   IconTrash,
+  IconUser,
+  IconKey,
+  IconCalendar,
 } from "@tabler/icons-react"
 
 export function maskValue(value, type) {
@@ -50,6 +53,36 @@ function TypeBadge({ type }) {
   )
 }
 
+function maskedPreview(item) {
+  if (item?.type === "card" && item.meta?.last4) {
+    return `•••• •••• •••• ${item.meta.last4}`
+  }
+  return maskValue(item.hasValue ? "secret" : "", item.type)
+}
+
+function ExtraInfo({ item }) {
+  const meta = item.meta || {}
+  const parts = []
+  if (item.type === "password" && meta.username) parts.push({ icon: IconUser, text: meta.username })
+  if (item.type === "api_key" && meta.keyId) parts.push({ icon: IconKey, text: meta.keyId })
+  if (item.type === "token" && meta.expires) parts.push({ icon: IconCalendar, text: `Expires ${meta.expires}` })
+  if (item.type === "card") {
+    if (meta.holder) parts.push({ icon: IconUser, text: meta.holder })
+    if (meta.expiry) parts.push({ icon: IconCalendar, text: `Exp ${meta.expiry}` })
+  }
+  if (parts.length === 0) return null
+  return (
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-foreground/60">
+      {parts.map(({ icon: Icon, text }) => (
+        <span key={text} className="flex min-w-0 items-center gap-1">
+          <Icon size={10} className="shrink-0" />
+          <span className="truncate">{text}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function ValueRow({ item, type, revealed, value, onToggleReveal }) {
   const Icon = type.icon
   return (
@@ -61,7 +94,7 @@ function ValueRow({ item, type, revealed, value, onToggleReveal }) {
           revealed ? "text-foreground" : "text-foreground/70"
         )}
       >
-        {revealed ? value || "—" : maskValue(item.hasValue ? "secret" : "", item.type)}
+        {revealed ? value || "—" : maskedPreview(item)}
       </span>
       <button
         onClick={onToggleReveal}
@@ -97,7 +130,7 @@ function TagChips({ tags, max = 3 }) {
 
 function MetaRow({ item, attachmentCount }) {
   const hasUrl = Boolean(item.url)
-  const hasNotes = Boolean(item.notes)
+  const hasNotes = Boolean(item.notes) && item.type !== "note"
   const tagCount = parseTagsString(item.tags).length
   if (!hasUrl && !hasNotes && tagCount === 0 && !attachmentCount) return null
   return (
@@ -215,6 +248,8 @@ export function VaultItemCard({
   const type = getVaultType(item.type)
   const TypeIcon = type.icon
   const hasCustomColor = Boolean(item.color_bg)
+  // Notes copy their content; everything else copies the decrypted secret.
+  const canCopy = item.type === "note" ? Boolean(item.notes) : true
 
   const favoriteButton = (
     <button
@@ -273,19 +308,29 @@ export function VaultItemCard({
             {favoriteButton}
           </div>
 
-          <ValueRow
-            item={item}
-            type={type}
-            revealed={revealed}
-            value={value}
-            onToggleReveal={onToggleReveal}
-          />
+          {item.type === "note" ? (
+            item.notes && (
+              <p className="line-clamp-5 whitespace-pre-wrap text-xs leading-relaxed text-foreground/70">
+                {item.notes}
+              </p>
+            )
+          ) : (
+            <ValueRow
+              item={item}
+              type={type}
+              revealed={revealed}
+              value={value}
+              onToggleReveal={onToggleReveal}
+            />
+          )}
+
+          <ExtraInfo item={item} />
 
           <MetaRow item={item} attachmentCount={attachmentCount} />
         </div>
 
         <div className="mt-auto flex items-center justify-between px-3.5 py-2">
-          <CopyButton copied={copied} onCopy={onCopy} subtle />
+          {canCopy && <CopyButton copied={copied} onCopy={onCopy} subtle />}
           {menu}
         </div>
       </div>
@@ -325,18 +370,28 @@ export function VaultItemCard({
           {favoriteButton}
         </div>
 
-        <ValueRow
-          item={item}
-          type={type}
-          revealed={revealed}
-          value={value}
-          onToggleReveal={onToggleReveal}
-        />
+        {item.type === "note" ? (
+          item.notes && (
+            <p className="line-clamp-6 whitespace-pre-wrap text-xs leading-relaxed text-foreground/70">
+              {item.notes}
+            </p>
+          )
+        ) : (
+          <ValueRow
+            item={item}
+            type={type}
+            revealed={revealed}
+            value={value}
+            onToggleReveal={onToggleReveal}
+          />
+        )}
+
+        <ExtraInfo item={item} />
 
         <MetaRow item={item} attachmentCount={attachmentCount} />
 
         <div className="mt-auto flex items-center justify-between">
-          <CopyButton copied={copied} onCopy={onCopy} />
+          {canCopy && <CopyButton copied={copied} onCopy={onCopy} />}
           {menu}
         </div>
       </div>

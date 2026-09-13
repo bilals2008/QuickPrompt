@@ -345,13 +345,24 @@ export default function VaultPage() {
 
   /* ---------------- item actions ---------------- */
 
+  function markCopied(id) {
+    setCopied((c) => ({ ...c, [id]: true }))
+    setTimeout(() => setCopied((c) => ({ ...c, [id]: false })), 1500)
+  }
+
+  /** Notes have no encrypted secret, so copy their content directly. */
+  function copyNote(item) {
+    navigator.clipboard.writeText(item.notes || "")
+    markCopied(item.id)
+    toast.success("Copied to clipboard")
+  }
+
   async function copySecret(id) {
     try {
       const res = await window.vaultAPI.copy(id)
       if (res?.success) {
         navigator.clipboard.writeText(res.value)
-        setCopied((c) => ({ ...c, [id]: true }))
-        setTimeout(() => setCopied((c) => ({ ...c, [id]: false })), 1500)
+        markCopied(id)
         toast.success("Copied to clipboard")
       } else {
         toast.error("Failed to copy")
@@ -511,7 +522,7 @@ export default function VaultPage() {
                 : {}
             }
             inFolder={Boolean(activeVaultFolder)}
-            onCopy={() => copySecret(item.id)}
+            onCopy={() => (item.type === "note" ? copyNote(item) : copySecret(item.id))}
             onToggleReveal={() => handleToggleReveal(item)}
             onToggleFavorite={() => handleToggleFavorite(item.id)}
             onTogglePin={handleTogglePin}

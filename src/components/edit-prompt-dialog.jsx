@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
-import { IconX, IconCheck } from "@tabler/icons-react"
+import { IconX, IconCheck, IconFolderFilled } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { TagManager } from "@/components/tag-manager"
+import { FolderSelect, NO_FOLDER } from "@/components/folders/FolderSelect"
 import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
 import { cn } from "@/lib/utils"
 import { splitTagInput, parseTagsString } from "@/lib/tag-utils"
@@ -45,6 +46,8 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
   const [allTags, setAllTags] = useState(externalTags || [])
+  const [folders, setFolders] = useState([])
+  const [selectedFolderId, setSelectedFolderId] = useState(NO_FOLDER)
   const [cardDisplay] = useCardDisplaySettings()
   const inputRef = useRef(null)
   const titleRef = useRef(null)
@@ -56,6 +59,11 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
       setContent(prompt.content || "")
       setSelectedTags(prompt.tags ? [...prompt.tags] : [])
       setAllTags(externalTags || [])
+      setSelectedFolderId(NO_FOLDER)
+      window.folderAPI
+        ?.list()
+        .then((f) => setFolders(Array.isArray(f) ? f : []))
+        .catch(() => setFolders([]))
     }
   }, [open, prompt, externalTags])
 
@@ -122,6 +130,13 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
     setSelectedTags(selectedTags.filter((t) => t !== tag))
   }
 
+  async function createFolderInline(name) {
+    const created = await window.folderAPI?.create({ name, parentId: null })
+    const list = await window.folderAPI?.list()
+    setFolders(Array.isArray(list) ? list : [])
+    return created
+  }
+
   async function saveEdit() {
     if (!content.trim()) {
       toast.error("Please enter a prompt")
@@ -137,6 +152,9 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
         content: content.trim(),
         tags: tagsToSave.join(","),
       })
+      if (selectedFolderId !== NO_FOLDER && prompt?.id) {
+        await window.folderAPI?.addPrompt(prompt.id, selectedFolderId).catch(() => {})
+      }
       for (const newTag of fresh) {
         if (!allTags.includes(newTag)) {
           window.db.createTag(newTag).catch((err) => {
@@ -177,6 +195,13 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="h-8 text-sm font-medium border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background"
+            />
+            <FolderSelect
+              value={selectedFolderId}
+              onChange={setSelectedFolderId}
+              folders={folders}
+              onCreate={createFolderInline}
+              triggerClassName="border-border/50 bg-background/50"
             />
             <Textarea
               id="content"
@@ -242,6 +267,18 @@ export function EditPromptDialog({ prompt, onSaved, allTags: externalTags, mini,
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="font-medium"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <IconFolderFilled size={12} />
+                Add to folder
+              </Label>
+              <FolderSelect
+                value={selectedFolderId}
+                onChange={setSelectedFolderId}
+                folders={folders}
+                onCreate={createFolderInline}
               />
             </div>
             <div className="space-y-2">
