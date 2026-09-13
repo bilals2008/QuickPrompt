@@ -3,10 +3,11 @@ import { toast } from "sonner"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { SectionHeading, SettingGroup, SettingRow } from "@/components/settings/SettingsPrimitives"
-import { FolderAppearancePicker } from "@/components/collections/FolderAppearancePicker"
-import { FolderCustomizeDialog } from "@/components/collections/FolderCustomizeDialog"
-import { FolderGlyph } from "@/components/collections/FolderGlyph"
+import { FolderAppearancePicker } from "@/components/folders/FolderAppearancePicker"
+import { FolderCustomizeDialog } from "@/components/folders/FolderCustomizeDialog"
+import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import { useFolders } from "@/hooks/useFolders"
+import { useVaultFolders } from "@/hooks/useVaultFolders"
 import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
 import {
   IconEye,
@@ -16,17 +17,54 @@ import {
   IconTrash,
 } from "@tabler/icons-react"
 
+function FolderList({ folders, byId, emptyLabel, onSelect }) {
+  if (folders.length === 0) {
+    return <p className="py-6 text-center text-xs text-muted-foreground">{emptyLabel}</p>
+  }
+  return (
+    <div className="flex flex-col">
+      {folders.map((folder, idx) => (
+        <div key={folder.id}>
+          {idx > 0 && <Separator />}
+          <button
+            onClick={() => onSelect(folder)}
+            className="flex w-full cursor-pointer items-center gap-3 py-2.5 text-left outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <FolderGlyph folder={folder} size={18} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium text-foreground">{folder.name}</p>
+              {folder.parent_id && byId[folder.parent_id] && (
+                <p className="truncate text-[11px] text-muted-foreground">
+                  in {byId[folder.parent_id].name}
+                </p>
+              )}
+            </div>
+            <IconPalette size={14} className="shrink-0 text-muted-foreground" />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function FoldersSettings() {
   const [display, setDisplay] = useFolderDisplaySettings()
-  const { folders, byId, updateFolder } = useFolders()
-  const [editing, setEditing] = useState(null)
+  const { folders, byId: promptById, updateFolder } = useFolders()
+  const {
+    folders: vaultFolders,
+    byId: vaultById,
+    updateFolder: updateVaultFolder,
+  } = useVaultFolders()
 
-  const handleSaveFolder = async (id, patch) => {
+  const [editingPromptFolder, setEditingPromptFolder] = useState(null)
+  const [editingVaultFolder, setEditingVaultFolder] = useState(null)
+
+  const saveFolder = async (updater, id, patch, label) => {
     try {
-      await updateFolder(id, patch)
-      toast.success("Folder updated")
+      await updater(id, patch)
+      toast.success(`${label} updated`)
     } catch {
-      toast.error("Failed to update folder")
+      toast.error(`Failed to update ${label.toLowerCase()}`)
     }
   }
 
@@ -42,7 +80,8 @@ export function FoldersSettings() {
         <SettingGroup title="New folder defaults">
           <div className="py-3">
             <p className="mb-3 text-xs text-muted-foreground">
-              Applied automatically whenever you create a folder or subfolder.
+              Applied automatically whenever you create a folder or subfolder, in both
+              Collections and the Vault.
             </p>
             <FolderAppearancePicker
               icon={display.defaultIcon}
@@ -91,49 +130,47 @@ export function FoldersSettings() {
           </SettingRow>
         </SettingGroup>
 
-        <SettingGroup title={`Your folders (${folders.length})`}>
+        <SettingGroup title={`Prompt folders (${folders.length})`}>
           <div className="py-1">
-            {folders.length === 0 ? (
-              <p className="py-6 text-center text-xs text-muted-foreground">
-                No folders yet. Create one from Collections.
-              </p>
-            ) : (
-              <div className="flex flex-col">
-                {folders.map((folder, idx) => (
-                  <div key={folder.id}>
-                    {idx > 0 && <Separator />}
-                    <button
-                      onClick={() => setEditing(folder)}
-                      className="flex w-full cursor-pointer items-center gap-3 py-2.5 text-left outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <FolderGlyph folder={folder} size={18} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-medium text-foreground">
-                          {folder.name}
-                        </p>
-                        {folder.parent_id && byId[folder.parent_id] && (
-                          <p className="truncate text-[11px] text-muted-foreground">
-                            in {byId[folder.parent_id].name}
-                          </p>
-                        )}
-                      </div>
-                      <IconPalette size={14} className="shrink-0 text-muted-foreground" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <FolderList
+              folders={folders}
+              byId={promptById}
+              emptyLabel="No prompt folders yet. Create one from Collections."
+              onSelect={setEditingPromptFolder}
+            />
+          </div>
+        </SettingGroup>
+
+        <SettingGroup title={`Vault folders (${vaultFolders.length})`}>
+          <div className="py-1">
+            <FolderList
+              folders={vaultFolders}
+              byId={vaultById}
+              emptyLabel="No vault folders yet. Create one from the Vault."
+              onSelect={setEditingVaultFolder}
+            />
           </div>
         </SettingGroup>
       </div>
 
       <FolderCustomizeDialog
-        folder={editing}
-        open={Boolean(editing)}
+        folder={editingPromptFolder}
+        title="Customize prompt folder"
+        open={Boolean(editingPromptFolder)}
         onOpenChange={(o) => {
-          if (!o) setEditing(null)
+          if (!o) setEditingPromptFolder(null)
         }}
-        onSave={handleSaveFolder}
+        onSave={(id, patch) => saveFolder(updateFolder, id, patch, "Folder")}
+      />
+
+      <FolderCustomizeDialog
+        folder={editingVaultFolder}
+        title="Customize vault folder"
+        open={Boolean(editingVaultFolder)}
+        onOpenChange={(o) => {
+          if (!o) setEditingVaultFolder(null)
+        }}
+        onSave={(id, patch) => saveFolder(updateVaultFolder, id, patch, "Vault folder")}
       />
     </section>
   )

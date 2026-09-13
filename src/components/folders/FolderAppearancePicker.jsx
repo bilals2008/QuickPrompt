@@ -2,8 +2,9 @@ import { cn } from "@/lib/utils"
 import { FOLDER_ICON_OPTIONS, FOLDER_COLOR_OPTIONS } from "@/lib/folder-appearance"
 
 /**
- * Compact icon + color picker shared by the folder customize dialog and the
- * Settings > Folders section. Designed to stay usable at the 360px mini width.
+ * Compact icon + color picker shared by the folder customize dialogs (prompt
+ * and vault folders) and the Settings > Folders section. Designed to stay
+ * usable at the 360px mini width.
  */
 export function FolderAppearancePicker({
   icon,

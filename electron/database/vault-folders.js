@@ -40,6 +40,21 @@ export async function renameVaultFolder(id, name) {
   return getVaultFolderById(id)
 }
 
+export async function updateVaultFolder(id, { name, icon, color }) {
+  const db = getDatabase()
+  const sets = []
+  const values = []
+  if (name !== undefined) { sets.push('name = ?'); values.push(name.trim()) }
+  if (icon !== undefined) { sets.push('icon = ?'); values.push(icon) }
+  if (color !== undefined) { sets.push('color = ?'); values.push(color) }
+  if (sets.length === 0) return getVaultFolderById(id)
+  sets.push('updated_at = ?')
+  values.push(new Date().toISOString())
+  values.push(id)
+  await db.run(`UPDATE vault_folders SET ${sets.join(', ')} WHERE id = ?`, values)
+  return getVaultFolderById(id)
+}
+
 export async function deleteVaultFolder(id) {
   const db = getDatabase()
   await db.run('DELETE FROM vault_item_folders WHERE folder_id = ?', [id])

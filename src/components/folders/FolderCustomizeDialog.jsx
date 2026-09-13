@@ -7,15 +7,21 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { FolderGlyph } from "@/components/collections/FolderGlyph"
-import { FolderAppearancePicker } from "@/components/collections/FolderAppearancePicker"
+import { FolderGlyph } from "@/components/folders/FolderGlyph"
+import { FolderAppearancePicker } from "@/components/folders/FolderAppearancePicker"
 import { DEFAULT_FOLDER_APPEARANCE } from "@/lib/folder-appearance"
 
 /**
- * Edit a folder's name, icon and color. Shared between the Collections page
- * and Settings > Folders.
+ * Edit a folder's name, icon and color. Shared between prompt folders,
+ * vault folders and Settings > Folders.
  */
-export function FolderCustomizeDialog({ folder, open, onOpenChange, onSave }) {
+export function FolderCustomizeDialog({
+  folder,
+  open,
+  onOpenChange,
+  onSave,
+  title = "Customize folder",
+}) {
   const [name, setName] = useState("")
   const [icon, setIcon] = useState(DEFAULT_FOLDER_APPEARANCE.icon)
   const [color, setColor] = useState(DEFAULT_FOLDER_APPEARANCE.color)
@@ -44,7 +50,7 @@ export function FolderCustomizeDialog({ folder, open, onOpenChange, onSave }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-4 sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-sm">Customize folder</DialogTitle>
+          <DialogTitle className="text-sm">{title}</DialogTitle>
         </DialogHeader>
 
         {/* Live preview */}

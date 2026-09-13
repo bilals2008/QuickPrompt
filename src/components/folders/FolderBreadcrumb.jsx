@@ -1,15 +1,21 @@
 import { cn } from "@/lib/utils"
 import { IconChevronRight, IconFiles } from "@tabler/icons-react"
 
-export function FolderBreadcrumb({ breadcrumb = [], activeFolder, onHome, onNavigate }) {
+export function FolderBreadcrumb({
+  breadcrumb = [],
+  activeFolder,
+  onHome,
+  onNavigate,
+  homeIcon: HomeIcon = IconFiles,
+}) {
   return (
-    <div className="flex items-center gap-1 overflow-x-auto border-b border-border/20 px-4 py-1.5 text-xs scrollbar-none">
+    <div className="flex items-center gap-1 overflow-x-auto border-b border-border/20 px-3 py-1.5 text-xs scrollbar-none sm:px-4">
       <button
         onClick={onHome}
         className="shrink-0 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent/60 cursor-pointer"
-        aria-label="All folders"
+        aria-label="Back to all folders"
       >
-        <IconFiles size={11} />
+        <HomeIcon size={11} />
       </button>
       {breadcrumb.map((b, i) => {
         const isLast = i === breadcrumb.length - 1
@@ -22,7 +28,7 @@ export function FolderBreadcrumb({ breadcrumb = [], activeFolder, onHome, onNavi
                 onNavigate(b)
               }}
               className={cn(
-                "rounded px-1 py-0.5 transition-colors cursor-pointer max-w-[120px] truncate",
+                "max-w-[120px] truncate rounded px-1 py-0.5 transition-colors cursor-pointer",
                 isLast
                   ? "font-medium text-foreground"
                   : "text-muted-foreground hover:bg-accent/60"

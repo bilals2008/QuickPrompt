@@ -13,9 +13,9 @@ function formatDate(value) {
   return d.toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })
 }
 
-export function FolderDetailsDialog({
+export function VaultFolderDetailsDialog({
   folder,
-  prompts = [],
+  items = [],
   childFolders = [],
   path = [],
   open,
@@ -24,7 +24,7 @@ export function FolderDetailsDialog({
   if (!folder) return null
 
   const parts = []
-  if (prompts.length > 0) parts.push(`${prompts.length} Prompt${prompts.length !== 1 ? "s" : ""}`)
+  if (items.length > 0) parts.push(`${items.length} Item${items.length !== 1 ? "s" : ""}`)
   if (childFolders.length > 0) parts.push(`${childFolders.length} Folder${childFolders.length !== 1 ? "s" : ""}`)
   const contains = parts.length > 0 ? parts.join(", ") : "Empty"
 
@@ -47,6 +47,10 @@ export function FolderDetailsDialog({
             </div>
           )}
           <div className="flex items-center gap-3 py-1">
+            <span className="w-20 shrink-0 text-muted-foreground">Type:</span>
+            <span className="text-foreground">Vault folder</span>
+          </div>
+          <div className="flex items-center gap-3 py-1">
             <span className="w-20 shrink-0 text-muted-foreground">Contains:</span>
             <span className="text-foreground">{contains}</span>
           </div>
@@ -64,4 +68,4 @@ export function FolderDetailsDialog({
   )
 }
 
-export default FolderDetailsDialog
+export default VaultFolderDetailsDialog

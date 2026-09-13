@@ -5,7 +5,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { FolderGlyph } from "@/components/collections/FolderGlyph"
+import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import {
   IconDotsVertical,
   IconFolderOpen,
@@ -23,7 +23,7 @@ export function FolderTile({
   folder,
   index = 0,
   subfolderCount = 0,
-  promptCount = 0,
+  itemCount = 0,
   showCustomAppearance = true,
   showCounts = true,
   onOpen,
@@ -32,7 +32,7 @@ export function FolderTile({
   onDetails,
   onNewSubfolder,
 }) {
-  const total = subfolderCount + promptCount
+  const total = subfolderCount + itemCount
 
   return (
     <div

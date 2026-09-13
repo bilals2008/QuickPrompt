@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { FolderGlyph } from "@/components/collections/FolderGlyph"
+import { FolderGlyph } from "@/components/folders/FolderGlyph"
 
 /**
  * Inline "New Folder" input. Used at the root level and when creating a

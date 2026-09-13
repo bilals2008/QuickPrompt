@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled, IconEdit, IconArrowMoveRight } from "@tabler/icons-react"
-import { FolderGlyph } from "@/components/collections/FolderGlyph"
+import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,27 +22,8 @@ import { cn } from "@/lib/utils"
 import { getPromptTitle, getPromptBody } from "@/lib/prompt-utils"
 import { parseTagsString } from "@/lib/tag-utils"
 import { TAG_CLASS, getTagColor } from "@/lib/tag-colors"
+import { getStickyTint } from "@/lib/sticky-tint"
 import { DENSITY_CLASSES, LINE_CLAMP_MAP } from "@/hooks/useCardDisplaySettings"
-
-const STICKY_TINTS = [
-  "sticky-tint-yellow",
-  "sticky-tint-green",
-  "sticky-tint-blue",
-  "sticky-tint-pink",
-  "sticky-tint-purple",
-  "sticky-tint-orange",
-  "sticky-tint-teal",
-  "sticky-tint-rose",
-]
-
-function getStickyTint(content, tag) {
-  const source = tag || content
-  let hash = 0
-  for (let i = 0; i < source.length; i++) {
-    hash = source.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return STICKY_TINTS[Math.abs(hash) % STICKY_TINTS.length]
-}
 
 const MORE_CLASS = "inline-flex items-center rounded-full border border-border/60 bg-muted px-1.5 py-[1px] text-[10px] font-medium text-muted-foreground leading-tight cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground"
 
@@ -249,9 +230,9 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
       className={cn(
         "group flex cursor-pointer flex-col rounded-xl transition-all",
         mini
-          ? `sticky-note ${getStickyTint(prompt.content, tintTag)}`
+          ? `sticky-note ${getStickyTint(tintTag || prompt.content)}`
           : colorByTag
-            ? `border border-border/60 ${getStickyTint(prompt.content, tintTag)} hover:ring-1 hover:ring-primary/30`
+            ? `border border-border/60 ${getStickyTint(tintTag || prompt.content)} hover:ring-1 hover:ring-primary/30`
             : "border border-border bg-card hover:ring-1 hover:ring-primary/30",
         clicked && "scale-[0.98] ring-2 ring-primary/40"
       )}

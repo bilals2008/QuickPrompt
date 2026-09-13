@@ -52,6 +52,7 @@ import {
   getRootVaultFolders,
   getChildVaultFolders,
   renameVaultFolder,
+  updateVaultFolder,
   deleteVaultFolder,
   getVaultFolderBreadcrumb,
   addVaultItemToFolder,
@@ -664,6 +665,10 @@ ipcMain.handle("vault-folders:breadcrumb", async (_event, folderId) => {
 
 ipcMain.handle("vault-folders:rename", async (_event, id, name) => {
   return renameVaultFolder(id, name)
+})
+
+ipcMain.handle("vault-folders:update", async (_event, id, data) => {
+  return updateVaultFolder(id, data)
 })
 
 ipcMain.handle("vault-folders:delete", async (_event, id) => {

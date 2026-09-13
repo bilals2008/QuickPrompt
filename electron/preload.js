@@ -139,6 +139,7 @@ contextBridge.exposeInMainWorld("vaultFolderAPI", {
   children: (parentId) => ipcRenderer.invoke("vault-folders:children", parentId),
   breadcrumb: (folderId) => ipcRenderer.invoke("vault-folders:breadcrumb", folderId),
   rename: (id, name) => ipcRenderer.invoke("vault-folders:rename", id, name),
+  update: (id, data) => ipcRenderer.invoke("vault-folders:update", id, data),
   delete: (id) => ipcRenderer.invoke("vault-folders:delete", id),
   addItem: (vaultItemId, folderId) => ipcRenderer.invoke("vault-folders:addItem", vaultItemId, folderId),
   removeItem: (vaultItemId, folderId) => ipcRenderer.invoke("vault-folders:removeItem", vaultItemId, folderId),

@@ -21,34 +21,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-import { FolderTile } from "@/components/collections/FolderTile"
-import { FolderBreadcrumb } from "@/components/collections/FolderBreadcrumb"
-import { NewFolderInput } from "@/components/collections/NewFolderInput"
+import { FolderTile } from "@/components/folders/FolderTile"
 import { PromptRow } from "@/components/collections/PromptRow"
 import { AddPromptsDialog } from "@/components/collections/AddPromptsDialog"
 import { FolderDetailsDialog } from "@/components/collections/FolderDetailsDialog"
-import { FolderCustomizeDialog } from "@/components/collections/FolderCustomizeDialog"
+import { FolderBreadcrumb } from "@/components/folders/FolderBreadcrumb"
+import { NewFolderInput } from "@/components/folders/NewFolderInput"
+import { FolderCustomizeDialog } from "@/components/folders/FolderCustomizeDialog"
+import { SectionHeader } from "@/components/section-header"
+import { EmptyState } from "@/components/empty-state"
 
 import { useFolders } from "@/hooks/useFolders"
 import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
-
-function SectionHeader({ label, count, action }) {
-  return (
-    <div className="mb-2 flex items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </h2>
-        {count !== undefined && (
-          <span className="rounded-full bg-muted px-1.5 py-px text-[10px] font-medium tabular-nums text-muted-foreground">
-            {count}
-          </span>
-        )}
-      </div>
-      {action}
-    </div>
-  )
-}
 
 export default function CollectionsPage() {
   useOutletContext()
@@ -324,7 +308,7 @@ export default function CollectionsPage() {
           key={folder.id}
           folder={folder}
           index={idx}
-          promptCount={stats.prompts[folder.id] || 0}
+          itemCount={stats.prompts[folder.id] || 0}
           subfolderCount={stats.subfolders[folder.id] || 0}
           {...tileProps}
         />
@@ -445,24 +429,19 @@ export default function CollectionsPage() {
 
         {view === "folders" ? (
           visibleFolders.length === 0 && !isCreating ? (
-            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/60 bg-card/30 px-4 py-14">
-              <div className="flex size-11 items-center justify-center rounded-full bg-muted/60">
-                <IconFolderFilled size={20} className="text-muted-foreground/60" strokeWidth={1.5} />
-              </div>
-              <div className="text-center">
-                <p className="text-[13px] font-medium text-foreground">
-                  {query ? "No folders match" : "No folders yet"}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {query ? "Try a different search term" : "Folders keep your prompts organized"}
-                </p>
-              </div>
-              {!query && (
-                <Button size="sm" className="h-7 gap-1.5 text-xs" onClick={() => startCreating(null)}>
-                  <IconFolderPlus size={12} /> Create folder
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              className="py-14"
+              icon={IconFolderFilled}
+              title={query ? "No folders match" : "No folders yet"}
+              hint={query ? "Try a different search term" : "Folders keep your prompts organized"}
+              action={
+                !query && (
+                  <Button size="sm" className="h-7 gap-1.5 text-xs" onClick={() => startCreating(null)}>
+                    <IconFolderPlus size={12} /> Create folder
+                  </Button>
+                )
+              }
+            />
           ) : (
             <>
               <SectionHeader label="Folders" count={visibleFolders.length} />
@@ -498,31 +477,25 @@ export default function CollectionsPage() {
               }
             />
             {filteredPrompts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/60 bg-card/30 px-4 py-12">
-                <div className="flex size-11 items-center justify-center rounded-full bg-muted/60">
-                  <IconFiles size={18} className="text-muted-foreground/60" />
-                </div>
-                <div className="text-center">
-                  <p className="text-[13px] font-medium text-foreground">
-                    {query ? "No matching prompts" : "This folder is empty"}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {query ? "Try a different search term" : "Add prompts from your library"}
-                  </p>
-                </div>
-                {!query && (
-                  <Button
-                    size="sm"
-                    className="h-7 gap-1.5 text-xs"
-                    onClick={() => {
-                      loadAllPrompts()
-                      setAddPromptsOpen(true)
-                    }}
-                  >
-                    <IconPlus size={12} /> Add prompts
-                  </Button>
-                )}
-              </div>
+              <EmptyState
+                icon={IconFiles}
+                title={query ? "No matching prompts" : "This folder is empty"}
+                hint={query ? "Try a different search term" : "Add prompts from your library"}
+                action={
+                  !query && (
+                    <Button
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs"
+                      onClick={() => {
+                        loadAllPrompts()
+                        setAddPromptsOpen(true)
+                      }}
+                    >
+                      <IconPlus size={12} /> Add prompts
+                    </Button>
+                  )
+                }
+              />
             ) : (
               <div className="flex flex-col gap-2">
                 {filteredPrompts.map((prompt) => (
