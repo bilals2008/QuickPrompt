@@ -779,3 +779,50 @@ html *::after {
     height: 14px !important;
   }
 }
+
+/* File Explorer Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-from-bottom-1 {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-from-left-1 {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-in {
+  animation: fade-in 0.2s ease-out both;
+}
+
+.fade-in {
+  animation: fade-in 0.2s ease-out both;
+}
+
+.slide-in-from-bottom-1 {
+  animation: slide-in-from-bottom-1 0.2s ease-out both;
+}
+
+.slide-in-from-left-1 {
+  animation: slide-in-from-left-1 0.15s ease-out both;
+}
+
+/* Custom scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: hsl(var(--border) / 0.4);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--border) / 0.6);
+}
