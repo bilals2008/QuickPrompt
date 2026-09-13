@@ -52,6 +52,11 @@ import {
   IconRuler,
   IconPalette,
   IconFolders,
+  IconBrandGithub,
+  IconBrandTwitter,
+  IconBrandLinkedin,
+  IconMail,
+  IconExternalLink,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -89,65 +94,11 @@ const themeCategories = [
         accent: "#6366f1",
         text: "#0f1729",
       },
-      {
-        id: "nord",
-        label: "Nord",
-        desc: "Cool arctic blue",
-        bg: "#eceff4",
-        card: "#ffffff",
-        accent: "#5e81ac",
-        text: "#2e3440",
-      },
-      {
-        id: "lavender",
-        label: "Lavender",
-        desc: "Soft purple elegance",
-        bg: "#faf5ff",
-        card: "#ffffff",
-        accent: "#8b5cf6",
-        text: "#1e1033",
-      },
-      {
-        id: "solarized",
-        label: "Solarized Light",
-        desc: "Iconic warm beige",
-        bg: "#fdf6e3",
-        card: "#eee8d5",
-        accent: "#268bd2",
-        text: "#586e75",
-      },
     ],
   },
   {
     label: "Dark",
     themes: [
-      {
-        id: "midnight",
-        label: "Midnight",
-        desc: "Dark with gold accents",
-        bg: "#0f0f1a",
-        card: "#1a1a2e",
-        accent: "#fbbf24",
-        text: "#e8e6f0",
-      },
-      {
-        id: "dracula",
-        label: "Dracula",
-        desc: "Iconic purple palette",
-        bg: "#282a36",
-        card: "#2d3044",
-        accent: "#bd93f9",
-        text: "#f8f8f2",
-      },
-      {
-        id: "tokyo-night",
-        label: "Tokyo Night",
-        desc: "City lights at dusk",
-        bg: "#1a1b26",
-        card: "#24283b",
-        accent: "#7aa2f7",
-        text: "#c0caf5",
-      },
       {
         id: "cyberpunk",
         label: "Cyberpunk",
@@ -158,58 +109,13 @@ const themeCategories = [
         text: "#e0e0e0",
       },
       {
-        id: "catppuccin",
-        label: "Catppuccin Mocha",
-        desc: "Soothing pastel mauve",
-        bg: "#1e1e2e",
-        card: "#313244",
-        accent: "#cba6f7",
-        text: "#cdd6f4",
-      },
-      {
-        id: "gruvbox",
-        label: "Gruvbox Dark",
-        desc: "Retro warm orange",
-        bg: "#282828",
-        card: "#32302f",
-        accent: "#fe8019",
-        text: "#ebdbb2",
-      },
-      {
-        id: "dark",
-        label: "Dark",
-        desc: "Easy on the eyes",
-        bg: "#0c0c14",
-        card: "#161e34",
-        accent: "#6366f1",
-        text: "#ededee",
-      },
-      {
-        id: "forest",
-        label: "Forest",
-        desc: "Natural green tones",
-        bg: "#0d1a0d",
-        card: "#142414",
-        accent: "#4ade80",
-        text: "#e2f0e2",
-      },
-      {
-        id: "ocean",
-        label: "Ocean",
-        desc: "Deep blue vibes",
-        bg: "#0a1628",
-        card: "#12203a",
-        accent: "#38bdf8",
-        text: "#dce8f5",
-      },
-      {
-        id: "sunset",
-        label: "Sunset",
-        desc: "Warm orange dusk",
-        bg: "#1a0c0a",
-        card: "#2a1410",
-        accent: "#f97316",
-        text: "#fde8d0",
+        id: "volt",
+        label: "Volt",
+        desc: "Neon yellow-green on deep dark",
+        bg: "#03080a",
+        card: "#081216",
+        accent: "#c8ff00",
+        text: "#d4e4e8",
       },
     ],
   },
@@ -1024,9 +930,7 @@ export default function Settings() {
                 <div className="space-y-5">
                   <SettingGroup>
                     <div className="flex flex-col items-center py-6 text-center">
-                      <div className="mb-4 flex size-20 items-center justify-center rounded-2xl bg-primary/10 shadow-sm">
-                        <IconSettings className="size-10 text-primary" />
-                      </div>
+                      <img src="/favicon.svg" alt="QuickPrompt" className="mb-4 size-20 rounded-2xl shadow-sm" />
                       <h3 className="text-lg font-semibold text-foreground">{pkg.productName}</h3>
                       <p className="text-xs text-muted-foreground">Version {pkg.version}</p>
                     </div>
@@ -1041,14 +945,46 @@ export default function Settings() {
 
                     <Separator />
 
-                    <div className="space-y-2 py-3">
+                    <div className="space-y-2.5 py-3">
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-muted-foreground">Version</p>
                         <p className="text-xs font-medium text-foreground">{pkg.version}</p>
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-muted-foreground">Developer</p>
-                        <p className="text-xs font-medium text-foreground">{pkg.author}</p>
+                        <p className="text-xs font-medium text-foreground">{pkg.author.name}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">Website</p>
+                        <a href="https://mbilalhassan.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          mbilalhassan.vercel.app <IconExternalLink className="size-3" />
+                        </a>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">Landing</p>
+                        <a href="https://quickprompt-web.netlify.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          quickprompt-web.netlify.app <IconExternalLink className="size-3" />
+                        </a>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="py-3 space-y-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Socials</p>
+                      <div className="flex items-center gap-3">
+                        <a href="https://github.com/bilals2008" target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="GitHub">
+                          <IconBrandGithub className="size-4" />
+                        </a>
+                        <a href="https://www.linkedin.com/in/muhammad-bilal-hassan-327209414/" target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="LinkedIn">
+                          <IconBrandLinkedin className="size-4" />
+                        </a>
+                        <a href="https://x.com/MBilal7555" target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="X / Twitter">
+                          <IconBrandTwitter className="size-4" />
+                        </a>
+                        <a href="mailto:bilaldev7575@gmail.com" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="Email">
+                          <IconMail className="size-4" />
+                        </a>
                       </div>
                     </div>
                   </SettingGroup>
