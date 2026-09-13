@@ -669,16 +669,16 @@ export default function Settings() {
                     <SettingRow
                       icon={IconMaximize}
                       label="Default window size"
-                      description="Window size on app startup"
+                      description="Window size on app startup — width is capped at 400px"
                     >
                       <Select value={defaultWindowSize} onValueChange={handleDefaultWindowSize}>
                         <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="mini">Mini (360px)</SelectItem>
-                          <SelectItem value="medium">Medium (440px)</SelectItem>
-                          <SelectItem value="full">Full (700px)</SelectItem>
+                          <SelectItem value="mini">Mini — 360 × 520</SelectItem>
+                          <SelectItem value="medium">Medium — 400 × 700</SelectItem>
+                          <SelectItem value="full">Tall — 400 × 900</SelectItem>
                         </SelectContent>
                       </Select>
                     </SettingRow>

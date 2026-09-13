@@ -199,7 +199,12 @@ function buildTrayMenu() {
       click: () => {
         showAndFocus("/vault")
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.setSize(440, 700)
+          const size = clampToScreen(
+            mainWindow,
+            WINDOW_PRESETS.medium.width,
+            WINDOW_PRESETS.medium.height
+          )
+          mainWindow.setSize(size.width, size.height)
         }
       },
     },
@@ -325,12 +330,38 @@ function toggleWindow() {
   }
 }
 
+// QuickPrompt is built as a compact companion window. Width is capped so the
+// app can never be expanded into a full-screen / full-width layout.
+const MIN_WINDOW_WIDTH = 360
+const MAX_WINDOW_WIDTH = 500
+const WINDOW_PRESETS = {
+  mini: { width: 360, height: 520 },
+  medium: { width: 500, height: 700 },
+  full: { width: 500, height: 900 },
+}
+const DEFAULT_WINDOW_SIZE = WINDOW_PRESETS.medium
+
+function clampToScreen(win, width, height) {
+  try {
+    const { workArea } = screen.getDisplayMatching(win.getBounds())
+    return {
+      width: Math.min(Math.max(width, MIN_WINDOW_WIDTH), MAX_WINDOW_WIDTH),
+      height: Math.max(320, Math.min(height, workArea.height)),
+    }
+  } catch {
+    return { width, height }
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 440,
-    height: 700,
-    minWidth: 360,
+    width: DEFAULT_WINDOW_SIZE.width,
+    height: DEFAULT_WINDOW_SIZE.height,
+    minWidth: MIN_WINDOW_WIDTH,
+    maxWidth: MAX_WINDOW_WIDTH,
     minHeight: 400,
+    maximizable: false,
+    fullscreenable: false,
     icon: path.join(process.env.VITE_PUBLIC, "icon.png"),
     autoHideMenuBar: true,
     roundedCorners: true,
@@ -359,6 +390,18 @@ function createWindow() {
   })
   mainWindow.on("unmaximize", () => {
     mainWindow.webContents.send("window:maximize-changed", false)
+  })
+
+  // Some window managers ignore `maxWidth`, so re-clamp on every resize.
+  mainWindow.on("resize", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    const [width, height] = mainWindow.getSize()
+    if (width > MAX_WINDOW_WIDTH) mainWindow.setSize(MAX_WINDOW_WIDTH, height)
+  })
+
+  // Block full-screen shortcuts (e.g. the default menu's F11 on Windows).
+  mainWindow.on("enter-full-screen", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setFullScreen(false)
   })
 
   mainWindow.on("close", (event) => {
@@ -759,13 +802,8 @@ ipcMain.handle("window:minimize", () => {
 })
 
 ipcMain.handle("window:toggle-maximize", () => {
-  if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
-  if (mainWindow.isMaximized()) {
-    mainWindow.unmaximize()
-  } else {
-    mainWindow.maximize()
-  }
-  return { success: true, maximized: mainWindow.isMaximized() }
+  // Maximizing is disabled — the window is intentionally width-capped.
+  return { success: false, maximized: false, reason: "maximize-disabled" }
 })
 
 ipcMain.handle("window:is-maximized", () => {
@@ -774,11 +812,14 @@ ipcMain.handle("window:is-maximized", () => {
 })
 
 ipcMain.handle("window:maximize", () => {
-  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.maximize()
+  // Disabled: the app window is width-capped by design.
+  return { success: false, reason: "maximize-disabled" }
 })
 
 ipcMain.handle("window:unmaximize", () => {
-  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.unmaximize()
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized()) {
+    mainWindow.unmaximize()
+  }
 })
 
 ipcMain.handle("window:hide", () => {
@@ -841,17 +882,18 @@ ipcMain.handle("window:get-bounds", () => {
 
 ipcMain.handle("window:set-default-size", (_event, preset) => {
   if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
-  const sizes = { mini: [360, 500], medium: [440, 700], full: [700, 700] }
-  const [w, h] = sizes[preset] || sizes.medium
-  mainWindow.setSize(w, h)
+  const presetSize = WINDOW_PRESETS[preset] || DEFAULT_WINDOW_SIZE
+  const size = clampToScreen(mainWindow, presetSize.width, presetSize.height)
+  mainWindow.setSize(size.width, size.height)
   mainWindow.center()
   return { success: true }
 })
 
 ipcMain.handle("window:set-size", (_event, width, height) => {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setSize(Math.round(width), Math.round(height))
-    return { success: true }
+    const size = clampToScreen(mainWindow, Math.round(width), Math.round(height))
+    mainWindow.setSize(size.width, size.height)
+    return { success: true, ...size }
   }
   return { success: false }
 })
