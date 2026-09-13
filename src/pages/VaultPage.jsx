@@ -7,7 +7,7 @@ import {
   IconSearch, IconX, IconCopy, IconTrash, IconDotsVertical, IconEdit,
   IconStar, IconStarFilled, IconEye, IconEyeOff, IconShieldLock, IconLoader2,
   IconArrowLeft, IconPin, IconPinFilled, IconLink, IconPaperclip,
-  IconFolderFilled, IconFolderPlus, IconFiles, IconPlus,
+  IconFolderFilled, IconFolderPlus, IconFiles, IconPlus, IconInfoCircle,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -93,6 +93,9 @@ export default function VaultPage() {
   const [moveItemId, setMoveItemId] = useState(null)
   const [addItemsOpen, setAddItemsOpen] = useState(false)
   const [addItemsSearch, setAddItemsSearch] = useState("")
+  const [detailsVaultFolder, setDetailsVaultFolder] = useState(null)
+  const [detailsVaultItems, setDetailsVaultItems] = useState([])
+  const [detailsVaultChildren, setDetailsVaultChildren] = useState([])
   const createVaultFolderRef = useRef(null)
   const searchRef = useRef(null)
   const mini = !sidebarVisible
@@ -219,6 +222,18 @@ export default function VaultPage() {
       setAddItemsSearch("")
       toast.success(`${itemIds.length} item(s) added`)
     } catch { toast.error("Failed") }
+  }
+
+  const openVaultFolderDetails = async (folder) => {
+    setDetailsVaultFolder(folder)
+    try {
+      const [itemsResult, children] = await Promise.all([
+        window.vaultFolderAPI.getItems(folder.id),
+        window.vaultFolderAPI.children(folder.id),
+      ])
+      setDetailsVaultItems(itemsResult?.items || [])
+      setDetailsVaultChildren(children || [])
+    } catch { setDetailsVaultItems([]); setDetailsVaultChildren([]) }
   }
 
   useEffect(() => {
@@ -642,14 +657,14 @@ export default function VaultPage() {
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="min-w-0 flex items-center gap-2">
             {!sidebarVisible && vaultFolderView === "items" && (
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={goBackToVaultFolders}>
-                <IconArrowLeft size={14} />
-              </Button>
+              <button onClick={goBackToVaultFolders} className="shrink-0 p-1 rounded hover:bg-accent/50 transition-colors cursor-pointer">
+                <IconArrowLeft size={14} className="text-muted-foreground" />
+              </button>
             )}
             {!sidebarVisible && vaultFolderView === "folders" && (
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => navigate("/")}>
-                <IconArrowLeft size={14} />
-              </Button>
+              <button onClick={() => navigate("/")} className="shrink-0 p-1 rounded hover:bg-accent/50 transition-colors cursor-pointer">
+                <IconArrowLeft size={14} className="text-muted-foreground" />
+              </button>
             )}
             {sidebarVisible ? (
               <>
@@ -777,6 +792,7 @@ export default function VaultPage() {
                   onOpen={openVaultFolder}
                   onRename={renameVaultFolderHandler}
                   onDelete={deleteVaultFolderHandler}
+                  onDetails={openVaultFolderDetails}
                 />
               ))}
             </div>
@@ -858,11 +874,18 @@ export default function VaultPage() {
           onSelect={(folderId) => moveVaultItemToFolder(folderId)}
         />
       )}
+      <VaultFolderDetailsDialog
+        folder={detailsVaultFolder}
+        items={detailsVaultItems}
+        childFolders={detailsVaultChildren}
+        open={Boolean(detailsVaultFolder)}
+        onOpenChange={(o) => { if (!o) setDetailsVaultFolder(null) }}
+      />
     </div>
   )
 }
 
-function VaultFolderTile({ folder, index, onOpen, onRename, onDelete }) {
+function VaultFolderTile({ folder, index, onOpen, onRename, onDelete, onDetails }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(folder.name)
   const inputRef = useRef(null)
@@ -912,6 +935,9 @@ function VaultFolderTile({ folder, index, onOpen, onRename, onDelete }) {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditing(true) }}>
             <IconEdit size={13} className="mr-2" /> Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDetails(folder) }}>
+            <IconInfoCircle size={13} className="mr-2" /> Details
           </DropdownMenuItem>
           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); if (confirm("Delete this folder?")) onDelete(folder.id) }} className="text-destructive">
             <IconTrash size={13} className="mr-2" /> Delete
@@ -1020,6 +1046,47 @@ function VaultMoveToFolderDialog({ open, onOpenChange, folders, onSelect }) {
               </button>
             ))
           )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function VaultFolderDetailsDialog({ folder, items, childFolders, open, onOpenChange }) {
+  if (!folder) return null
+  const created = folder.created_at ? new Date(folder.created_at) : null
+  const modified = folder.updated_at ? new Date(folder.updated_at) : null
+  const fmt = (d) => d ? d.toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" }) : "—"
+  const parts = []
+  if (items.length > 0) parts.push(`${items.length} Item${items.length !== 1 ? "s" : ""}`)
+  if (childFolders.length > 0) parts.push(`${childFolders.length} Folder${childFolders.length !== 1 ? "s" : ""}`)
+  const contains = parts.length > 0 ? parts.join(", ") : "Empty"
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="p-0 w-80">
+        <DialogHeader className="px-4 pt-4 pb-3">
+          <DialogTitle className="text-sm flex items-center gap-2">
+            <IconFolderFilled size={18} className="text-yellow-500/80 shrink-0" />
+            <span className="truncate">{folder.name}</span>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="px-4 pb-4 space-y-2 text-xs">
+          <div className="flex items-center gap-3 py-1">
+            <span className="text-muted-foreground w-20 shrink-0">Type:</span>
+            <span className="text-foreground">File folder</span>
+          </div>
+          <div className="flex items-center gap-3 py-1">
+            <span className="text-muted-foreground w-20 shrink-0">Contains:</span>
+            <span className="text-foreground">{contains}</span>
+          </div>
+          <div className="flex items-center gap-3 py-1">
+            <span className="text-muted-foreground w-20 shrink-0">Created:</span>
+            <span className="text-foreground">{fmt(created)}</span>
+          </div>
+          <div className="flex items-center gap-3 py-1">
+            <span className="text-muted-foreground w-20 shrink-0">Modified:</span>
+            <span className="text-foreground">{fmt(modified)}</span>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
