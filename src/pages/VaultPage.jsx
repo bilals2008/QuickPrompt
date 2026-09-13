@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext } from "react-router-dom"
 import { toast } from "sonner"
 import {
   IconArrowLeft,
+  IconCheckbox,
   IconFiles,
   IconFolderPlus,
   IconLoader2,
@@ -26,7 +27,8 @@ import { VaultAddItemsDialog } from "@/components/vault/VaultAddItemsDialog"
 import { VaultMoveToFolderDialog } from "@/components/vault/VaultMoveToFolderDialog"
 import { VaultFolderDetailsDialog } from "@/components/vault/VaultFolderDetailsDialog"
 import { FolderTile } from "@/components/folders/FolderTile"
-import { NewFolderInput } from "@/components/folders/NewFolderInput"
+import { NewFolderDialog } from "@/components/folders/NewFolderDialog"
+import { BulkDeleteConfirmDialog } from "@/components/folders/BulkDeleteConfirmDialog"
 import { FolderBreadcrumb } from "@/components/folders/FolderBreadcrumb"
 import { FolderCustomizeDialog } from "@/components/folders/FolderCustomizeDialog"
 import { SectionHeader } from "@/components/section-header"
@@ -73,7 +75,8 @@ export default function VaultPage() {
 
   const [activeVaultFolder, setActiveVaultFolder] = useState(null)
   const [showFolders, setShowFolders] = useState(true)
-  const [creatingParentId, setCreatingParentId] = useState(undefined)
+  const [newFolderOpen, setNewFolderOpen] = useState(false)
+  const [newFolderParentId, setNewFolderParentId] = useState(null)
   const [moveItemId, setMoveItemId] = useState(null)
   const [addItemsOpen, setAddItemsOpen] = useState(false)
   const [addItemsSearch, setAddItemsSearch] = useState("")
@@ -84,6 +87,9 @@ export default function VaultPage() {
   const [customizeFolder, setCustomizeFolder] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [folderStats, setFolderStats] = useState({})
+  const [selectedFolderIds, setSelectedFolderIds] = useState(new Set())
+  const [selectionActive, setSelectionActive] = useState(false)
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
   const searchRef = useRef(null)
   const mini = !sidebarVisible
@@ -94,9 +100,6 @@ export default function VaultPage() {
     () => (activeVaultFolder ? breadcrumbFor(activeVaultFolder.id) : []),
     [activeVaultFolder, breadcrumbFor]
   )
-
-  const isCreating = creatingParentId !== undefined
-  const creatingParent = creatingParentId === undefined ? undefined : creatingParentId
 
   /* ---------------- data loading ---------------- */
 
@@ -219,7 +222,8 @@ export default function VaultPage() {
     async (folder) => {
       if (!folder) return
       setActiveVaultFolder(folder)
-      setCreatingParentId(undefined)
+      setNewFolderOpen(false)
+      setSelectedFolderIds(new Set())
       await loadFolderItems(folder)
     },
     [loadFolderItems]
@@ -227,21 +231,24 @@ export default function VaultPage() {
 
   const goBackToVaultFolders = useCallback(() => {
     setActiveVaultFolder(null)
-    setCreatingParentId(undefined)
+    setNewFolderOpen(false)
+    setSelectedFolderIds(new Set())
   }, [])
 
-  const startCreating = (parentId) => setCreatingParentId(parentId)
+  const startCreating = (parentId) => {
+    setNewFolderParentId(parentId)
+    setNewFolderOpen(true)
+  }
 
-  const handleCreateFolder = async (name) => {
+  const handleCreateFolder = async ({ name, icon, color }) => {
     try {
       await createFolder({
         name,
-        parentId: creatingParent ?? null,
-        icon: folderDisplay.defaultIcon,
-        color: folderDisplay.defaultColor,
+        parentId: newFolderParentId ?? null,
+        icon,
+        color,
       })
-      setCreatingParentId(undefined)
-      toast.success(creatingParent ? "Subfolder created" : "Folder created")
+      toast.success(newFolderParentId ? "Subfolder created" : "Folder created")
     } catch {
       toast.error("Failed to create folder")
     }
@@ -273,6 +280,68 @@ export default function VaultPage() {
   const requestDelete = (folder) => {
     if (folderDisplay.confirmDelete) setDeleteTarget(folder)
     else handleDeleteFolder(folder)
+  }
+
+  /* ---------------- selection ---------------- */
+
+  const selectionMode = selectionActive || selectedFolderIds.size > 0
+
+  const toggleSelect = (folderId) => {
+    setSelectedFolderIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(folderId)) next.delete(folderId)
+      else next.add(folderId)
+      return next
+    })
+  }
+
+  const clearSelection = () => {
+    setSelectedFolderIds(new Set())
+    setSelectionActive(false)
+  }
+
+  const toggleSelectionActive = () => {
+    setSelectionActive((prev) => !prev)
+    if (selectionActive) {
+      setSelectedFolderIds(new Set())
+    }
+  }
+
+  const selectAll = () => {
+    const allVisible = [...visibleRootFolders, ...visibleChildFolders]
+    setSelectedFolderIds(new Set(allVisible.map((f) => f.id)))
+  }
+
+  const selectedSubfolderCount = useMemo(() => {
+    let count = 0
+    for (const id of selectedFolderIds) {
+      count += childrenOf(id).length
+    }
+    return count
+  }, [selectedFolderIds, childrenOf])
+
+  const handleBulkDelete = async ({ deleteContents }) => {
+    const ids = Array.from(selectedFolderIds)
+    if (ids.length === 0) return
+    try {
+      if (deleteContents) {
+        for (const id of ids) {
+          const result = await window.vaultFolderAPI.getItems(id)
+          const items = result?.items || []
+          for (const item of items) {
+            await window.vaultAPI.delete(item.id)
+          }
+        }
+      }
+      for (const id of ids) {
+        await deleteFolder(id)
+      }
+      if (ids.includes(activeVaultFolder?.id)) goBackToVaultFolders()
+      clearSelection()
+      toast.success(`${ids.length} ${ids.length === 1 ? "folder" : "folders"} deleted`)
+    } catch {
+      toast.error("Failed to delete folders")
+    }
   }
 
   const handleNewSubfolder = async (folder) => {
@@ -444,11 +513,13 @@ export default function VaultPage() {
   const tileProps = {
     showCustomAppearance: folderDisplay.showFolderAppearance,
     showCounts: folderDisplay.showItemCounts,
+    selectionMode,
     onOpen: openVaultFolder,
     onCustomize: setCustomizeFolder,
     onDelete: requestDelete,
     onDetails: openVaultFolderDetails,
     onNewSubfolder: handleNewSubfolder,
+    onToggleSelect: toggleSelect,
   }
 
   const renderFolderGrid = (list) => (
@@ -460,6 +531,7 @@ export default function VaultPage() {
           index={idx}
           itemCount={folderStats[folder.id] || 0}
           subfolderCount={childrenOf(folder.id).length}
+          selected={selectedFolderIds.has(folder.id)}
           {...tileProps}
         />
       ))}
@@ -616,6 +688,22 @@ export default function VaultPage() {
           <TooltipContent>{activeVaultFolder ? "New subfolder" : "New folder"}</TooltipContent>
         </Tooltip>
 
+        {view === "folders" && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={selectionActive ? "secondary" : "ghost"}
+                size="icon"
+                className="size-7 shrink-0"
+                onClick={toggleSelectionActive}
+              >
+                <IconCheckbox size={14} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{selectionActive ? "Exit selection" : "Select folders"}</TooltipContent>
+          </Tooltip>
+        )}
+
         {view === "folders" && vaultFolders.length > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -633,6 +721,40 @@ export default function VaultPage() {
         )}
       </div>
 
+      {/* Bulk selection toolbar */}
+      {selectionMode && (
+        <div className="flex items-center gap-2 border-b border-border/30 bg-muted/30 px-3 py-2 sm:px-4">
+          <span className="text-xs font-medium text-muted-foreground">
+            {selectedFolderIds.size} selected
+          </span>
+          <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 cursor-pointer text-xs"
+            onClick={selectedFolderIds.size === visibleRootFolders.length + visibleChildFolders.length ? clearSelection : selectAll}
+          >
+            {selectedFolderIds.size === visibleRootFolders.length + visibleChildFolders.length ? "Deselect all" : "Select all"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 cursor-pointer text-xs"
+            onClick={clearSelection}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-7 cursor-pointer text-xs"
+            onClick={() => setBulkDeleteOpen(true)}
+          >
+            Delete
+          </Button>
+        </div>
+      )}
+
       {view === "items" && (
         <FolderBreadcrumb
           breadcrumb={breadcrumb}
@@ -645,16 +767,6 @@ export default function VaultPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3 pb-20 sm:p-4 sm:pb-20">
-        {isCreating && (
-          <NewFolderInput
-            icon={folderDisplay.defaultIcon}
-            color={folderDisplay.defaultColor}
-            placeholder={creatingParent ? "New Subfolder" : "New Folder"}
-            onSubmit={handleCreateFolder}
-            onCancel={() => setCreatingParentId(undefined)}
-          />
-        )}
-
         {!encryptionAvailable && <EncryptionNotice />}
 
         {view === "folders" ? (
@@ -772,6 +884,25 @@ export default function VaultPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NewFolderDialog
+        open={newFolderOpen}
+        onOpenChange={setNewFolderOpen}
+        onSubmit={handleCreateFolder}
+        parentId={newFolderParentId}
+        existingFolders={vaultFolders}
+        defaultIcon={folderDisplay.defaultIcon}
+        defaultColor={folderDisplay.defaultColor}
+        isSubfolder={Boolean(newFolderParentId)}
+      />
+
+      <BulkDeleteConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        folderCount={selectedFolderIds.size}
+        subfolderCount={selectedSubfolderCount}
+        onDelete={handleBulkDelete}
+      />
     </div>
   )
 }

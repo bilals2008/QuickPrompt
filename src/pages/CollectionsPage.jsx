@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate, useOutletContext } from "react-router-dom"
 import { toast } from "sonner"
 import {
   IconArrowLeft,
+  IconCheckbox,
   IconFiles,
   IconFolderFilled,
   IconFolderPlus,
@@ -26,7 +27,8 @@ import { PromptRow } from "@/components/collections/PromptRow"
 import { AddPromptsDialog } from "@/components/collections/AddPromptsDialog"
 import { FolderDetailsDialog } from "@/components/collections/FolderDetailsDialog"
 import { FolderBreadcrumb } from "@/components/folders/FolderBreadcrumb"
-import { NewFolderInput } from "@/components/folders/NewFolderInput"
+import { NewFolderDialog } from "@/components/folders/NewFolderDialog"
+import { BulkDeleteConfirmDialog } from "@/components/folders/BulkDeleteConfirmDialog"
 import { FolderCustomizeDialog } from "@/components/folders/FolderCustomizeDialog"
 import { SectionHeader } from "@/components/section-header"
 import { EmptyState } from "@/components/empty-state"
@@ -59,7 +61,8 @@ export default function CollectionsPage() {
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const [creatingParentId, setCreatingParentId] = useState(undefined) // undefined = not creating
+  const [newFolderOpen, setNewFolderOpen] = useState(false)
+  const [newFolderParentId, setNewFolderParentId] = useState(null)
 
   const [allPrompts, setAllPrompts] = useState([])
   const [addPromptsOpen, setAddPromptsOpen] = useState(false)
@@ -71,18 +74,17 @@ export default function CollectionsPage() {
 
   const [customizeFolder, setCustomizeFolder] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [selectedFolderIds, setSelectedFolderIds] = useState(new Set())
+  const [selectionActive, setSelectionActive] = useState(false)
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
   const [stats, setStats] = useState({ prompts: {}, subfolders: {} })
-  const createAnchorRef = useRef(null)
 
   const childFolders = activeFolder ? childrenOf(activeFolder.id) : []
   const breadcrumb = useMemo(
     () => (activeFolder ? breadcrumbFor(activeFolder.id) : []),
     [activeFolder, breadcrumbFor]
   )
-
-  const creatingParent = creatingParentId === undefined ? undefined : creatingParentId
-  const isCreating = creatingParent !== undefined
 
   /* ---------------- data loading ---------------- */
 
@@ -147,7 +149,8 @@ export default function CollectionsPage() {
       setActiveFolder(folder)
       setView("prompts")
       setSearchQuery("")
-      setCreatingParentId(undefined)
+      setNewFolderOpen(false)
+      setSelectedFolderIds(new Set())
       await loadFolderPrompts(folder.id)
     },
     [loadFolderPrompts]
@@ -158,26 +161,26 @@ export default function CollectionsPage() {
     setActiveFolder(null)
     setPrompts([])
     setSearchQuery("")
-    setCreatingParentId(undefined)
+    setNewFolderOpen(false)
+    setSelectedFolderIds(new Set())
   }, [])
 
   /* ---------------- folder mutations ---------------- */
 
   const startCreating = (parentId) => {
-    setCreatingParentId(parentId)
-    setTimeout(() => createAnchorRef.current?.scrollIntoView?.({ block: "nearest" }), 50)
+    setNewFolderParentId(parentId)
+    setNewFolderOpen(true)
   }
 
-  const handleCreateFolder = async (name) => {
+  const handleCreateFolder = async ({ name, icon, color }) => {
     try {
       await createFolder({
         name,
-        parentId: creatingParent ?? null,
-        icon: folderDisplay.defaultIcon,
-        color: folderDisplay.defaultColor,
+        parentId: newFolderParentId ?? null,
+        icon,
+        color,
       })
-      setCreatingParentId(undefined)
-      toast.success(creatingParent ? "Subfolder created" : "Folder created")
+      toast.success(newFolderParentId ? "Subfolder created" : "Folder created")
     } catch {
       toast.error("Failed to create folder")
     }
@@ -209,6 +212,67 @@ export default function CollectionsPage() {
   const requestDelete = (folder) => {
     if (folderDisplay.confirmDelete) setDeleteTarget(folder)
     else handleDeleteFolder(folder)
+  }
+
+  /* ---------------- selection ---------------- */
+
+  const selectionMode = selectionActive || selectedFolderIds.size > 0
+
+  const toggleSelect = (folderId) => {
+    setSelectedFolderIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(folderId)) next.delete(folderId)
+      else next.add(folderId)
+      return next
+    })
+  }
+
+  const clearSelection = () => {
+    setSelectedFolderIds(new Set())
+    setSelectionActive(false)
+  }
+
+  const toggleSelectionActive = () => {
+    setSelectionActive((prev) => !prev)
+    if (selectionActive) {
+      setSelectedFolderIds(new Set())
+    }
+  }
+
+  const selectAll = () => {
+    setSelectedFolderIds(new Set(visibleFolders.map((f) => f.id)))
+  }
+
+  const selectedSubfolderCount = useMemo(() => {
+    let count = 0
+    for (const id of selectedFolderIds) {
+      count += childrenOf(id).length
+    }
+    return count
+  }, [selectedFolderIds, childrenOf])
+
+  const handleBulkDelete = async ({ deleteContents }) => {
+    const ids = Array.from(selectedFolderIds)
+    if (ids.length === 0) return
+    try {
+      if (deleteContents) {
+        for (const id of ids) {
+          const result = await window.folderAPI.getPrompts(id)
+          const promptIds = (result?.prompts || []).map((p) => p.id)
+          for (const pid of promptIds) {
+            await window.db.deletePrompt(pid)
+          }
+        }
+      }
+      for (const id of ids) {
+        await deleteFolder(id)
+      }
+      if (ids.includes(activeFolder?.id)) goHome()
+      clearSelection()
+      toast.success(`${ids.length} ${ids.length === 1 ? "folder" : "folders"} deleted`)
+    } catch {
+      toast.error("Failed to delete folders")
+    }
   }
 
   const handleNewSubfolder = async (folder) => {
@@ -294,11 +358,13 @@ export default function CollectionsPage() {
   const tileProps = {
     showCustomAppearance: folderDisplay.showFolderAppearance,
     showCounts: folderDisplay.showItemCounts,
+    selectionMode,
     onOpen: openFolder,
     onCustomize: setCustomizeFolder,
     onDelete: requestDelete,
     onDetails: openDetails,
     onNewSubfolder: handleNewSubfolder,
+    onToggleSelect: toggleSelect,
   }
 
   const renderFolderGrid = (list) => (
@@ -310,6 +376,7 @@ export default function CollectionsPage() {
           index={idx}
           itemCount={stats.prompts[folder.id] || 0}
           subfolderCount={stats.subfolders[folder.id] || 0}
+          selected={selectedFolderIds.has(folder.id)}
           {...tileProps}
         />
       ))}
@@ -402,7 +469,57 @@ export default function CollectionsPage() {
           </TooltipTrigger>
           <TooltipContent>Refresh</TooltipContent>
         </Tooltip>
+
+        {view === "folders" && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={selectionActive ? "secondary" : "ghost"}
+                size="icon"
+                className="size-7 shrink-0"
+                onClick={toggleSelectionActive}
+              >
+                <IconCheckbox size={14} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{selectionActive ? "Exit selection" : "Select folders"}</TooltipContent>
+          </Tooltip>
+        )}
       </div>
+
+      {/* Bulk selection toolbar */}
+      {selectionMode && view === "folders" && (
+        <div className="flex items-center gap-2 border-b border-border/30 bg-muted/30 px-3 py-2 sm:px-4">
+          <span className="text-xs font-medium text-muted-foreground">
+            {selectedFolderIds.size} selected
+          </span>
+          <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 cursor-pointer text-xs"
+            onClick={selectedFolderIds.size === visibleFolders.length ? clearSelection : selectAll}
+          >
+            {selectedFolderIds.size === visibleFolders.length ? "Deselect all" : "Select all"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 cursor-pointer text-xs"
+            onClick={clearSelection}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-7 cursor-pointer text-xs"
+            onClick={() => setBulkDeleteOpen(true)}
+          >
+            Delete
+          </Button>
+        </div>
+      )}
 
       {view === "prompts" && (
         <FolderBreadcrumb
@@ -415,20 +532,8 @@ export default function CollectionsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4">
-        {isCreating && (
-          <div ref={createAnchorRef}>
-            <NewFolderInput
-              icon={folderDisplay.defaultIcon}
-              color={folderDisplay.defaultColor}
-              placeholder={creatingParent ? "New Subfolder" : "New Folder"}
-              onSubmit={handleCreateFolder}
-              onCancel={() => setCreatingParentId(undefined)}
-            />
-          </div>
-        )}
-
         {view === "folders" ? (
-          visibleFolders.length === 0 && !isCreating ? (
+          visibleFolders.length === 0 && !newFolderOpen ? (
             <EmptyState
               className="py-14"
               icon={IconFolderFilled}
@@ -589,6 +694,25 @@ export default function CollectionsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NewFolderDialog
+        open={newFolderOpen}
+        onOpenChange={setNewFolderOpen}
+        onSubmit={handleCreateFolder}
+        parentId={newFolderParentId}
+        existingFolders={folders}
+        defaultIcon={folderDisplay.defaultIcon}
+        defaultColor={folderDisplay.defaultColor}
+        isSubfolder={Boolean(newFolderParentId)}
+      />
+
+      <BulkDeleteConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        folderCount={selectedFolderIds.size}
+        subfolderCount={selectedSubfolderCount}
+        onDelete={handleBulkDelete}
+      />
     </div>
   )
 }
