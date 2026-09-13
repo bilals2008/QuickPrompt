@@ -25,3 +25,17 @@ export function isExplicitTitle(prompt) {
   if (!prompt || typeof prompt !== "object") return false
   return typeof prompt.title === "string" && prompt.title.trim().length > 0
 }
+
+/**
+ * The body of a prompt — the full content when an explicit title is set,
+ * otherwise everything after the line used as the derived title.
+ */
+export function getPromptBody(prompt) {
+  const content = typeof prompt?.content === "string" ? prompt.content : ""
+  if (!content) return ""
+  if (isExplicitTitle(prompt)) return content.trim()
+  const lines = content.split("\n")
+  const firstIdx = lines.findIndex((l) => l.trim().length > 0)
+  if (firstIdx === -1) return ""
+  return lines.slice(firstIdx + 1).join("\n").trim()
+}

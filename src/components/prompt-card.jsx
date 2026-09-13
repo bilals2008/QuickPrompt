@@ -19,20 +19,10 @@ import {
 } from "@/components/ui/popover"
 import { EditPromptDialog } from "@/components/edit-prompt-dialog"
 import { cn } from "@/lib/utils"
-import { getPromptTitle, isExplicitTitle } from "@/lib/prompt-utils"
+import { getPromptTitle, getPromptBody } from "@/lib/prompt-utils"
 import { parseTagsString } from "@/lib/tag-utils"
+import { TAG_CLASS, getTagColor } from "@/lib/tag-colors"
 import { DENSITY_CLASSES, LINE_CLAMP_MAP } from "@/hooks/useCardDisplaySettings"
-
-const TAG_COLORS = [
-  "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
-  "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
-  "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400",
-  "bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400",
-  "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400",
-  "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400",
-  "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
-  "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400",
-]
 
 const STICKY_TINTS = [
   "sticky-tint-yellow",
@@ -54,15 +44,6 @@ function getStickyTint(content, tag) {
   return STICKY_TINTS[Math.abs(hash) % STICKY_TINTS.length]
 }
 
-function getTagColor(tag) {
-  let hash = 0
-  for (let i = 0; i < tag.length; i++) {
-    hash = tag.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
-}
-
-const TAG_CLASS = "inline-flex items-center rounded-full px-1.5 py-[1px] text-[10px] font-medium border leading-tight"
 const MORE_CLASS = "inline-flex items-center rounded-full border border-border/60 bg-muted px-1.5 py-[1px] text-[10px] font-medium text-muted-foreground leading-tight cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground"
 
 function TagList({ tags, max = 3, wrap = true }) {
@@ -118,16 +99,6 @@ function formatTime(date) {
   return new Date(date).toLocaleDateString()
 }
 
-function getBodyText(prompt) {
-  const content = typeof prompt?.content === "string" ? prompt.content : ""
-  if (!content) return ""
-  if (isExplicitTitle(prompt)) return content
-  const lines = content.split("\n")
-  const firstIdx = lines.findIndex((l) => l.trim().length > 0)
-  if (firstIdx === -1) return ""
-  return lines.slice(firstIdx + 1).join("\n").trim()
-}
-
 export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display, dragHandle, folderName, folderColor, folderIcon, onMoveToFolder }) {
   const showTags = display?.showTags ?? true
   const showTitle = display?.showTitle ?? true
@@ -146,7 +117,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   const [clicked, setClicked] = useState(false)
 
   const title = getPromptTitle(prompt)
-  const bodyText = getBodyText(prompt)
+  const bodyText = getPromptBody(prompt)
   const hasBody = bodyText.length > 0
 
   const handleCopy = (e) => {
