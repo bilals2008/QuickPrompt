@@ -1,5 +1,13 @@
 // File: src/features/onboarding/OnboardingStep.jsx
-import { IconDeviceDesktop, IconCopy, IconCommand, IconArrowsTransferUpDown } from "@tabler/icons-react"
+import {
+  IconDeviceDesktop,
+  IconCopy,
+  IconCommand,
+  IconArrowsTransferUpDown,
+  IconFolder,
+  IconPalette,
+  IconLock,
+} from "@tabler/icons-react"
 
 const steps = [
   {
@@ -20,6 +28,14 @@ const steps = [
   },
   {
     id: 3,
+    title: "Collections & Folders",
+    description: "Organize prompts into folders. Group related prompts together and find them fast.",
+    icon: IconFolder,
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
+  },
+  {
+    id: 4,
     title: "Spotlight Search",
     description: "Press ⌘ + K (or Ctrl + K) anywhere to instantly search and open any prompt with Spotlight.",
     icon: IconCommand,
@@ -27,7 +43,23 @@ const steps = [
     bgColor: "bg-cyan-500/10",
   },
   {
-    id: 4,
+    id: 5,
+    title: "Themes",
+    description: "Switch between Light, Cyberpunk, or Volt themes. Make QuickPrompt feel like yours.",
+    icon: IconPalette,
+    color: "text-pink-500",
+    bgColor: "bg-pink-500/10",
+  },
+  {
+    id: 6,
+    title: "Vault",
+    description: "Store sensitive prompts in an encrypted vault. Password-protected and private.",
+    icon: IconLock,
+    color: "text-red-500",
+    bgColor: "bg-red-500/10",
+  },
+  {
+    id: 7,
     title: "Import & Export",
     description: "Back up your prompts anytime, or migrate from another tool. Your data is always yours.",
     icon: IconArrowsTransferUpDown,
