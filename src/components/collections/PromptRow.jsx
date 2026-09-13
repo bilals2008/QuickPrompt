@@ -4,6 +4,7 @@ import { getPromptTitle, getPromptBody } from "@/lib/prompt-utils"
 import { parseTagsString } from "@/lib/tag-utils"
 import { TAG_CLASS, getTagColor } from "@/lib/tag-colors"
 import { IconCheck, IconCopy, IconStar, IconStarFilled, IconX } from "@tabler/icons-react"
+import { PromptDetailDialog } from "@/components/prompt-detail-dialog"
 
 function TagChips({ tags, max = 4 }) {
   const list = parseTagsString(tags)
@@ -32,6 +33,7 @@ function TagChips({ tags, max = 4 }) {
  */
 export function PromptRow({ prompt, onCopy, onRemove, onToggleFavorite }) {
   const [copied, setCopied] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
 
   const title = getPromptTitle(prompt)
   const body = getPromptBody(prompt)
@@ -43,9 +45,16 @@ export function PromptRow({ prompt, onCopy, onRemove, onToggleFavorite }) {
     setTimeout(() => setCopied(false), 1400)
   }
 
+  const handleDoubleClick = (e) => {
+    e.stopPropagation()
+    setDetailOpen(true)
+  }
+
   return (
+    <>
     <div
       onClick={handleCopy}
+      onDoubleClick={handleDoubleClick}
       className={cn(
         "group relative flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-card p-3 transition-all duration-150",
         "hover:border-border hover:bg-accent/30 hover:shadow-sm"
@@ -120,6 +129,12 @@ export function PromptRow({ prompt, onCopy, onRemove, onToggleFavorite }) {
         )}
       </div>
     </div>
+    <PromptDetailDialog
+      prompt={prompt}
+      open={detailOpen}
+      onOpenChange={setDetailOpen}
+    />
+    </>
   )
 }
 

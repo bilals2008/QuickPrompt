@@ -18,6 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { EditPromptDialog } from "@/components/edit-prompt-dialog"
+import { PromptDetailDialog } from "@/components/prompt-detail-dialog"
 import { cn } from "@/lib/utils"
 import { getPromptTitle, getPromptBody } from "@/lib/prompt-utils"
 import { parseTagsString } from "@/lib/tag-utils"
@@ -95,6 +96,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   const tintTag = colorByTag && prompt.tags.length > 0 ? prompt.tags[0] : null
   const [copied, setCopied] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [clicked, setClicked] = useState(false)
 
   const title = getPromptTitle(prompt)
@@ -121,6 +123,11 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   const handleFavorite = (e) => {
     e.stopPropagation()
     onToggleFavorite(prompt.id)
+  }
+
+  const handleDoubleClick = (e) => {
+    e.stopPropagation()
+    setDetailOpen(true)
   }
 
   const starBtn = (
@@ -184,9 +191,12 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
     </>
   )
 
-  return viewMode === "list" ? (
+  return (
+    <>
+    {viewMode === "list" ? (
     <div
       onClick={handleCardClick}
+      onDoubleClick={handleDoubleClick}
       className={cn(
         "group flex cursor-pointer items-center gap-4 rounded-lg border border-border bg-card px-4 py-3 transition-all hover:bg-accent/50 hover:ring-1 hover:ring-primary/20",
         clicked && "scale-[0.98] ring-2 ring-primary/40"
@@ -227,6 +237,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   ) : (
     <div
       onClick={handleCardClick}
+      onDoubleClick={handleDoubleClick}
       className={cn(
         "group flex cursor-pointer flex-col rounded-xl transition-all",
         mini
@@ -354,6 +365,13 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
         </div>
       )}
     </div>
+  )}
+  <PromptDetailDialog
+    prompt={prompt}
+    open={detailOpen}
+    onOpenChange={setDetailOpen}
+  />
+  </>
   )
 }
 
