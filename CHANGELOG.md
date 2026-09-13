@@ -1,36 +1,167 @@
-# Changelog
+# 🚀 QuickPrompt v2.0.0
 
-All notable changes to this project will be documented in this file.
+**Release Date:** September 13, 2026 ✨
+🏷️ Version: v2.0.0
 
-## [1.9.0] - 2026-08-14
+---
 
-### Added
-- **Vault (New!)**: store passwords, API keys, and other secret info safely inside QuickPrompt.
-  - Your secrets are locked with your computer's built-in security, so only you can see them.
-  - Add, edit, and search for credentials quickly.
-  - Pin important items to the top, mark favorites with a star, and organize with colorful tags.
-  - Cards match the app's fun sticky-note look — each type has its own color.
-  - Use it in the mini window too, with easy copy-and-paste buttons.
-- **Drag & drop reorder for prompts**: grab any prompt and drag it anywhere you want to organize your list — works with the keyboard too.
-- **Tooltips & springy animation** when reordering, so it feels smooth and clear.
+## ✨ Added
 
-### Fixed
-- Rearranging prompts with drag & drop now saves correctly every time.
-- Small text and color fixes inside the Vault windows so everything is easy to read.
+### 📂 Folders & Collections
 
-## [1.8.0] - 2026-06-18
+* Full folder system for organizing prompts and vault items
+* CollectionsPage with folder grid view and breadcrumb navigation
+* Create, rename, and delete folders
+* Move prompts and vault items into folders via dropdown or dialog picker
+* Folder badges on prompt cards for quick identification
 
-### Added
-- **Import & Export page**: full-featured page for importing and exporting prompts.
-  - Drag-and-drop file import with JSON, CSV, and Markdown support.
-  - Import preview with valid/invalid counts and skipped-item details.
-  - Export panel with format selection and prompt count summary.
-- **Settings sidebar search**: quickly jump to a settings section with `/` shortcut.
-- **Theme cards**: redesigned appearance picker with larger, selectable theme cards.
+### 🎨 Folder Appearance
 
-### Changed
-- **Settings layout overhaul**: sections are now grouped into cleaner cards with improved spacing, iconography, and responsive behavior.
-- Backup, updates, and about sections updated to match the new card-based layout.
+* Folder Appearance Picker with custom color input
+* Hex color validation for folder styling
+* Folder display settings on HomePage
+* Configure folder icons and display preferences
 
-### Fixed
-- Add/Edit prompt dialogs no longer expand endlessly when pasting large prompts; textarea height is now capped with scroll.
+### 🔐 Vault Improvements
+
+* Attachments support added to vault items
+* URL field added for link storage
+* Card tints for visual customization
+* Meta field for extra metadata
+* Delete confirmation dialog to prevent accidental deletion
+
+### ⚙️ Settings & UI
+
+* Window size settings updated with better descriptions
+* Enforced width cap in UI for consistent layout
+
+---
+
+## 🔄 Changed
+
+### 🏗️ Codebase Refactor
+
+* Code structure refactored for improved readability and maintainability
+* CollectionsPage layout redesigned with section headers
+* VaultItemDialog now uses a select component for folder selection
+
+---
+
+## 🐛 Fixed
+
+### 📝 UI Fixes
+
+* Folder name truncation in folder details popup fixed
+* Back button behavior simplified across folder navigation
+* Folder selector now works in both mini and full AddPrompt dialog modes
+
+---
+
+## 🙏 Thank You
+
+This is a major release bringing the most requested feature — Folders & Collections. Organize your prompts and vault items the way you want, with a beautiful grid view and full control over appearance. Along with vault improvements and under-the-hood refactoring, QuickPrompt is now more powerful and polished than ever. ✨
+
+---
+---
+
+# 🚀 QuickPrompt v1.9.0
+
+**Release Date:** August 14, 2026 ✨
+🏷️ Version: v1.9.0
+
+---
+
+## ✨ Added
+
+### 🔐 Vault (New!)
+
+* Store passwords, API keys, and other secret info safely inside QuickPrompt
+* Secrets are locked with your computer's built-in security
+* Add, edit, and search for credentials quickly
+* Pin important items to the top and mark favorites with a star
+* Colorful sticky-note style cards — each type has its own color
+* Works in the mini window with easy copy-and-paste buttons
+
+### 🔀 Drag & Drop Reorder
+
+* Grab any prompt and drag it anywhere to organize your list
+* Full keyboard support for reordering
+* Tooltips and springy animation for smooth feedback
+
+---
+
+## 🐛 Fixed
+
+### 📝 Stability Fixes
+
+* Rearranging prompts with drag & drop now saves correctly every time
+* Small text and color fixes inside the Vault windows
+
+---
+
+## 🙏 Thank You
+
+QuickPrompt now keeps your secrets safe with the new encrypted Vault, and organizing prompts is easier than ever with drag & drop. Enjoy the smoother experience! ✨
+
+---
+---
+
+# 🚀 QuickPrompt v1.8.0
+
+**Release Date:** June 18, 2026 ✨
+🏷️ Version: v1.8.0
+
+---
+
+## ✨ Added
+
+### 📥 Import & Export Page
+
+* Full-featured page for importing and exporting prompts
+* Drag-and-drop file import with JSON, CSV, and Markdown support
+* Import preview with valid/invalid counts and skipped-item details
+* Export panel with format selection and prompt count summary
+
+### 🔎 Settings Navigation
+
+* Settings sidebar search added
+* Quickly jump to any settings section
+* `/` keyboard shortcut support
+
+### 🎨 Theme Cards
+
+* Redesigned appearance picker with larger, selectable theme cards
+* Improved theme selection experience
+
+---
+
+## 🔄 Changed
+
+### ⚙️ Settings Experience Overhaul
+
+* Settings page redesigned with cleaner card-based sections
+* Improved spacing and visual hierarchy
+* Updated iconography across settings
+* Better responsive behavior across all screen sizes
+
+### 🗂️ Section Refresh
+
+* Backup section updated to match the new card-based design
+* Updates section redesigned for consistency
+* About section refreshed with improved layout and styling
+
+---
+
+## 🐛 Fixed
+
+### 📝 Prompt Editor Improvements
+
+* Add/Edit Prompt dialogs no longer expand endlessly when pasting large content
+* Textarea height is now capped for better usability
+* Large prompts are now scrollable inside the editor
+
+---
+
+## 🙏 Thank You
+
+This release focuses on better organization, faster settings navigation, improved data management, and a more polished user experience throughout the application. ✨
