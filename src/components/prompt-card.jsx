@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled, IconEdit } from "@tabler/icons-react"
+import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled, IconEdit, IconFolderFilled, IconArrowMoveRight } from "@tabler/icons-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,7 +127,7 @@ function getBodyText(prompt) {
   return lines.slice(firstIdx + 1).join("\n").trim()
 }
 
-export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display, dragHandle }) {
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display, dragHandle, folderName, folderColor, onMoveToFolder }) {
   const showTags = display?.showTags ?? true
   const showTitle = display?.showTitle ?? true
   const showBody = display?.showBody ?? true
@@ -210,6 +210,11 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditOpen(true) }}>
             <IconEdit className="size-3.5" /> Edit
           </DropdownMenuItem>
+          {onMoveToFolder && (
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMoveToFolder(prompt.id) }}>
+              <IconArrowMoveRight className="size-3.5" /> Move to folder
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem variant="destructive" onClick={(e) => { e.stopPropagation(); onDelete(prompt.id) }}>
             <IconTrash className="size-3.5" /> Delete
           </DropdownMenuItem>
@@ -320,13 +325,19 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
       )}
       {mini && (
         <div className={cn("flex items-center justify-between mt-auto", densityClasses.footer)}>
-          {showTimestamp ? (
-            <span className="text-[10px] text-foreground/40 font-medium">
-              {formatTime(prompt.created_at)}
-            </span>
-          ) : (
-            <span />
-          )}
+          <div className="flex items-center gap-1.5 min-w-0">
+            {showTimestamp ? (
+              <span className="text-[10px] text-foreground/40 font-medium">
+                {formatTime(prompt.created_at)}
+              </span>
+            ) : null}
+            {folderName && (
+              <span className="flex items-center gap-0.5 text-[9px] text-foreground/40 truncate">
+                <IconFolderFilled size={9} style={{ color: folderColor || undefined }} className={cn(!folderColor && "text-yellow-500/60")} />
+                {folderName}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-0.5">
             {showCopyButton && (
               <button
@@ -370,13 +381,19 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
       )}
       {!mini && (
         <div className={cn("flex items-center justify-between mt-auto", densityClasses.footer)}>
-          {showTimestamp ? (
-            <span className="text-[10px] text-muted-foreground font-medium">
-              {formatTime(prompt.created_at)}
-            </span>
-          ) : (
-            <span />
-          )}
+          <div className="flex items-center gap-1.5 min-w-0">
+            {showTimestamp ? (
+              <span className="text-[10px] text-muted-foreground font-medium">
+                {formatTime(prompt.created_at)}
+              </span>
+            ) : null}
+            {folderName && (
+              <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground/70 truncate">
+                <IconFolderFilled size={9} style={{ color: folderColor || undefined }} className={cn(!folderColor && "text-yellow-500/60")} />
+                {folderName}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-0.5">
             {showCopyButton && copyBtn}
             {menuBtn}

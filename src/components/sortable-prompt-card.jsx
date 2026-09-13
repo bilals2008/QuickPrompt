@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { PromptCardItem } from "@/components/prompt-card"
 import { cn } from "@/lib/utils"
 
-export function SortablePromptCard({ id, prompt, viewMode, onCopy, onDelete, onToggleFavorite, allTags, mini, onSaved, autoCopy, display }) {
+export function SortablePromptCard({ id, prompt, viewMode, onCopy, onDelete, onToggleFavorite, allTags, mini, onSaved, autoCopy, display, folderName, folderColor, onMoveToFolder }) {
   const {
     attributes,
     listeners,
@@ -64,6 +64,9 @@ export function SortablePromptCard({ id, prompt, viewMode, onCopy, onDelete, onT
         autoCopy={autoCopy}
         display={display}
         dragHandle={dragHandle}
+        folderName={folderName}
+        folderColor={folderColor}
+        onMoveToFolder={onMoveToFolder}
       />
     </div>
   )

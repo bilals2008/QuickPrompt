@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown, IconShieldLock } from "@tabler/icons-react"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown, IconShieldLock, IconFolder, IconFolderFilled } from "@tabler/icons-react"
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { SortableContext, arrayMove, rectSortingStrategy, verticalListSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import { usePromptLoader } from "@/hooks/usePromptLoader"
 import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const PROMPT_PAGE_SIZE = 100
 
@@ -36,6 +37,9 @@ export default function HomePage() {
   const searchRef = useRef(null)
   const isCustomSort = sortOrder === "custom"
   const [showVaultBadge, setShowVaultBadge] = useState(false)
+  const [folderMap, setFolderMap] = useState({})
+  const [movePromptId, setMovePromptId] = useState(null)
+  const [folders, setFolders] = useState([])
 
   useEffect(() => {
     let cancelled = false
@@ -143,6 +147,38 @@ export default function HomePage() {
     window.settingsAPI?.get("defaultSortOrder", "newest").then((v) => setSortOrder(v))
   }, [loadTags])
 
+  const loadFolderMap = useCallback(async () => {
+    try {
+      const allFoldersList = await window.folderAPI.list()
+      const map = {}
+      for (const f of (allFoldersList || [])) {
+        const result = await window.folderAPI.getPrompts(f.id)
+        for (const p of (result?.prompts || [])) {
+          if (!map[p.id]) map[p.id] = []
+          map[p.id].push({ id: f.id, name: f.name, color: f.color })
+        }
+      }
+      setFolderMap(map)
+    } catch { /* ignored */ }
+  }, [])
+
+  useEffect(() => { loadFolderMap() }, [loadFolderMap])
+
+  const loadMoveFolders = useCallback(async () => {
+    const result = await window.folderAPI.list()
+    setFolders(result || [])
+  }, [])
+
+  const handleMovePrompt = async (folderId) => {
+    if (!movePromptId || !folderId) return
+    try {
+      await window.folderAPI.addPrompt(movePromptId, folderId)
+      setMovePromptId(null)
+      await loadFolderMap()
+      toast.success("Prompt moved to folder")
+    } catch { toast.error("Failed to move") }
+  }
+
   function copyPrompt(text) {
     navigator.clipboard.writeText(text)
     if (notifications) toast.success("Copied to clipboard!")
@@ -227,6 +263,22 @@ export default function HomePage() {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">Vault</TooltipContent>
+              </Tooltip>
+            )}
+            {!sidebarVisible && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 cursor-pointer"
+                    onClick={() => navigate("/collections")}
+                    aria-label="Collections"
+                  >
+                    <IconFolder size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Collections</TooltipContent>
               </Tooltip>
             )}
             {!sidebarVisible && (
@@ -408,6 +460,9 @@ export default function HomePage() {
                       onSaved={refresh}
                       autoCopy={autoCopy}
                       display={cardDisplay}
+                      folderName={folderMap[prompt.id]?.[0]?.name}
+                      folderColor={folderMap[prompt.id]?.[0]?.color}
+                      onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
                     />
                   ))}
                 </div>
@@ -433,6 +488,9 @@ export default function HomePage() {
                   onSaved={refresh}
                   autoCopy={autoCopy}
                   display={cardDisplay}
+                  folderName={folderMap[prompt.id]?.[0]?.name}
+                  folderColor={folderMap[prompt.id]?.[0]?.color}
+                  onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
                 />
               ))}
             </div>
@@ -455,6 +513,9 @@ export default function HomePage() {
                     onSaved={refresh}
                     autoCopy={autoCopy}
                     display={cardDisplay}
+                    folderName={folderMap[prompt.id]?.[0]?.name}
+                    folderColor={folderMap[prompt.id]?.[0]?.color}
+                    onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
                   />
                 ))}
               </div>
@@ -475,6 +536,9 @@ export default function HomePage() {
                 onSaved={refresh}
                 autoCopy={autoCopy}
                 display={cardDisplay}
+                folderName={folderMap[prompt.id]?.[0]?.name}
+                folderColor={folderMap[prompt.id]?.[0]?.color}
+                onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
               />
             ))}
           </div>
@@ -516,6 +580,30 @@ export default function HomePage() {
       </div>
 
       <AddPromptDialog onSaved={refresh} allTags={allTags} mini={!sidebarVisible} />
+
+      <Dialog open={!!movePromptId} onOpenChange={(v) => { if (!v) setMovePromptId(null) }}>
+        <DialogContent className="sm:max-w-xs p-0 gap-0">
+          <DialogHeader className="px-4 py-3 border-b border-border/30">
+            <DialogTitle className="text-sm">Move to folder</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-64 overflow-y-auto py-1">
+            {folders.length === 0 ? (
+              <p className="text-xs text-muted-foreground/60 text-center py-6">No folders yet. Create one in Collections first.</p>
+            ) : (
+              folders.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => handleMovePrompt(f.id)}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-left hover:bg-accent/50 transition-colors cursor-pointer"
+                >
+                  <IconFolderFilled size={14} style={{ color: f.color || undefined }} className={cn(!f.color && "text-yellow-500/80")} />
+                  <span className="text-xs truncate">{f.name}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
