@@ -498,9 +498,9 @@ export default function CollectionsPage() {
             variant="ghost"
             size="sm"
             className="h-7 cursor-pointer text-xs"
-            onClick={selectedFolderIds.size === visibleFolders.length ? clearSelection : selectAll}
+            onClick={selectAll}
           >
-            {selectedFolderIds.size === visibleFolders.length ? "Deselect all" : "Select all"}
+            Select all
           </Button>
           <Button
             variant="ghost"

@@ -732,9 +732,9 @@ export default function VaultPage() {
             variant="ghost"
             size="sm"
             className="h-7 cursor-pointer text-xs"
-            onClick={selectedFolderIds.size === visibleRootFolders.length + visibleChildFolders.length ? clearSelection : selectAll}
+            onClick={selectAll}
           >
-            {selectedFolderIds.size === visibleRootFolders.length + visibleChildFolders.length ? "Deselect all" : "Select all"}
+            Select all
           </Button>
           <Button
             variant="ghost"
