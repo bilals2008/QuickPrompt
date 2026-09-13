@@ -108,3 +108,41 @@ contextBridge.exposeInMainWorld("settingsAPI", {
   set: (key, value) => ipcRenderer.invoke("settings:set", key, value),
   pickFolder: () => ipcRenderer.invoke("settings:pick-folder"),
 })
+
+contextBridge.exposeInMainWorld("fsAPI", {
+  readDir: (dirPath) => ipcRenderer.invoke("fs:read-dir", dirPath),
+  getDrives: () => ipcRenderer.invoke("fs:get-drives"),
+})
+
+contextBridge.exposeInMainWorld("folderAPI", {
+  create: (data) => ipcRenderer.invoke("folders:create", data),
+  list: () => ipcRenderer.invoke("folders:list"),
+  roots: () => ipcRenderer.invoke("folders:roots"),
+  children: (parentId) => ipcRenderer.invoke("folders:children", parentId),
+  get: (id) => ipcRenderer.invoke("folders:get", id),
+  breadcrumb: (folderId) => ipcRenderer.invoke("folders:breadcrumb", folderId),
+  rename: (id, name) => ipcRenderer.invoke("folders:rename", id, name),
+  update: (id, data) => ipcRenderer.invoke("folders:update", id, data),
+  delete: (id) => ipcRenderer.invoke("folders:delete", id),
+  search: (query) => ipcRenderer.invoke("folders:search", query),
+  addPrompt: (promptId, folderId) => ipcRenderer.invoke("folders:addPrompt", promptId, folderId),
+  removePrompt: (promptId, folderId) => ipcRenderer.invoke("folders:removePrompt", promptId, folderId),
+  movePrompt: (promptId, fromFolderId, toFolderId) => ipcRenderer.invoke("folders:movePrompt", promptId, fromFolderId, toFolderId),
+  getPrompts: (folderId, options) => ipcRenderer.invoke("folders:getPrompts", folderId, options),
+  getPromptFolders: (promptId) => ipcRenderer.invoke("folders:getPromptFolders", promptId),
+})
+
+contextBridge.exposeInMainWorld("vaultFolderAPI", {
+  create: (data) => ipcRenderer.invoke("vault-folders:create", data),
+  list: () => ipcRenderer.invoke("vault-folders:list"),
+  roots: () => ipcRenderer.invoke("vault-folders:roots"),
+  children: (parentId) => ipcRenderer.invoke("vault-folders:children", parentId),
+  breadcrumb: (folderId) => ipcRenderer.invoke("vault-folders:breadcrumb", folderId),
+  rename: (id, name) => ipcRenderer.invoke("vault-folders:rename", id, name),
+  delete: (id) => ipcRenderer.invoke("vault-folders:delete", id),
+  addItem: (vaultItemId, folderId) => ipcRenderer.invoke("vault-folders:addItem", vaultItemId, folderId),
+  removeItem: (vaultItemId, folderId) => ipcRenderer.invoke("vault-folders:removeItem", vaultItemId, folderId),
+  getItems: (folderId, options) => ipcRenderer.invoke("vault-folders:getItems", folderId, options),
+  getItemFolders: (vaultItemId) => ipcRenderer.invoke("vault-folders:getItemFolders", vaultItemId),
+  search: (query) => ipcRenderer.invoke("vault-folders:search", query),
+})

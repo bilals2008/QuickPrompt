@@ -30,6 +30,36 @@ import {
   deleteAttachment,
   getAttachmentData,
 } from "./database/vault.js"
+import {
+  createFolder,
+  getAllFolders,
+  getRootFolders,
+  getChildFolders,
+  renameFolder,
+  updateFolder,
+  deleteFolder,
+  getFolderBreadcrumb,
+  addPromptToFolder,
+  removePromptFromFolder,
+  movePromptBetweenFolders,
+  getPromptsInFolder,
+  getPromptFolders,
+  searchFolders,
+} from "./database/folders.js"
+import {
+  createVaultFolder,
+  getAllVaultFolders,
+  getRootVaultFolders,
+  getChildVaultFolders,
+  renameVaultFolder,
+  deleteVaultFolder,
+  getVaultFolderBreadcrumb,
+  addVaultItemToFolder,
+  removeVaultItemFromFolder,
+  getVaultItemsInFolder,
+  getVaultItemFolders,
+  searchVaultFolders,
+} from "./database/vault-folders.js"
 import updater from "electron-updater"
 const { autoUpdater } = updater
 
@@ -552,6 +582,114 @@ ipcMain.handle("vault:attachments:download", async (_event, id) => {
   return getAttachmentData(id)
 })
 
+ipcMain.handle("folders:create", async (_event, data) => {
+  return createFolder(data || {})
+})
+
+ipcMain.handle("folders:list", async () => {
+  return getAllFolders()
+})
+
+ipcMain.handle("folders:roots", async () => {
+  return getRootFolders()
+})
+
+ipcMain.handle("folders:children", async (_event, parentId) => {
+  return getChildFolders(parentId)
+})
+
+ipcMain.handle("folders:get", async (_event, id) => {
+  return (await getAllFolders()).find(f => f.id === id) || null
+})
+
+ipcMain.handle("folders:breadcrumb", async (_event, folderId) => {
+  return getFolderBreadcrumb(folderId)
+})
+
+ipcMain.handle("folders:rename", async (_event, id, name) => {
+  return renameFolder(id, name)
+})
+
+ipcMain.handle("folders:update", async (_event, id, data) => {
+  return updateFolder(id, data)
+})
+
+ipcMain.handle("folders:delete", async (_event, id) => {
+  return deleteFolder(id)
+})
+
+ipcMain.handle("folders:search", async (_event, query) => {
+  return searchFolders(query)
+})
+
+ipcMain.handle("folders:addPrompt", async (_event, promptId, folderId) => {
+  return addPromptToFolder(promptId, folderId)
+})
+
+ipcMain.handle("folders:removePrompt", async (_event, promptId, folderId) => {
+  return removePromptFromFolder(promptId, folderId)
+})
+
+ipcMain.handle("folders:movePrompt", async (_event, promptId, fromFolderId, toFolderId) => {
+  return movePromptBetweenFolders(promptId, fromFolderId, toFolderId)
+})
+
+ipcMain.handle("folders:getPrompts", async (_event, folderId, options) => {
+  return getPromptsInFolder(folderId, options || {})
+})
+
+ipcMain.handle("folders:getPromptFolders", async (_event, promptId) => {
+  return getPromptFolders(promptId)
+})
+
+ipcMain.handle("vault-folders:create", async (_event, data) => {
+  return createVaultFolder(data || {})
+})
+
+ipcMain.handle("vault-folders:list", async () => {
+  return getAllVaultFolders()
+})
+
+ipcMain.handle("vault-folders:roots", async () => {
+  return getRootVaultFolders()
+})
+
+ipcMain.handle("vault-folders:children", async (_event, parentId) => {
+  return getChildVaultFolders(parentId)
+})
+
+ipcMain.handle("vault-folders:breadcrumb", async (_event, folderId) => {
+  return getVaultFolderBreadcrumb(folderId)
+})
+
+ipcMain.handle("vault-folders:rename", async (_event, id, name) => {
+  return renameVaultFolder(id, name)
+})
+
+ipcMain.handle("vault-folders:delete", async (_event, id) => {
+  return deleteVaultFolder(id)
+})
+
+ipcMain.handle("vault-folders:addItem", async (_event, vaultItemId, folderId) => {
+  return addVaultItemToFolder(vaultItemId, folderId)
+})
+
+ipcMain.handle("vault-folders:removeItem", async (_event, vaultItemId, folderId) => {
+  return removeVaultItemFromFolder(vaultItemId, folderId)
+})
+
+ipcMain.handle("vault-folders:getItems", async (_event, folderId, options) => {
+  return getVaultItemsInFolder(folderId, options || {})
+})
+
+ipcMain.handle("vault-folders:getItemFolders", async (_event, vaultItemId) => {
+  return getVaultItemFolders(vaultItemId)
+})
+
+ipcMain.handle("vault-folders:search", async (_event, query) => {
+  return searchVaultFolders(query)
+})
+
 ipcMain.handle("update:check", async () => {
   try {
     const result = await autoUpdater.checkForUpdates()
@@ -744,6 +882,46 @@ ipcMain.handle("settings:pick-folder", async () => {
     return { success: false }
   }
   return { success: true, path: result.filePaths[0] }
+})
+
+ipcMain.handle("fs:read-dir", async (_event, dirPath) => {
+  try {
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true })
+    const items = await Promise.all(
+      entries.map(async (entry) => {
+        const fullPath = path.join(dirPath, entry.name)
+        let stat = null
+        try {
+          stat = await fs.promises.stat(fullPath)
+        } catch { /* ignore */ }
+        return {
+          name: entry.name,
+          isDirectory: entry.isDirectory(),
+          isFile: entry.isFile(),
+          size: stat?.size ?? 0,
+          modifiedAt: stat?.mtime?.toISOString() ?? null,
+        }
+      })
+    )
+    return { success: true, items }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle("fs:get-drives", async () => {
+  try {
+    if (isWin) {
+      const { execSync } = await import("node:child_process")
+      const output = execSync("wmic logicaldisk get name", { encoding: "utf-8" })
+      const drives = output.split("\r\n").filter((l) => /^[A-Z]:/.test(l.trim())).map((l) => l.trim())
+      return { success: true, drives }
+    } else {
+      return { success: true, drives: ["/"] }
+    }
+  } catch {
+    return { success: true, drives: isWin ? ["C:\\"] : ["/"] }
+  }
 })
 
 ipcMain.handle("shell:open-external", (_event, url) => {
