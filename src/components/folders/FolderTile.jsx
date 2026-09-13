@@ -79,7 +79,6 @@ export function FolderTile({
           : "border-border/30 hover:border-border/60 hover:bg-accent/30 hover:shadow-sm",
         selectionMode && "select-none"
       )}
-      style={{ animationDelay: `${Math.min(index * 30, 300)}ms`, animationFillMode: "backwards" }}
     >
       {/* Selection checkbox */}
       {selectionMode && (

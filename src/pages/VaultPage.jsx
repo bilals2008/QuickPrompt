@@ -525,15 +525,20 @@ export default function VaultPage() {
   const renderFolderGrid = (list) => (
     <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
       {list.map((folder, idx) => (
-        <FolderTile
+        <div
           key={folder.id}
-          folder={folder}
-          index={idx}
-          itemCount={folderStats[folder.id] || 0}
-          subfolderCount={childrenOf(folder.id).length}
-          selected={selectedFolderIds.has(folder.id)}
-          {...tileProps}
-        />
+          className="animate-folder-tile"
+          style={{ animationDelay: `${idx * 40}ms` }}
+        >
+          <FolderTile
+            folder={folder}
+            index={idx}
+            itemCount={folderStats[folder.id] || 0}
+            subfolderCount={childrenOf(folder.id).length}
+            selected={selectedFolderIds.has(folder.id)}
+            {...tileProps}
+          />
+        </div>
       ))}
     </div>
   )
@@ -771,12 +776,21 @@ export default function VaultPage() {
 
         {view === "folders" ? (
           <>
-            {showFolders && visibleRootFolders.length > 0 && (
-              <div className="mb-5">
-                <SectionHeader label="Folders" count={visibleRootFolders.length} />
-                {renderFolderGrid(visibleRootFolders)}
-              </div>
-            )}
+            <div
+              className="overflow-hidden transition-all duration-300 ease-in-out"
+              style={{
+                maxHeight: showFolders && visibleRootFolders.length > 0 ? "600px" : "0px",
+                opacity: showFolders && visibleRootFolders.length > 0 ? 1 : 0,
+                transform: showFolders && visibleRootFolders.length > 0 ? "translateY(0)" : "translateY(-8px)",
+              }}
+            >
+              {visibleRootFolders.length > 0 && (
+                <div className="mb-5">
+                  <SectionHeader label="Folders" count={visibleRootFolders.length} />
+                  {renderFolderGrid(visibleRootFolders)}
+                </div>
+              )}
+            </div>
 
             <SectionHeader label="Credentials" count={visibleItems.length} />
             {renderItems()}

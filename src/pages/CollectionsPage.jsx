@@ -370,15 +370,20 @@ export default function CollectionsPage() {
   const renderFolderGrid = (list) => (
     <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
       {list.map((folder, idx) => (
-        <FolderTile
+        <div
           key={folder.id}
-          folder={folder}
-          index={idx}
-          itemCount={stats.prompts[folder.id] || 0}
-          subfolderCount={stats.subfolders[folder.id] || 0}
-          selected={selectedFolderIds.has(folder.id)}
-          {...tileProps}
-        />
+          className="animate-folder-tile"
+          style={{ animationDelay: `${idx * 40}ms` }}
+        >
+          <FolderTile
+            folder={folder}
+            index={idx}
+            itemCount={stats.prompts[folder.id] || 0}
+            subfolderCount={stats.subfolders[folder.id] || 0}
+            selected={selectedFolderIds.has(folder.id)}
+            {...tileProps}
+          />
+        </div>
       ))}
     </div>
   )
