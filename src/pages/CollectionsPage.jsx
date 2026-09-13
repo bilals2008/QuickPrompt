@@ -31,6 +31,7 @@ export default function CollectionsPage() {
   const [newFolderName, setNewFolderName] = useState("")
   const [selectedPrompt, setSelectedPrompt] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [showFolders, setShowFolders] = useState(true)
   const [breadcrumb, setBreadcrumb] = useState([])
   const [view, setView] = useState("folders") // "folders" | "prompts"
   const [addPromptsOpen, setAddPromptsOpen] = useState(false)
@@ -39,6 +40,7 @@ export default function CollectionsPage() {
   const [detailsFolder, setDetailsFolder] = useState(null)
   const [detailsPrompts, setDetailsPrompts] = useState([])
   const [detailsChildFolders, setDetailsChildFolders] = useState([])
+  const [deleteConfirmFolder, setDeleteConfirmFolder] = useState(null)
   const createInputRef = useRef(null)
 
   const loadFolders = useCallback(async () => {
@@ -247,6 +249,7 @@ export default function CollectionsPage() {
           </TooltipTrigger>
           <TooltipContent>New Folder</TooltipContent>
         </Tooltip>
+        
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -336,7 +339,7 @@ export default function CollectionsPage() {
                   index={idx}
                   onOpen={openFolder}
                   onRename={renameFolder}
-                  onDelete={deleteFolder}
+                  onDelete={() => setDeleteConfirmFolder(folder)}
                   onDetails={openDetails}
                 />
               ))}
@@ -362,7 +365,7 @@ export default function CollectionsPage() {
                         index={idx}
                         onOpen={openFolder}
                         onRename={renameFolder}
-                        onDelete={deleteFolder}
+                        onDelete={() => setDeleteConfirmFolder(folder)}
                         onDetails={openDetails}
                       />
                     ))}
@@ -431,6 +434,20 @@ export default function CollectionsPage() {
         open={Boolean(detailsFolder)}
         onOpenChange={(o) => { if (!o) setDetailsFolder(null) }}
       />
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={Boolean(deleteConfirmFolder)} onOpenChange={(o) => { if (!o) setDeleteConfirmFolder(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Folder</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete "{deleteConfirmFolder?.name}"? This action cannot be undone.</p>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmFolder(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={() => { deleteFolder(deleteConfirmFolder.id); setDeleteConfirmFolder(null) }}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -558,7 +575,7 @@ function FolderTile({ folder, index, onOpen, onRename, onDelete, onDetails }) {
             <IconInfoCircle size={12} /> Details
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => onDelete(folder.id)} className="gap-2 text-xs text-destructive">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(folder.id) }} className="gap-2 text-xs text-destructive">
             <IconTrash size={12} /> Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -625,12 +642,12 @@ function PromptRow({ prompt, index, onCopy, onRemove, onToggleFavorite, isSelect
           ))}
         </div>
       )}
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <button onClick={(e) => { e.stopPropagation(); onCopy(prompt.content) }} className="p-1 rounded hover:bg-accent transition-colors cursor-pointer" title="Copy">
+      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <button onClick={(e) => { e.stopPropagation(); onCopy(prompt.content) }} className="p-1 rounded hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer" title="Copy">
           <IconCopy size={11} className="text-muted-foreground" />
         </button>
         {onRemove && (
-          <button onClick={(e) => { e.stopPropagation(); onRemove() }} className="p-1 rounded hover:bg-accent transition-colors cursor-pointer" title="Remove">
+          <button onClick={(e) => { e.stopPropagation(); onRemove() }} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer" title="Remove from folder">
             <IconX size={11} className="text-muted-foreground" />
           </button>
         )}
