@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
-import { IconPlus, IconX, IconCheck } from "@tabler/icons-react"
+import { IconPlus, IconX, IconCheck, IconFolderFilled } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -44,6 +44,8 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   const [tagInput, setTagInput] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
   const [allTags, setAllTags] = useState(externalTags || [])
+  const [folders, setFolders] = useState([])
+  const [selectedFolderId, setSelectedFolderId] = useState("")
   const [cardDisplay] = useCardDisplaySettings()
   const inputRef = useRef(null)
   const titleRef = useRef(null)
@@ -52,6 +54,8 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   useEffect(() => {
     if (open) {
       setAllTags(externalTags || [])
+      setSelectedFolderId("")
+      window.folderAPI?.list().then((f) => setFolders(f || [])).catch(() => {})
     }
   }, [open, externalTags])
 
@@ -129,11 +133,14 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
     const fresh = pendingTags.filter((t) => !selectedTags.includes(t))
     const tagsToSave = [...selectedTags, ...fresh]
     try {
-      await window.db.createPrompt({
+      const created = await window.db.createPrompt({
         title: title.trim(),
         content: content.trim(),
         tags: tagsToSave.join(","),
       })
+      if (selectedFolderId && created?.id) {
+        await window.folderAPI?.addPrompt(created.id, selectedFolderId).catch(() => {})
+      }
       for (const newTag of fresh) {
         if (!allTags.includes(newTag)) {
           window.db.createTag(newTag).catch((err) => {
@@ -253,6 +260,24 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
                 className="font-medium"
               />
             </div>
+            {folders.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <IconFolderFilled size={12} />
+                  Folder
+                </Label>
+                <select
+                  value={selectedFolderId}
+                  onChange={(e) => setSelectedFolderId(e.target.value)}
+                  className="w-full h-9 text-sm border border-border rounded-md px-2 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">No folder</option>
+                  {folders.map((f) => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="content">Prompt</Label>
               <Textarea

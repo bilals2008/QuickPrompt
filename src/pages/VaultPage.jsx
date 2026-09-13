@@ -7,12 +7,19 @@ import {
   IconSearch, IconX, IconCopy, IconTrash, IconDotsVertical, IconEdit,
   IconStar, IconStarFilled, IconEye, IconEyeOff, IconShieldLock, IconLoader2,
   IconArrowLeft, IconPin, IconPinFilled, IconLink, IconPaperclip,
+  IconFolderFilled, IconFolderPlus, IconFiles, IconPlus,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Tooltip, TooltipTrigger, TooltipContent,
+} from "@/components/ui/tooltip"
 import { VaultItemDialog, getVaultType } from "@/components/vault-item-dialog"
 import { SortableVaultCard } from "@/components/sortable-vault-card"
 import { cn } from "@/lib/utils"
@@ -76,8 +83,17 @@ export default function VaultPage() {
   const [copied, setCopied] = useState({})
   const [editItem, setEditItem] = useState(null)
   const [encryptionAvailable, setEncryptionAvailable] = useState(true)
-  const [sortOrder, setSortOrder] = useState("newest")
+  const [sortOrder] = useState("newest")
   const [attachmentCounts, setAttachmentCounts] = useState({})
+  const [vaultFolders, setVaultFolders] = useState([])
+  const [activeVaultFolder, setActiveVaultFolder] = useState(null)
+  const [vaultFolderView, setVaultFolderView] = useState("folders")
+  const [creatingVaultFolder, setCreatingVaultFolder] = useState(false)
+  const [newVaultFolderName, setNewVaultFolderName] = useState("")
+  const [moveItemId, setMoveItemId] = useState(null)
+  const [addItemsOpen, setAddItemsOpen] = useState(false)
+  const [addItemsSearch, setAddItemsSearch] = useState("")
+  const createVaultFolderRef = useRef(null)
   const searchRef = useRef(null)
   const mini = !sidebarVisible
   const isCustomSort = sortOrder === "custom"
@@ -92,32 +108,118 @@ export default function VaultPage() {
     try {
       const health = await window.vaultAPI.health()
       setEncryptionAvailable(Boolean(health?.encryptionAvailable))
-      const list = await window.vaultAPI.list({
-        sortOrder,
-        search,
-      })
+      const list = await window.vaultAPI.list({ sortOrder, search })
       setItems(Array.isArray(list) ? list : [])
       const counts = {}
       for (const item of (Array.isArray(list) ? list : [])) {
         try {
           const atts = await window.vaultAPI.listAttachments(item.id)
           counts[item.id] = Array.isArray(atts) ? atts.length : 0
-        } catch {
-          counts[item.id] = 0
-        }
+        } catch { counts[item.id] = 0 }
       }
       setAttachmentCounts(counts)
     } catch (err) {
       console.error("Failed to load vault:", err)
       toast.error("Failed to load vault")
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }, [sortOrder, search])
+
+  const loadAllVaultItems = useCallback(async () => {
+    try {
+      const list = await window.vaultAPI.list({ sortOrder: "newest", search: "" })
+      setItems(Array.isArray(list) ? list : [])
+    } catch { /* ignored */ }
+  }, [])
 
   useEffect(() => {
     load()
   }, [load])
+
+  const loadVaultFolders = useCallback(async () => {
+    const all = await window.vaultFolderAPI.list()
+    setVaultFolders(all || [])
+  }, [])
+
+  useEffect(() => { loadVaultFolders() }, [loadVaultFolders])
+
+  const loadVaultFolderItems = useCallback(async (folderId) => {
+    setLoading(true)
+    try {
+      const result = await window.vaultFolderAPI.getItems(folderId)
+      setItems(result?.items || [])
+    } catch { setItems([]) }
+    setLoading(false)
+  }, [])
+
+  const openVaultFolder = useCallback(async (folder) => {
+    setActiveVaultFolder(folder)
+    setVaultFolderView("items")
+    await loadVaultFolderItems(folder.id)
+  }, [loadVaultFolderItems])
+
+  const goBackToVaultFolders = () => {
+    setVaultFolderView("folders")
+    setActiveVaultFolder(null)
+    load()
+  }
+
+  const createNewVaultFolder = async () => {
+    if (!newVaultFolderName.trim()) return
+    try {
+      await window.vaultFolderAPI.create({ name: newVaultFolderName.trim(), parentId: activeVaultFolder?.id || null })
+      setNewVaultFolderName("")
+      setCreatingVaultFolder(false)
+      await loadVaultFolders()
+      toast.success("Folder created")
+    } catch { toast.error("Failed") }
+  }
+
+  const renameVaultFolderHandler = async (id, name) => {
+    try {
+      await window.vaultFolderAPI.rename(id, name)
+      await loadVaultFolders()
+      toast.success("Renamed")
+    } catch { toast.error("Failed") }
+  }
+
+  const deleteVaultFolderHandler = async (id) => {
+    try {
+      await window.vaultFolderAPI.delete(id)
+      await loadVaultFolders()
+      if (activeVaultFolder?.id === id) goBackToVaultFolders()
+      toast.success("Deleted")
+    } catch { toast.error("Failed") }
+  }
+
+  const moveVaultItemToFolder = async (folderId) => {
+    if (!moveItemId || !folderId) return
+    try {
+      await window.vaultFolderAPI.addItem(moveItemId, folderId)
+      setMoveItemId(null)
+      if (activeVaultFolder) await loadVaultFolderItems(activeVaultFolder.id)
+      toast.success("Moved")
+    } catch { toast.error("Failed") }
+  }
+
+  const removeVaultItemFromFolder = async (itemId) => {
+    if (!activeVaultFolder) return
+    try {
+      await window.vaultFolderAPI.removeItem(itemId, activeVaultFolder.id)
+      await loadVaultFolderItems(activeVaultFolder.id)
+      toast.success("Removed")
+    } catch { toast.error("Failed") }
+  }
+
+  const addItemsToVaultFolder = async (itemIds) => {
+    if (!activeVaultFolder || itemIds.length === 0) return
+    try {
+      for (const id of itemIds) await window.vaultFolderAPI.addItem(id, activeVaultFolder.id)
+      await loadVaultFolderItems(activeVaultFolder.id)
+      setAddItemsOpen(false)
+      setAddItemsSearch("")
+      toast.success(`${itemIds.length} item(s) added`)
+    } catch { toast.error("Failed") }
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 200)
@@ -314,9 +416,9 @@ export default function VaultPage() {
               </div>
             )}
 
-            {item.tags.length > 0 && (
+            {item.tags && item.tags.length > 0 && (
               <div className="flex flex-wrap items-center gap-1">
-                {item.tags.slice(0, 4).map((tag) => (
+                {(typeof item.tags === "string" ? item.tags.split(",").map((t) => t.trim()).filter(Boolean) : item.tags).slice(0, 4).map((tag) => (
                   <span
                     key={tag}
                     className={cn(
@@ -372,6 +474,14 @@ export default function VaultPage() {
                     {item.pinned ? <IconPinFilled className="size-3.5" /> : <IconPin className="size-3.5" />}
                     {item.pinned ? "Unpin" : "Pin to top"}
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setMoveItemId(item.id)}>
+                    <IconFolderPlus className="size-3.5" /> Move to folder
+                  </DropdownMenuItem>
+                  {activeVaultFolder && (
+                    <DropdownMenuItem onClick={() => removeVaultItemFromFolder(item.id)}>
+                      <IconArrowLeft className="size-3.5" /> Remove from folder
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem variant="destructive" onClick={() => handleDelete(item.id)}>
                     <IconTrash className="size-3.5" /> Delete
                   </DropdownMenuItem>
@@ -530,12 +640,22 @@ export default function VaultPage() {
     <div className="flex flex-col h-full">
       <header className="border-b border-border/30 px-6 pt-4 pb-3">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 flex items-center gap-2">
+            {!sidebarVisible && vaultFolderView === "items" && (
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={goBackToVaultFolders}>
+                <IconArrowLeft size={14} />
+              </Button>
+            )}
+            {!sidebarVisible && vaultFolderView === "folders" && (
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => navigate("/")}>
+                <IconArrowLeft size={14} />
+              </Button>
+            )}
             {sidebarVisible ? (
               <>
                 <h1 className="truncate text-lg font-semibold text-foreground tracking-tight flex items-center gap-2">
                   <IconShieldLock size={18} className="text-primary" />
-                  Vault
+                  {vaultFolderView === "items" && activeVaultFolder ? activeVaultFolder.name : "Vault"}
                 </h1>
                 <p className="hidden truncate text-xs text-muted-foreground sm:block">
                   Store API keys, passwords &amp; secrets securely
@@ -544,25 +664,39 @@ export default function VaultPage() {
             ) : (
               <h1 className="truncate text-lg font-semibold tracking-tight text-foreground flex items-center gap-1.5">
                 <IconShieldLock size={16} className="text-primary" />
-                Vault{" "}
-                <span className="font-normal text-muted-foreground tabular-nums">
-                  ({items.length.toLocaleString()})
-                </span>
+                {vaultFolderView === "items" && activeVaultFolder ? activeVaultFolder.name : "Vault"}
               </h1>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            {!sidebarVisible && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 cursor-pointer"
-                onClick={() => navigate("/")}
-                aria-label="Back"
-              >
-                <IconArrowLeft size={16} />
+            {vaultFolderView === "items" && activeVaultFolder && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { loadAllVaultItems(); setAddItemsOpen(true) }}>
+                <IconPlus size={14} />
               </Button>
             )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={vaultFolderView === "folders" ? "default" : "ghost"}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    if (vaultFolderView === "folders") { setVaultFolderView("items"); setActiveVaultFolder(null); load() }
+                    else goBackToVaultFolders()
+                  }}
+                >
+                  <IconFiles size={14} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{vaultFolderView === "folders" ? "All items" : "Folders"}</TooltipContent>
+            </Tooltip>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+              setCreatingVaultFolder(true)
+              setNewVaultFolderName("New Folder")
+              setTimeout(() => createVaultFolderRef.current?.select(), 50)
+            }}>
+              <IconFolderPlus size={14} />
+            </Button>
           </div>
         </div>
 
@@ -602,59 +736,292 @@ export default function VaultPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 pb-20">
-        {!encryptionAvailable && (
-          <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
-            <p className="font-semibold">Secure encryption unavailable</p>
-            <p className="mt-0.5 text-amber-600/80 dark:text-amber-300/70">
-              Values are stored base64-encoded but not OS-encrypted. On Windows/macOS the OS keychain is used automatically.
-            </p>
+        {creatingVaultFolder && vaultFolderView === "folders" && (
+          <div className="flex items-center gap-2 mb-3 animate-in fade-in" style={{ animationDuration: "0.15s" }}>
+            <IconFolderFilled size={20} className="text-yellow-500/80 shrink-0" />
+            <input
+              ref={createVaultFolderRef}
+              value={newVaultFolderName}
+              onChange={(e) => setNewVaultFolderName(e.target.value)}
+              onBlur={() => { if (newVaultFolderName.trim()) createNewVaultFolder(); else setCreatingVaultFolder(false) }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createNewVaultFolder()
+                if (e.key === "Escape") { setCreatingVaultFolder(false); setNewVaultFolderName("") }
+              }}
+              className="flex-1 min-w-0 bg-transparent border-b border-ring/50 px-1 py-0.5 text-xs outline-none"
+              autoFocus
+            />
           </div>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            <IconLoader2 size={18} className="animate-spin" />
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <div className="sticky-note sticky-tint-yellow p-6 text-center">
-              <p className="text-lg font-semibold text-foreground/80">
-                {hasSearch ? "No matching credentials" : "Vault is empty"}
-              </p>
-              <p className="text-sm mt-2 text-foreground/60">
-                {hasSearch
-                  ? "Try a different search"
-                  : "Click + to save your first API key or password"}
-              </p>
+        {vaultFolderView === "folders" ? (
+          /* VAULT FOLDER GRID */
+          vaultFolders.length === 0 && !creatingVaultFolder ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3">
+              <IconFolderFilled size={48} className="text-muted-foreground/20" strokeWidth={1} />
+              <p className="text-xs text-muted-foreground/60">No folders yet</p>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => {
+                setCreatingVaultFolder(true); setNewVaultFolderName("New Folder")
+                setTimeout(() => createVaultFolderRef.current?.select(), 50)
+              }}>
+                <IconFolderPlus size={12} /> Create Folder
+              </Button>
             </div>
-          </div>
-        ) : isCustomSort ? (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={items.map((p) => p.id)} strategy={rectSortingStrategy}>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5">
+              {vaultFolders.filter((f) => f.name.toLowerCase().includes(searchInput.toLowerCase())).map((folder, idx) => (
+                <VaultFolderTile
+                  key={folder.id}
+                  folder={folder}
+                  index={idx}
+                  onOpen={openVaultFolder}
+                  onRename={renameVaultFolderHandler}
+                  onDelete={deleteVaultFolderHandler}
+                />
+              ))}
+            </div>
+          )
+        ) : (
+          /* VAULT ITEMS */
+          <>
+            {!encryptionAvailable && (
+              <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
+                <p className="font-semibold">Secure encryption unavailable</p>
+                <p className="mt-0.5 text-amber-600/80 dark:text-amber-300/70">
+                  Values are stored base64-encoded but not OS-encrypted. On Windows/macOS the OS keychain is used automatically.
+                </p>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <IconLoader2 size={18} className="animate-spin" />
+              </div>
+            ) : items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <div className="sticky-note sticky-tint-yellow p-6 text-center">
+                  <p className="text-lg font-semibold text-foreground/80">
+                    {hasSearch ? "No matching credentials" : "Vault is empty"}
+                  </p>
+                  <p className="text-sm mt-2 text-foreground/60">
+                    {hasSearch
+                      ? "Try a different search"
+                      : "Click + to save your first API key or password"}
+                  </p>
+                </div>
+              </div>
+            ) : isCustomSort ? (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={items.map((p) => p.id)} strategy={rectSortingStrategy}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {items.map((item) => (
+                      <SortableVaultCard
+                        key={item.id}
+                        id={item.id}
+                        disabled={item.pinned}
+                      >
+                        {({ dragHandle }) => renderCard(item, item.pinned ? undefined : dragHandle)}
+                      </SortableVaultCard>
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {items.map((item) => (
-                  <SortableVaultCard
-                    key={item.id}
-                    id={item.id}
-                    disabled={item.pinned}
-                  >
-                    {({ dragHandle }) => renderCard(item, item.pinned ? undefined : dragHandle)}
-                  </SortableVaultCard>
+                  <div key={item.id} className="relative">{renderCard(item, undefined)}</div>
                 ))}
               </div>
-            </SortableContext>
-          </DndContext>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {items.map((item) => (
-              <div key={item.id} className="relative">{renderCard(item, undefined)}</div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 
-      <VaultItemDialog onSaved={() => load()} mini={mini} />
-      <VaultItemDialog hideTrigger open={Boolean(editItem)} onOpenChange={(o) => { if (!o) setEditItem(null) }} onSaved={() => load()} item={editItem} mini={mini} />
+      <VaultItemDialog onSaved={() => load()} />
+      <VaultItemDialog hideTrigger open={Boolean(editItem)} onOpenChange={(o) => { if (!o) setEditItem(null) }} onSaved={() => load()} item={editItem} />
+      {addItemsOpen && (
+        <VaultAddItemsDialog
+          open={addItemsOpen}
+          onOpenChange={setAddItemsOpen}
+          items={items}
+          search={addItemsSearch}
+          onSearchChange={setAddItemsSearch}
+          onAdd={addItemsToVaultFolder}
+          folderName={activeVaultFolder?.name}
+        />
+      )}
+      {moveItemId && (
+        <VaultMoveToFolderDialog
+          open={Boolean(moveItemId)}
+          onOpenChange={() => setMoveItemId(null)}
+          folders={vaultFolders}
+          onSelect={(folderId) => moveVaultItemToFolder(folderId)}
+        />
+      )}
     </div>
+  )
+}
+
+function VaultFolderTile({ folder, index, onOpen, onRename, onDelete }) {
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(folder.name)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (editing) {
+      setTimeout(() => inputRef.current?.select(), 50)
+    }
+  }, [editing])
+
+  function handleSave() {
+    if (name.trim() && name.trim() !== folder.name) onRename(folder.id, name.trim())
+    else setName(folder.name)
+    setEditing(false)
+  }
+
+  return (
+    <div
+      className="group flex flex-col items-center gap-1 rounded-lg border border-border/30 bg-muted/20 hover:bg-accent/30 p-2 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 animate-in fade-in"
+      style={{ animationDelay: `${index * 20}ms`, animationFillMode: "backwards" }}
+      onClick={() => onOpen(folder)}
+    >
+      <IconFolderFilled size={28} className="text-yellow-500/80 shrink-0" strokeWidth={1.5} />
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={handleSave}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSave()
+            if (e.key === "Escape") { setName(folder.name); setEditing(false) }
+            e.stopPropagation()
+          }}
+          className="w-full bg-transparent border-b border-ring/50 px-1 py-0.5 text-[10px] text-center outline-none"
+        />
+      ) : (
+        <span className="text-[10px] text-foreground/80 truncate max-w-full">{folder.name}</span>
+      )}
+      <DropdownMenu onOpenChange={(o) => { if (o) setName(folder.name) }}>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+            <IconDotsVertical size={12} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditing(true) }}>
+            <IconEdit size={13} className="mr-2" /> Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); if (confirm("Delete this folder?")) onDelete(folder.id) }} className="text-destructive">
+            <IconTrash size={13} className="mr-2" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
+function VaultAddItemsDialog({ open, onOpenChange, items, search, onSearchChange, onAdd, folderName }) {
+  const [selected, setSelected] = useState(new Set())
+  const inputRef = useRef(null)
+  const filtered = items.filter((i) =>
+    i.title.toLowerCase().includes(search.toLowerCase()) ||
+    i.username?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  useEffect(() => {
+    if (open) {
+      setSelected(new Set())
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
+  }, [open])
+
+  function toggle(id) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="p-0 w-96">
+        <DialogHeader className="px-4 pt-4 pb-2">
+          <DialogTitle className="text-sm">Add items to "{folderName}"</DialogTitle>
+        </DialogHeader>
+        <div className="px-4 pb-2">
+          <div className="relative">
+            <IconSearch size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              ref={inputRef}
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search items..."
+              className="w-full h-8 pl-8 pr-3 text-xs bg-muted/40 border border-border/50 rounded-md outline-none focus:border-ring"
+            />
+          </div>
+        </div>
+        <div className="max-h-64 overflow-y-auto px-4 pb-2">
+          {filtered.map((item) => (
+            <label key={item.id} className="flex items-center gap-2 py-1.5 px-1 rounded hover:bg-accent/30 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selected.has(item.id)}
+                onChange={() => toggle(item.id)}
+                className="accent-primary"
+              />
+              <span className="text-xs truncate">{item.title}</span>
+            </label>
+          ))}
+          {filtered.length === 0 && (
+            <p className="text-xs text-muted-foreground py-4 text-center">No items found</p>
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-2 px-4 pb-3">
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            disabled={selected.size === 0}
+            onClick={() => onAdd(Array.from(selected))}
+          >
+            Add {selected.size > 0 && `(${selected.size})`}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function VaultMoveToFolderDialog({ open, onOpenChange, folders, onSelect }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="p-0 w-80">
+        <DialogHeader className="px-4 pt-4 pb-2">
+          <DialogTitle className="text-sm">Move to folder</DialogTitle>
+        </DialogHeader>
+        <div className="max-h-64 overflow-y-auto px-2 pb-2">
+          {folders.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-4 text-center">No folders</p>
+          ) : (
+            folders.map((folder) => (
+              <button
+                key={folder.id}
+                onClick={() => { onSelect(folder.id); onOpenChange(false) }}
+                className="flex items-center gap-2 w-full px-3 py-2 rounded-md hover:bg-accent/30 text-xs text-left transition-colors"
+              >
+                <IconFolderFilled size={14} className="text-yellow-500/80 shrink-0" />
+                <span className="truncate">{folder.name}</span>
+              </button>
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
-import { IconLock, IconKey, IconShieldLock, IconNote, IconCreditCard, IconEye, IconEyeOff, IconPlus, IconX, IconPalette, IconLink, IconPaperclip, IconFile, IconDownload, IconTrash, IconFileZip } from "@tabler/icons-react"
+import { IconLock, IconKey, IconShieldLock, IconNote, IconCreditCard, IconEye, IconEyeOff, IconPlus, IconX, IconPalette, IconLink, IconPaperclip, IconFile, IconDownload, IconFolderFilled } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -71,7 +71,7 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
-export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini = false, hideTrigger = false }) {
+export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hideTrigger = false }) {
   const isEditing = Boolean(item)
   const controlled = open !== undefined
   const [internalOpen, setInternalOpen] = useState(false)
@@ -90,6 +90,8 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const [attachments, setAttachments] = useState([])
   const [attachmentUploading, setAttachmentUploading] = useState(false)
+  const [vaultFolders, setVaultFolders] = useState([])
+  const [selectedFolderId, setSelectedFolderId] = useState("")
   const titleRef = useRef(null)
   const valueRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -116,9 +118,11 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
       setColorText(item?.color_text || "")
       setColorPickerOpen(false)
       setAttachments([])
+      setSelectedFolderId("")
       if (item?.id) {
         window.vaultAPI?.listAttachments(item.id).then(setAttachments).catch(() => {})
       }
+      window.vaultFolderAPI?.list().then((f) => setVaultFolders(f || [])).catch(() => {})
       setTimeout(() => titleRef.current?.focus(), 100)
     }
   }, [isOpen, item])
@@ -159,6 +163,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
     const allTags = [...new Set([...tags, ...pendingTags])]
     setSaving(true)
     try {
+      let savedId = item?.id
       if (isEditing) {
         await window.vaultAPI.update(item.id, {
           title: title.trim(),
@@ -172,7 +177,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
         })
         toast.success("Credential updated")
       } else {
-        await window.vaultAPI.create({
+        const created = await window.vaultAPI.create({
           title: title.trim(),
           type,
           value: value.trim(),
@@ -182,7 +187,11 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
           color_bg: colorBg,
           color_text: colorText,
         })
+        savedId = created?.id
         toast.success("Credential saved")
+      }
+      if (selectedFolderId && savedId) {
+        await window.vaultFolderAPI?.addItem(savedId, selectedFolderId).catch(() => {})
       }
       onSaved?.()
       setOpen(false)
@@ -242,6 +251,25 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
               className="h-8 text-sm border-border/60 bg-background/40 focus:bg-background focus:border-primary/50 focus:ring-primary/20"
             />
           </div>
+
+          {vaultFolders.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                <IconFolderFilled size={11} />
+                Folder
+              </Label>
+              <select
+                value={selectedFolderId}
+                onChange={(e) => setSelectedFolderId(e.target.value)}
+                className="w-full h-8 text-sm border border-border/60 bg-background/40 rounded-md px-2 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">No folder</option>
+                {vaultFolders.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="vault-url" className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
@@ -392,7 +420,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
                     const updated = await window.vaultAPI?.listAttachments(item.id)
                     setAttachments(updated || [])
                     toast.success(`${files.length} file(s) attached`)
-                  } catch (err) {
+                  } catch {
                     toast.error("Upload failed")
                   } finally {
                     setAttachmentUploading(false)
@@ -426,7 +454,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
                           link.download = a.filename
                           link.click()
                           URL.revokeObjectURL(url)
-                        } catch (err) {
+                        } catch {
                           toast.error("Download failed")
                         }
                       }}
@@ -442,7 +470,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, mini
                           await window.vaultAPI?.deleteAttachment(a.id)
                           setAttachments((prev) => prev.filter((x) => x.id !== a.id))
                           toast.success("Attachment removed")
-                        } catch (err) {
+                        } catch {
                           toast.error("Delete failed")
                         }
                       }}
