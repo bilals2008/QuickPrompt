@@ -81,6 +81,34 @@ const sections = [
   { id: "about", icon: IconInfoCircle, label: "About" },
 ]
 
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return "0 B"
+  const units = ["B", "KB", "MB", "GB"]
+  let i = 0
+  let size = bytes
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024
+    i++
+  }
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
+}
+
+function formatSpeed(bytesPerSecond) {
+  if (!bytesPerSecond || bytesPerSecond === 0) return "—"
+  if (bytesPerSecond < 1024) return `${bytesPerSecond} B/s`
+  if (bytesPerSecond < 1024 * 1024) return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`
+  return `${(bytesPerSecond / (1024 * 1024)).toFixed(1)} MB/s`
+}
+
+function formatETA(bytesPerSecond, total, transferred) {
+  if (!bytesPerSecond || bytesPerSecond === 0 || !total) return "—"
+  const remaining = total - transferred
+  const seconds = Math.ceil(remaining / bytesPerSecond)
+  if (seconds < 60) return `${seconds}s`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+}
+
 const themeCategories = [
   {
     label: "Light",
@@ -142,6 +170,7 @@ export default function Settings() {
   const [autoDownload, setAutoDownload] = useState(false)
   const [checking, setChecking] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [downloadProgress, setDownloadProgress] = useState({ percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 })
   const [closeBehavior, setCloseBehavior] = useState("tray")
   const [autoCopy, setAutoCopy] = useState(true)
   const [defaultView, setDefaultView] = useState("grid")
@@ -182,6 +211,14 @@ export default function Settings() {
       setUpdateStatus(event.status)
       if (event.version) {
         setUpdateInfo({ version: event.version, releaseNotes: event.releaseNotes })
+      }
+      if (event.status === "downloading") {
+        setDownloadProgress({
+          percent: event.percent || 0,
+          bytesPerSecond: event.bytesPerSecond || 0,
+          total: event.total || 0,
+          transferred: event.transferred || 0,
+        })
       }
       if (event.status === "available") {
         toast.success(`Update available: v${event.version}`)
@@ -230,6 +267,7 @@ export default function Settings() {
 
   async function handleDownloadUpdate() {
     setDownloading(true)
+    setDownloadProgress({ percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 })
     try {
       await window.updateAPI?.downloadUpdate()
     } catch {
@@ -876,6 +914,62 @@ export default function Settings() {
 
                     <Separator />
 
+                    {updateStatus === "downloading" && (
+                      <>
+                        <div className="px-4 py-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="flex size-7 items-center justify-center rounded-lg bg-blue-500/10">
+                                <IconDownload className="size-3.5 text-blue-500" />
+                              </div>
+                              <span className="text-[13px] font-medium text-foreground">
+                                {updateInfo?.version ? `Downloading v${updateInfo.version}` : "Downloading update"}
+                              </span>
+                            </div>
+                            <span className="text-xs font-semibold text-blue-500">
+                              {downloadProgress.percent.toFixed(1)}%
+                            </span>
+                          </div>
+
+                          <div className="relative mb-3 h-2 w-full overflow-hidden rounded-full bg-primary/10">
+                            <div
+                              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-300 ease-out"
+                              style={{ width: `${downloadProgress.percent}%` }}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-[1fr_1.4fr_1fr] gap-3">
+                            <div className="rounded-lg bg-muted/50 px-3 py-2">
+                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                                Speed
+                              </p>
+                              <p className="mt-0.5 text-xs font-semibold text-foreground tabular-nums">
+                                {formatSpeed(downloadProgress.bytesPerSecond)}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-muted/50 px-3 py-2">
+                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                                Downloaded
+                              </p>
+                              <p className="mt-0.5 whitespace-nowrap text-xs font-semibold text-foreground tabular-nums">
+                                {formatBytes(downloadProgress.transferred)}
+                                <span className="font-normal text-muted-foreground"> / {formatBytes(downloadProgress.total)}</span>
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-muted/50 px-3 py-2">
+                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                                ETA
+                              </p>
+                              <p className="mt-0.5 text-xs font-semibold text-foreground tabular-nums">
+                                {formatETA(downloadProgress.bytesPerSecond, downloadProgress.total, downloadProgress.transferred)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+
                     <SettingRow
                       icon={IconRefresh}
                       label="Check for updates on startup"
@@ -902,7 +996,7 @@ export default function Settings() {
                         size="sm"
                         className="cursor-pointer"
                         onClick={handleCheckUpdate}
-                        disabled={checking || updateStatus === "checking"}
+                        disabled={checking || updateStatus === "checking" || updateStatus === "downloading"}
                       >
                         {checking || updateStatus === "checking" ? (
                           <IconLoader2 className="size-3.5 animate-spin mr-1.5" />

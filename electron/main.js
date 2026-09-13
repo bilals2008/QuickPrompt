@@ -132,7 +132,13 @@ autoUpdater.on("update-available", (info) => {
 
 autoUpdater.on("download-progress", (progress) => {
   updateStatus = "downloading"
-  notifyRenderer({ status: "downloading", percent: progress.percent })
+  notifyRenderer({
+    status: "downloading",
+    percent: progress.percent,
+    bytesPerSecond: progress.bytesPerSecond,
+    total: progress.total,
+    transferred: progress.transferred,
+  })
 })
 
 autoUpdater.on("update-not-available", () => {
