@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown, IconShieldLock, IconFolder, IconFolderFilled } from "@tabler/icons-react"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown, IconShieldLock, IconFolder } from "@tabler/icons-react"
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { SortableContext, arrayMove, rectSortingStrategy, verticalListSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,8 @@ import { SortablePromptCard } from "@/components/sortable-prompt-card"
 import { AddPromptDialog } from "@/components/add-prompt-dialog"
 import { usePromptLoader } from "@/hooks/usePromptLoader"
 import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
+import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
+import { FolderGlyph } from "@/components/collections/FolderGlyph"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -38,6 +40,7 @@ export default function HomePage() {
   const isCustomSort = sortOrder === "custom"
   const [showVaultBadge, setShowVaultBadge] = useState(false)
   const [folderMap, setFolderMap] = useState({})
+  const [folderDisplay] = useFolderDisplaySettings()
   const [movePromptId, setMovePromptId] = useState(null)
   const [folders, setFolders] = useState([])
 
@@ -155,7 +158,7 @@ export default function HomePage() {
         const result = await window.folderAPI.getPrompts(f.id)
         for (const p of (result?.prompts || [])) {
           if (!map[p.id]) map[p.id] = []
-          map[p.id].push({ id: f.id, name: f.name, color: f.color })
+          map[p.id].push({ id: f.id, name: f.name, color: f.color, icon: f.icon })
         }
       }
       setFolderMap(map)
@@ -168,6 +171,20 @@ export default function HomePage() {
     const result = await window.folderAPI.list()
     setFolders(result || [])
   }, [])
+
+  const folderInfo = useCallback(
+    (id) => {
+      const f = folderMap[id]?.[0]
+      if (!f) return {}
+      const showCustom = folderDisplay.showFolderAppearance
+      return {
+        folderName: f.name,
+        folderColor: showCustom ? f.color : "",
+        folderIcon: showCustom ? f.icon : "",
+      }
+    },
+    [folderMap, folderDisplay.showFolderAppearance]
+  )
 
   const handleMovePrompt = async (folderId) => {
     if (!movePromptId || !folderId) return
@@ -460,8 +477,7 @@ export default function HomePage() {
                       onSaved={refresh}
                       autoCopy={autoCopy}
                       display={cardDisplay}
-                      folderName={folderMap[prompt.id]?.[0]?.name}
-                      folderColor={folderMap[prompt.id]?.[0]?.color}
+                      {...folderInfo(prompt.id)}
                       onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
                     />
                   ))}
@@ -488,8 +504,7 @@ export default function HomePage() {
                   onSaved={refresh}
                   autoCopy={autoCopy}
                   display={cardDisplay}
-                  folderName={folderMap[prompt.id]?.[0]?.name}
-                  folderColor={folderMap[prompt.id]?.[0]?.color}
+                  {...folderInfo(prompt.id)}
                   onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
                 />
               ))}
@@ -513,8 +528,7 @@ export default function HomePage() {
                     onSaved={refresh}
                     autoCopy={autoCopy}
                     display={cardDisplay}
-                    folderName={folderMap[prompt.id]?.[0]?.name}
-                    folderColor={folderMap[prompt.id]?.[0]?.color}
+                    {...folderInfo(prompt.id)}
                     onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
                   />
                 ))}
@@ -536,8 +550,7 @@ export default function HomePage() {
                 onSaved={refresh}
                 autoCopy={autoCopy}
                 display={cardDisplay}
-                folderName={folderMap[prompt.id]?.[0]?.name}
-                folderColor={folderMap[prompt.id]?.[0]?.color}
+                {...folderInfo(prompt.id)}
                 onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
               />
             ))}
@@ -596,7 +609,7 @@ export default function HomePage() {
                   onClick={() => handleMovePrompt(f.id)}
                   className="w-full flex items-center gap-2.5 px-4 py-2 text-left hover:bg-accent/50 transition-colors cursor-pointer"
                 >
-                  <IconFolderFilled size={14} style={{ color: f.color || undefined }} className={cn(!f.color && "text-yellow-500/80")} />
+                  <FolderGlyph folder={f} size={14} />
                   <span className="text-xs truncate">{f.name}</span>
                 </button>
               ))

@@ -23,7 +23,6 @@ import {
   IconMoon,
   IconInfoCircle,
   IconPlayerPlay,
-  IconCheck,
   IconSettings,
   IconArrowLeft,
   IconRefresh,
@@ -52,15 +51,25 @@ import {
   IconMinimize,
   IconRuler,
   IconPalette,
+  IconFolders,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import pkg from "../../package.json"
 import { useCardDisplaySettings, DEFAULT_CARD_DISPLAY } from "@/hooks/useCardDisplaySettings"
+import {
+  NavItem,
+  SettingRow,
+  SectionHeading,
+  SettingGroup,
+  ThemeCard,
+} from "@/components/settings/SettingsPrimitives"
+import FoldersSettings from "@/components/settings/FoldersSettings"
 
 const sections = [
   { id: "general", icon: IconPlayerPlay, label: "General" },
   { id: "customization", icon: IconCategory, label: "Customization" },
+  { id: "folders", icon: IconFolders, label: "Folders" },
   { id: "backup", icon: IconCloudUpload, label: "Backup" },
   { id: "appearance", icon: IconMoon, label: "Appearance" },
   { id: "updates", icon: IconRefresh, label: "Updates" },
@@ -205,111 +214,6 @@ const themeCategories = [
     ],
   },
 ]
-
-function NavItem({ icon: Icon, label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active
-          ? "bg-accent text-accent-foreground"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-      )}
-    >
-      {active && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-full bg-primary" />
-      )}
-      <Icon className="size-[18px] shrink-0" />
-      <span className="truncate">{label}</span>
-    </button>
-  )
-}
-
-function SettingRow({ icon: Icon, label, description, children }) {
-  return (
-    <div className="grid grid-cols-[1fr_auto] items-center gap-4 py-2.5 sm:py-3">
-      <div className="flex items-start gap-3 min-w-0">
-        {Icon && (
-          <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
-            <Icon className="size-4" />
-          </div>
-        )}
-        <div className="min-w-0">
-          <p className="text-[13px] font-medium leading-tight text-foreground">{label}</p>
-          {description && (
-            <p className="mt-0.5 text-xs text-muted-foreground leading-snug">{description}</p>
-          )}
-        </div>
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
-  )
-}
-
-function SectionHeading({ icon: Icon, title, description }) {
-  return (
-    <div className="mb-5 flex items-center gap-3">
-      <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-        {Icon && <Icon className="size-5 text-primary" />}
-      </div>
-      <div>
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
-      </div>
-    </div>
-  )
-}
-
-function SettingGroup({ title, children, className }) {
-  return (
-    <div className={cn("rounded-xl border border-border/80 bg-card overflow-hidden", className)}>
-      {title && (
-        <div className="border-b border-border/60 bg-muted/30 px-4 py-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {title}
-          </p>
-        </div>
-      )}
-      <div className="px-4">{children}</div>
-    </div>
-  )
-}
-
-function ThemeCard({ theme, selected, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "group relative flex flex-col rounded-xl border p-3 text-left transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        selected
-          ? "border-primary bg-primary/5"
-          : "border-border bg-card hover:border-muted-foreground/30 hover:bg-accent/30"
-      )}
-    >
-      {selected && (
-        <div className="absolute top-2 right-2 flex items-center justify-center size-5 rounded-full bg-primary shadow-sm">
-          <IconCheck size={12} className="text-primary-foreground" />
-        </div>
-      )}
-      <div
-        className="mb-3 h-16 w-full rounded-lg border overflow-hidden"
-        style={{ borderColor: theme.card }}
-      >
-        <div className="h-full w-full p-2" style={{ background: theme.bg }}>
-          <div className="h-1.5 w-10 rounded-full mb-1.5" style={{ background: theme.accent }} />
-          <div className="h-1 w-16 rounded-full opacity-40 mb-2" style={{ background: theme.text }} />
-          <div className="flex gap-1">
-            <div className="h-6 flex-1 rounded" style={{ background: theme.card }} />
-            <div className="h-6 flex-1 rounded opacity-70" style={{ background: theme.card }} />
-          </div>
-        </div>
-      </div>
-      <p className="text-[13px] font-semibold text-foreground">{theme.label}</p>
-      <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">{theme.desc}</p>
-    </button>
-  )
-}
 
 export default function Settings() {
   const navigate = useNavigate()
@@ -909,6 +813,8 @@ export default function Settings() {
                 </div>
               </section>
             )}
+
+            {activeSection === "folders" && <FoldersSettings />}
 
             {activeSection === "backup" && (
               <section>

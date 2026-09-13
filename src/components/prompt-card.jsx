@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled, IconEdit, IconFolderFilled, IconArrowMoveRight } from "@tabler/icons-react"
+import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled, IconEdit, IconArrowMoveRight } from "@tabler/icons-react"
+import { FolderGlyph } from "@/components/collections/FolderGlyph"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,7 +128,7 @@ function getBodyText(prompt) {
   return lines.slice(firstIdx + 1).join("\n").trim()
 }
 
-export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display, dragHandle, folderName, folderColor, onMoveToFolder }) {
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display, dragHandle, folderName, folderColor, folderIcon, onMoveToFolder }) {
   const showTags = display?.showTags ?? true
   const showTitle = display?.showTitle ?? true
   const showBody = display?.showBody ?? true
@@ -333,7 +334,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
             ) : null}
             {folderName && (
               <span className="flex items-center gap-0.5 text-[9px] text-foreground/40 truncate">
-                <IconFolderFilled size={9} style={{ color: folderColor || undefined }} className={cn(!folderColor && "text-yellow-500/60")} />
+                <FolderGlyph folder={{ icon: folderIcon, color: folderColor }} size={9} />
                 {folderName}
               </span>
             )}
@@ -389,7 +390,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
             ) : null}
             {folderName && (
               <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground/70 truncate">
-                <IconFolderFilled size={9} style={{ color: folderColor || undefined }} className={cn(!folderColor && "text-yellow-500/60")} />
+                <FolderGlyph folder={{ icon: folderIcon, color: folderColor }} size={9} />
                 {folderName}
               </span>
             )}
