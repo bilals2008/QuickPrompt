@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import ReactDOM from "react-dom/client"
 import { HashRouter, Routes, Route } from "react-router-dom"
 import { ThemeProvider } from "@/components/theme-provider.jsx"
@@ -11,8 +11,17 @@ import ImportExportPage from "./features/import-export/ImportExportPage.jsx"
 import Onboarding from "./features/onboarding/Onboarding.jsx"
 import "./index.css"
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+function Root() {
+  useEffect(() => {
+    const splash = document.getElementById("splash")
+    if (splash) {
+      splash.style.transition = "opacity 0.3s ease-out"
+      splash.style.opacity = "0"
+      setTimeout(() => splash.remove(), 300)
+    }
+  }, [])
+
+  return (
     <ThemeProvider defaultTheme="volt">
       <HashRouter>
         <Routes>
@@ -27,5 +36,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </Routes>
       </HashRouter>
     </ThemeProvider>
+  )
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <Root />
   </React.StrictMode>
 )
