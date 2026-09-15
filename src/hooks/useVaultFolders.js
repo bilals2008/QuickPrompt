@@ -40,8 +40,8 @@ export function useVaultFolders() {
   )
 
   const createFolder = useCallback(
-    async ({ name, parentId = null, icon, color }) => {
-      const created = await window.vaultFolderAPI.create({ name, parentId, icon, color })
+    async ({ name, parentId = null, icon, color, appearance }) => {
+      const created = await window.vaultFolderAPI.create({ name, parentId, icon, color, appearance })
       await reload()
       return created
     },

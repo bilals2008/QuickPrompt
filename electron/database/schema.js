@@ -107,6 +107,8 @@ const MIGRATIONS = [
   `ALTER TABLE folders ADD COLUMN icon TEXT DEFAULT 'folder'`,
   `ALTER TABLE folders ADD COLUMN color TEXT DEFAULT ''`,
   `ALTER TABLE folders ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE folders ADD COLUMN appearance TEXT DEFAULT ''`,
+  `ALTER TABLE vault_folders ADD COLUMN appearance TEXT DEFAULT ''`,
 ]
 
 export async function createTables() {

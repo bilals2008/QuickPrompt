@@ -100,7 +100,21 @@ export function AddPromptsDialog({
           )}
         </div>
         <div className="flex items-center justify-between border-t border-border/30 px-4 py-2.5">
-          <p className="text-[10px] text-muted-foreground/60">{selected.length} selected</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] text-muted-foreground/60">{selected.length} selected</p>
+            {filtered.length > 0 && (
+              <button
+                onClick={() => {
+                  const allFilteredIds = filtered.map((p) => p.id)
+                  const allSelected = allFilteredIds.every((id) => selected.includes(id))
+                  setSelected(allSelected ? [] : allFilteredIds)
+                }}
+                className="text-[10px] text-primary hover:underline cursor-pointer"
+              >
+                {filtered.every((p) => selected.includes(p.id)) ? "Deselect all" : "Select all"}
+              </button>
+            )}
+          </div>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onOpenChange(false)}>
               Cancel

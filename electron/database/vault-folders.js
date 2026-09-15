@@ -2,15 +2,15 @@ import crypto from 'node:crypto'
 import { getDatabase } from './db.js'
 import { mapRow } from './vault.js'
 
-export async function createVaultFolder({ name, parentId = null, icon = 'folder', color = '' }) {
+export async function createVaultFolder({ name, parentId = null, icon = 'folder', color = '', appearance = '' }) {
   const db = getDatabase()
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
   const maxOrder = await db.get('SELECT MAX(sort_order) AS max_order FROM vault_folders WHERE parent_id IS ?', [parentId])
   const sortOrder = (maxOrder?.max_order ?? -1) + 1
   await db.run(
-    'INSERT INTO vault_folders (id, name, parent_id, icon, color, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [id, name.trim(), parentId, icon, color, sortOrder, now, now]
+    'INSERT INTO vault_folders (id, name, parent_id, icon, color, sort_order, created_at, updated_at, appearance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [id, name.trim(), parentId, icon, color, sortOrder, now, now, appearance]
   )
   return getVaultFolderById(id)
 }
@@ -41,13 +41,14 @@ export async function renameVaultFolder(id, name) {
   return getVaultFolderById(id)
 }
 
-export async function updateVaultFolder(id, { name, icon, color }) {
+export async function updateVaultFolder(id, { name, icon, color, appearance }) {
   const db = getDatabase()
   const sets = []
   const values = []
   if (name !== undefined) { sets.push('name = ?'); values.push(name.trim()) }
   if (icon !== undefined) { sets.push('icon = ?'); values.push(icon) }
   if (color !== undefined) { sets.push('color = ?'); values.push(color) }
+  if (appearance !== undefined) { sets.push('appearance = ?'); values.push(appearance) }
   if (sets.length === 0) return getVaultFolderById(id)
   sets.push('updated_at = ?')
   values.push(new Date().toISOString())

@@ -21,6 +21,7 @@ function FolderList({ folders, byId, emptyLabel, onSelect }) {
   if (folders.length === 0) {
     return <p className="py-6 text-center text-xs text-muted-foreground">{emptyLabel}</p>
   }
+
   return (
     <div className="flex max-h-[240px] flex-col overflow-y-auto pr-1">
       {folders.map((folder, idx) => (
@@ -135,7 +136,7 @@ export function FoldersSettings() {
             <FolderList
               folders={folders}
               byId={promptById}
-              emptyLabel="No prompt folders yet. Create one from Collections."
+              emptyLabel="No prompt folders yet."
               onSelect={setEditingPromptFolder}
             />
           </div>
@@ -146,7 +147,7 @@ export function FoldersSettings() {
             <FolderList
               folders={vaultFolders}
               byId={vaultById}
-              emptyLabel="No vault folders yet. Create one from the Vault."
+              emptyLabel="No vault folders yet."
               onSelect={setEditingVaultFolder}
             />
           </div>
