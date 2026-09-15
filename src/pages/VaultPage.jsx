@@ -725,9 +725,9 @@ export default function VaultPage() {
       </div>
 
       {/* Search bar below header actions */}
-      <div className="border-b border-border/30 px-3 py-2 sm:px-4">
+      <div className="border-b border-border/30 px-3 py-2.5 sm:px-4">
         <div className="relative flex items-center">
-          <IconSearch size={12} className="absolute left-2.5 text-muted-foreground" />
+          <IconSearch size={14} className="absolute left-3 text-muted-foreground" />
           <Input
             ref={searchRef}
             value={searchInput}
@@ -741,7 +741,7 @@ export default function VaultPage() {
               }
             }}
             placeholder="Search..."
-            className="h-7 w-full border-border/40 bg-background/60 pl-7 pr-7 text-xs"
+            className="h-9 w-full rounded-lg border-border/40 bg-background/60 pl-9 pr-9 text-sm"
           />
           {searchInput && (
             <button
@@ -750,10 +750,10 @@ export default function VaultPage() {
                 setSearch("")
                 searchRef.current?.focus()
               }}
-              className="absolute right-2.5 cursor-pointer text-muted-foreground hover:text-foreground"
+              className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
-              <IconX size={12} />
+              <IconX size={14} />
             </button>
           )}
         </div>
