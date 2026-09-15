@@ -99,6 +99,7 @@ export default function VaultPage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [itemViewMode, setItemViewMode] = useState("grid")
   const [sortOrder, setSortOrder] = useState("newest")
+  const [searchOpen, setSearchOpen] = useState(false)
 
   const searchRef = useRef(null)
   const mini = !sidebarVisible
@@ -653,39 +654,27 @@ export default function VaultPage() {
 
         <div className="flex-1" />
 
-        {view === "folders" && (
-          <div className="relative flex items-center">
-            <IconSearch size={14} className="absolute left-3 text-muted-foreground" />
-            <Input
-              ref={searchRef}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.preventDefault()
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`size-7 shrink-0 border border-border/40 ${searchOpen ? "bg-accent" : ""}`}
+              onClick={() => {
+                setSearchOpen(!searchOpen)
+                if (!searchOpen) {
+                  setTimeout(() => searchRef.current?.focus(), 150)
+                } else {
                   setSearchInput("")
                   setSearch("")
-                  searchRef.current?.blur()
                 }
               }}
-              placeholder="Search..."
-              className="h-9 w-48 rounded-lg border-border/40 bg-background/60 pl-9 pr-9 text-sm"
-            />
-            {searchInput && (
-              <button
-                onClick={() => {
-                  setSearchInput("")
-                  setSearch("")
-                  searchRef.current?.focus()
-                }}
-                className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground"
-                aria-label="Clear search"
-              >
-                <IconX size={14} />
-              </button>
-            )}
-          </div>
-        )}
+            >
+              <IconSearch size={14} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{searchOpen ? "Close search" : "Search"}</TooltipContent>
+        </Tooltip>
 
         <VaultViewToggle
           view={itemViewMode}
@@ -758,42 +747,44 @@ export default function VaultPage() {
 
       </div>
 
-      {/* Search bar below header - only show in items view */}
-      {view === "items" && (
-        <div className="border-b border-border/30 px-3 py-2.5 sm:px-4">
-          <div className="relative flex items-center">
-            <IconSearch size={14} className="absolute left-3 text-muted-foreground" />
-            <Input
-              ref={searchRef}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.preventDefault()
-                  setSearchInput("")
-                  setSearch("")
-                  searchRef.current?.blur()
-                }
+      {/* Search bar (animated) */}
+      <div
+        className={`overflow-hidden border-b border-border/30 transition-all duration-300 ease-in-out ${
+          searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0 border-b-0"
+        }`}
+      >
+        <div className="relative flex items-center px-3 py-2.5 sm:px-4">
+          <IconSearch size={14} className="absolute left-6 text-muted-foreground" />
+          <Input
+            ref={searchRef}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault()
+                setSearchInput("")
+                setSearch("")
+                setSearchOpen(false)
+              }
+            }}
+            placeholder="Search..."
+            className="h-9 w-full rounded-lg border-border/40 bg-background/60 pl-9 pr-9 text-sm"
+          />
+          {searchInput && (
+            <button
+              onClick={() => {
+                setSearchInput("")
+                setSearch("")
+                searchRef.current?.focus()
               }}
-              placeholder="Search..."
-              className="h-9 w-full rounded-lg border-border/40 bg-background/60 pl-9 pr-9 text-sm"
-            />
-            {searchInput && (
-              <button
-                onClick={() => {
-                  setSearchInput("")
-                  setSearch("")
-                  searchRef.current?.focus()
-                }}
-                className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground"
-                aria-label="Clear search"
-              >
-                <IconX size={14} />
-              </button>
-            )}
-          </div>
+              className="absolute right-6 cursor-pointer text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <IconX size={14} />
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Bulk selection toolbar */}
       {selectionMode && (
