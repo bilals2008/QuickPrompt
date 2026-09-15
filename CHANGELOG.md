@@ -1,277 +1,242 @@
-# 🚀 QuickPrompt v2.2.0
+# Changelog
 
-**Release Date:** September 15, 2026 ✨
-🏷️ Version: v2.2.0
+All notable changes to QuickPrompt will be documented in this file.
 
----
-
-## ✨ Added
-
-### 🎬 Splash Screen
-
-* Splash screen with animated loading indicator and smooth transition into the app
-
-### ⬇️ Update & Download Progress
-
-* Download progress now shows speed, total size, and estimated time remaining (ETA)
-* Restart option in settings after an update finishes downloading
-
-### 🔐 Vault Views
-
-* Vault view toggle with **Grid** and **Accordion** layout options
-* Sorting options for vault items within each view mode
-
-### 🎨 Themes & Appearance
-
-* New **Ember** theme with a soft warm amber tint
-
-### 📂 Folder Icons & Appearance
-
-* Folder icon picker for customizing folder appearance
-* Appearance property for both regular and vault folder creation
-* Updated folder icons component with expanded icon set
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## 🔄 Changed
+## [2.3.0] - September 15, 2026
 
-### ⚡ Vault Refactor
+### Added
 
-* VaultItemCard merged into VaultItemViews for a simpler component structure
-* VaultItemViews now uses a maskValue utility for secret masking
+#### Animated Search Bar
 
----
+- Animated search bar toggle with smooth expand/collapse transition
+- Clear button to quickly reset search input
+- Conditional search rendering based on active view mode
+- Improved search bar sizing, spacing, and visual polish
 
-## 🙏 Thank You
+#### Backup & Restore
 
-A feature-packed update — splash screen, vault view toggle with sorting, a warm Ember theme, folder icon customization, and smarter update downloads with ETA. QuickPrompt keeps getting better! ✨
+- Full backup and restore functionality with encryption support
+- Encrypted export/import for secure data portability
+- Restore data from encrypted backup files
 
----
+#### Folder Customization Enhancements
 
-# 🚀 QuickPrompt v2.1.0
+- Custom icon upload for folder appearance
+- Tooltip support on folder icons and controls
+- Folder size customization in appearance settings
+- Improved appearance handling across folder components
 
-**Release Date:** September 13, 2026 ✨
-🏷️ Version: v2.1.0
+### Changed
 
----
-
-## ✨ Added
-
-### 🎨 Themes & Appearance
-
-* New **Noir** theme with dark, moody styling
-* Default theme changed to **Volt** for a fresher look
-* Theme cleanup — kept only Light, Cyberpunk, Volt, and Noir
-
-### 🖱️ Interaction
-
-* Double-click any prompt card to view its full content in a dialog
-* Entrance animation for folder tiles in CollectionsPage and VaultPage
-
-### 📂 Folder Management
-
-* Dialog-based folder creation for a smoother workflow
-* Bulk selection mode for moving multiple items into folders at once
-
-### 🚀 Onboarding
-
-* Enhanced onboarding steps with new icons and clearer descriptions
-
-### 🏠 About
-
-* About section redesigned with improved layout and styling
+- VaultViewToggle and VaultPage updated for improved UI and functionality
+- Search behavior refined to adapt to grid/list view modes
 
 ---
 
-## 🔄 Changed
+## [2.2.0] - September 15, 2026
 
-### ⚡ Default Theme
+### Added
 
-* Default theme switched from Light to **Volt**
+#### Splash Screen
 
----
+- Splash screen with animated loading indicator and smooth transition into the app
 
-## 🐛 Fixed
+#### Update & Download Progress
 
-### 📝 UI Fixes
+- Download progress now shows speed, total size, and estimated time remaining (ETA)
+- Restart option in settings after an update finishes downloading
 
-* Select all button logic simplified in CollectionsPage and VaultPage
-* Dropdown menu actions no longer close prematurely
+#### Vault Views
 
----
+- Vault view toggle with **Grid** and **Accordion** layout options
+- Sorting options for vault items within each view mode
 
-## 🙏 Thank You
+#### Themes & Appearance
 
-A polish release — new Noir theme, smoother folder management, better onboarding, and a handful of UX fixes. QuickPrompt keeps getting better thanks to your feedback! ✨
+- New **Ember** theme with a soft warm amber tint
 
----
+#### Folder Icons & Appearance
 
----
+- Folder icon picker for customizing folder appearance
+- Appearance property for both regular and vault folder creation
+- Updated folder icons component with expanded icon set
 
-# 🚀 QuickPrompt v2.0.0
+### Changed
 
-**Release Date:** September 13, 2026 ✨
-🏷️ Version: v2.0.0
+#### Vault Refactor
 
----
-
-## ✨ Added
-
-### 📂 Folders & Collections
-
-* Full folder system for organizing prompts and vault items
-* CollectionsPage with folder grid view and breadcrumb navigation
-* Create, rename, and delete folders
-* Move prompts and vault items into folders via dropdown or dialog picker
-* Folder badges on prompt cards for quick identification
-
-### 🎨 Folder Appearance
-
-* Folder Appearance Picker with custom color input
-* Hex color validation for folder styling
-* Folder display settings on HomePage
-* Configure folder icons and display preferences
-
-### 🔐 Vault Improvements
-
-* Attachments support added to vault items
-* URL field added for link storage
-* Card tints for visual customization
-* Meta field for extra metadata
-* Delete confirmation dialog to prevent accidental deletion
-
-### ⚙️ Settings & UI
-
-* Window size settings updated with better descriptions
-* Enforced width cap in UI for consistent layout
+- VaultItemCard merged into VaultItemViews for a simpler component structure
+- VaultItemViews now uses a maskValue utility for secret masking
 
 ---
 
-## 🔄 Changed
+## [2.1.0] - September 13, 2026
 
-### 🏗️ Codebase Refactor
+### Added
 
-* Code structure refactored for improved readability and maintainability
-* CollectionsPage layout redesigned with section headers
-* VaultItemDialog now uses a select component for folder selection
+#### Themes & Appearance
 
----
+- New **Noir** theme with dark, moody styling
+- Default theme changed to **Volt** for a fresher look
+- Theme cleanup — kept only Light, Cyberpunk, Volt, and Noir
 
-## 🐛 Fixed
+#### Interaction
 
-### 📝 UI Fixes
+- Double-click any prompt card to view its full content in a dialog
+- Entrance animation for folder tiles in CollectionsPage and VaultPage
 
-* Folder name truncation in folder details popup fixed
-* Back button behavior simplified across folder navigation
-* Folder selector now works in both mini and full AddPrompt dialog modes
+#### Folder Management
 
----
+- Dialog-based folder creation for a smoother workflow
+- Bulk selection mode for moving multiple items into folders at once
 
-## 🙏 Thank You
+#### Onboarding
 
-This is a major release bringing the most requested feature — Folders & Collections. Organize your prompts and vault items the way you want, with a beautiful grid view and full control over appearance. Along with vault improvements and under-the-hood refactoring, QuickPrompt is now more powerful and polished than ever. ✨
+- Enhanced onboarding steps with new icons and clearer descriptions
 
----
----
+#### About
 
-# 🚀 QuickPrompt v1.9.0
+- About section redesigned with improved layout and styling
 
-**Release Date:** August 14, 2026 ✨
-🏷️ Version: v1.9.0
+### Changed
 
----
+#### Default Theme
 
-## ✨ Added
+- Default theme switched from Light to **Volt**
 
-### 🔐 Vault (New!)
+### Fixed
 
-* Store passwords, API keys, and other secret info safely inside QuickPrompt
-* Secrets are locked with your computer's built-in security
-* Add, edit, and search for credentials quickly
-* Pin important items to the top and mark favorites with a star
-* Colorful sticky-note style cards — each type has its own color
-* Works in the mini window with easy copy-and-paste buttons
+#### UI Fixes
 
-### 🔀 Drag & Drop Reorder
-
-* Grab any prompt and drag it anywhere to organize your list
-* Full keyboard support for reordering
-* Tooltips and springy animation for smooth feedback
+- Select all button logic simplified in CollectionsPage and VaultPage
+- Dropdown menu actions no longer close prematurely
 
 ---
 
-## 🐛 Fixed
+## [2.0.0] - September 13, 2026
 
-### 📝 Stability Fixes
+### Added
 
-* Rearranging prompts with drag & drop now saves correctly every time
-* Small text and color fixes inside the Vault windows
+#### Folders & Collections
 
----
+- Full folder system for organizing prompts and vault items
+- CollectionsPage with folder grid view and breadcrumb navigation
+- Create, rename, and delete folders
+- Move prompts and vault items into folders via dropdown or dialog picker
+- Folder badges on prompt cards for quick identification
 
-## 🙏 Thank You
+#### Folder Appearance
 
-QuickPrompt now keeps your secrets safe with the new encrypted Vault, and organizing prompts is easier than ever with drag & drop. Enjoy the smoother experience! ✨
+- Folder Appearance Picker with custom color input
+- Hex color validation for folder styling
+- Folder display settings on HomePage
+- Configure folder icons and display preferences
 
----
----
+#### Vault Improvements
 
-# 🚀 QuickPrompt v1.8.0
+- Attachments support added to vault items
+- URL field added for link storage
+- Card tints for visual customization
+- Meta field for extra metadata
+- Delete confirmation dialog to prevent accidental deletion
 
-**Release Date:** June 18, 2026 ✨
-🏷️ Version: v1.8.0
+#### Settings & UI
 
----
+- Window size settings updated with better descriptions
+- Enforced width cap in UI for consistent layout
 
-## ✨ Added
+### Changed
 
-### 📥 Import & Export Page
+#### Codebase Refactor
 
-* Full-featured page for importing and exporting prompts
-* Drag-and-drop file import with JSON, CSV, and Markdown support
-* Import preview with valid/invalid counts and skipped-item details
-* Export panel with format selection and prompt count summary
+- Code structure refactored for improved readability and maintainability
+- CollectionsPage layout redesigned with section headers
+- VaultItemDialog now uses a select component for folder selection
 
-### 🔎 Settings Navigation
+### Fixed
 
-* Settings sidebar search added
-* Quickly jump to any settings section
-* `/` keyboard shortcut support
+#### UI Fixes
 
-### 🎨 Theme Cards
-
-* Redesigned appearance picker with larger, selectable theme cards
-* Improved theme selection experience
-
----
-
-## 🔄 Changed
-
-### ⚙️ Settings Experience Overhaul
-
-* Settings page redesigned with cleaner card-based sections
-* Improved spacing and visual hierarchy
-* Updated iconography across settings
-* Better responsive behavior across all screen sizes
-
-### 🗂️ Section Refresh
-
-* Backup section updated to match the new card-based design
-* Updates section redesigned for consistency
-* About section refreshed with improved layout and styling
+- Folder name truncation in folder details popup fixed
+- Back button behavior simplified across folder navigation
+- Folder selector now works in both mini and full AddPrompt dialog modes
 
 ---
 
-## 🐛 Fixed
+## [1.9.0] - August 14, 2026
 
-### 📝 Prompt Editor Improvements
+### Added
 
-* Add/Edit Prompt dialogs no longer expand endlessly when pasting large content
-* Textarea height is now capped for better usability
-* Large prompts are now scrollable inside the editor
+#### Vault
+
+- Store passwords, API keys, and other secret info safely inside QuickPrompt
+- Secrets are locked with your computer's built-in security
+- Add, edit, and search for credentials quickly
+- Pin important items to the top and mark favorites with a star
+- Colorful sticky-note style cards — each type has its own color
+- Works in the mini window with easy copy-and-paste buttons
+
+#### Drag & Drop Reorder
+
+- Grab any prompt and drag it anywhere to organize your list
+- Full keyboard support for reordering
+- Tooltips and springy animation for smooth feedback
+
+### Fixed
+
+#### Stability Fixes
+
+- Rearranging prompts with drag & drop now saves correctly every time
+- Small text and color fixes inside the Vault windows
 
 ---
 
-## 🙏 Thank You
+## [1.8.0] - June 18, 2026
 
-This release focuses on better organization, faster settings navigation, improved data management, and a more polished user experience throughout the application. ✨
+### Added
+
+#### Import & Export Page
+
+- Full-featured page for importing and exporting prompts
+- Drag-and-drop file import with JSON, CSV, and Markdown support
+- Import preview with valid/invalid counts and skipped-item details
+- Export panel with format selection and prompt count summary
+
+#### Settings Navigation
+
+- Settings sidebar search added
+- Quickly jump to any settings section
+- `/` keyboard shortcut support
+
+#### Theme Cards
+
+- Redesigned appearance picker with larger, selectable theme cards
+- Improved theme selection experience
+
+### Changed
+
+#### Settings Experience Overhaul
+
+- Settings page redesigned with cleaner card-based sections
+- Improved spacing and visual hierarchy
+- Updated iconography across settings
+- Better responsive behavior across all screen sizes
+
+#### Section Refresh
+
+- Backup section updated to match the new card-based design
+- Updates section redesigned for consistency
+- About section refreshed with improved layout and styling
+
+### Fixed
+
+#### Prompt Editor Improvements
+
+- Add/Edit Prompt dialogs no longer expand endlessly when pasting large content
+- Textarea height is now capped for better usability
+- Large prompts are now scrollable inside the editor
