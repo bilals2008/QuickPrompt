@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { FOLDER_ICON_OPTIONS, FOLDER_COLOR_OPTIONS } from "@/lib/folder-appearance"
+import { FOLDER_ICON_OPTIONS, FOLDER_COLOR_OPTIONS, FOLDER_SIZE_OPTIONS } from "@/lib/folder-appearance"
 
 const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
 
@@ -13,11 +13,22 @@ const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
 export function FolderAppearancePicker({
   icon,
   color,
+  size = "normal",
   onIconChange,
   onColorChange,
+  onSizeChange,
   className,
 }) {
   const [hexDraft, setHexDraft] = useState(color || "")
+  const [iconSearch, setIconSearch] = useState("")
+
+  const filteredIcons = useMemo(() => {
+    if (!iconSearch.trim()) return FOLDER_ICON_OPTIONS
+    const q = iconSearch.toLowerCase()
+    return FOLDER_ICON_OPTIONS.filter((opt) =>
+      opt.label.toLowerCase().includes(q) || opt.id.toLowerCase().includes(q)
+    )
+  }, [iconSearch])
 
   useEffect(() => {
     setHexDraft(color || "")
@@ -47,8 +58,20 @@ export function FolderAppearancePicker({
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Icon
         </p>
-        <div className="flex flex-wrap gap-1">
-          {FOLDER_ICON_OPTIONS.map(({ id, label, Icon }) => (
+        <div className="relative mb-2">
+          <Input
+            value={iconSearch}
+            onChange={(e) => setIconSearch(e.target.value)}
+            placeholder="Search icons..."
+            className="h-7 text-[11px]"
+            aria-label="Search folder icons"
+          />
+        </div>
+        <div className="flex max-h-[180px] flex-wrap gap-1.5 overflow-y-auto pr-1">
+          {filteredIcons.length === 0 && (
+            <p className="py-2 text-center text-[11px] text-muted-foreground">No icons match.</p>
+          )}
+          {filteredIcons.map(({ id, label, Icon }) => (
             <button
               key={id}
               type="button"
@@ -57,13 +80,13 @@ export function FolderAppearancePicker({
               aria-pressed={icon === id}
               onClick={() => onIconChange(id)}
               className={cn(
-                "flex size-9 items-center justify-center rounded-md border transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "flex size-11 items-center justify-center rounded-lg border transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 icon === id
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
-              <Icon size={20} />
+              <Icon size={24} />
             </button>
           ))}
         </div>
@@ -129,6 +152,34 @@ export function FolderAppearancePicker({
           )}
         </div>
       </div>
+
+      {onSizeChange && (
+        <div>
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Size
+          </p>
+          <div className="flex gap-1">
+            {FOLDER_SIZE_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                title={opt.label}
+                aria-label={opt.label}
+                aria-pressed={size === opt.id}
+                onClick={() => onSizeChange(opt.id)}
+                className={cn(
+                  "flex h-7 items-center justify-center rounded-md border px-2 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring text-[11px] font-medium",
+                  size === opt.id
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

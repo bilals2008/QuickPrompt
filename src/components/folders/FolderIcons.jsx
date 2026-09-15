@@ -172,6 +172,99 @@ const EMBLEMS = {
       <path d="M9.6 2.2v2.6H7" stroke="#14b8a6" {...STROKE} />
     </>
   ),
+
+  camera: (
+    <>
+      <rect x="1.5" y="3.5" width="9" height="6" rx="1.2" stroke="#8b5cf6" {...STROKE} />
+      <circle cx="6" cy="6.5" r="1.8" stroke="#8b5cf6" {...STROKE} />
+      <path d="M3.8 3.5l.7-1.3h3l.7 1.3" stroke="#8b5cf6" {...STROKE} />
+    </>
+  ),
+
+  globe: (
+    <>
+      <circle cx="6" cy="6" r="4.2" stroke="#06b6d4" {...STROKE} />
+      <ellipse cx="6" cy="6" rx="2" ry="4.2" stroke="#06b6d4" {...STROKE} />
+      <path d="M1.8 6h8.4" stroke="#06b6d4" {...STROKE} />
+    </>
+  ),
+
+  pin: (
+    <>
+      <path d="M6 1.8v5.5" stroke="#f43f5e" {...STROKE} />
+      <circle cx="6" cy="9.5" r="1.2" fill="#f43f5e" />
+      <path d="M4 5.5h4" stroke="#f43f5e" {...STROKE} />
+    </>
+  ),
+
+  fire: (
+    <>
+      <path d="M6 1.5c0 2.5-2.5 3.5-2.5 5.5a3 3 0 0 0 5 0c0-2-2.5-3-2.5-5.5Z" stroke="#f97316" {...STROKE} />
+      <path d="M6 5.5c0 1.2-1 1.8-1 2.6a1.2 1.2 0 0 0 2 0c0-.8-1-1.4-1-2.6Z" fill="#f97316" />
+    </>
+  ),
+
+  paint: (
+    <>
+      <circle cx="6" cy="7" r="3.5" stroke="#a855f7" {...STROKE} />
+      <path d="M6 3.5V1.8" stroke="#a855f7" {...STROKE} />
+      <path d="M8.5 4.5l1-1" stroke="#a855f7" {...STROKE} />
+      <path d="M3.5 4.5l-1-1" stroke="#a855f7" {...STROKE} />
+    </>
+  ),
+
+  prompt: (
+    <>
+      <path d="M2 3h8a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1H5l-2.5 2V9H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="#6366f1" {...STROKE} />
+      <path d="M3.5 5.5h5" stroke="#6366f1" {...STROKE} />
+      <path d="M3.5 7.5h3" stroke="#6366f1" {...STROKE} />
+    </>
+  ),
+
+  apikey: (
+    <>
+      <circle cx="4.5" cy="6" r="2.5" stroke="#eab308" {...STROKE} />
+      <path d="M7 6h3.5" stroke="#eab308" {...STROKE} />
+      <path d="M9 4.5v3" stroke="#eab308" {...STROKE} />
+    </>
+  ),
+
+  token: (
+    <>
+      <path d="M6 1.5l4 2.2v4.4L6 10.3 2 8.1V3.7Z" stroke="#14b8a6" {...STROKE} />
+      <path d="M4.2 6l1.2 1.2 2.4-2.4" stroke="#14b8a6" {...STROKE} />
+    </>
+  ),
+
+  card: (
+    <>
+      <rect x="1" y="2.5" width="10" height="7.5" rx="1.2" stroke="#3b82f6" {...STROKE} />
+      <path d="M1 5h10" stroke="#3b82f6" {...STROKE} />
+      <path d="M2.5 7.5h3" stroke="#3b82f6" {...STROKE} />
+    </>
+  ),
+
+  tag: (
+    <>
+      <path d="M1.5 6V2.5a1 1 0 0 1 1-1H6l4.5 4.5-4.5 4.5Z" stroke="#f43f5e" {...STROKE} />
+      <circle cx="4" cy="4" r="0.8" fill="#f43f5e" />
+    </>
+  ),
+
+  model: (
+    <>
+      <circle cx="6" cy="5" r="3.5" stroke="#8b5cf6" {...STROKE} />
+      <path d="M3 8.5c0 1.7 1.3 3 3 3s3-1.3 3-3" stroke="#8b5cf6" {...STROKE} />
+      <circle cx="6" cy="5" r="1.2" fill="#8b5cf6" />
+    </>
+  ),
+
+  attachment: (
+    <>
+      <path d="M7.5 5.5v4a2 2 0 0 1-4 0v-4a1.5 1.5 0 0 1 3 0v3.5" stroke="#0ea5e9" {...STROKE} />
+      <path d="M7.5 3v7.5a2.5 2.5 0 0 1-5 0V5" stroke="#0ea5e9" {...STROKE} />
+    </>
+  ),
 }
 
 function FolderSvg({ size = 16, style, className, children }) {
@@ -271,3 +364,15 @@ export const FolderDollarIcon = makeFolderIcon(EMBLEMS.dollar)
 export const FolderClockIcon = makeFolderIcon(EMBLEMS.clock)
 export const FolderCheckIcon = makeFolderIcon(EMBLEMS.check)
 export const FolderFlagIcon = makeFolderIcon(EMBLEMS.flag)
+export const FolderCameraIcon = makeFolderIcon(EMBLEMS.camera)
+export const FolderGlobeIcon = makeFolderIcon(EMBLEMS.globe)
+export const FolderPinIcon = makeFolderIcon(EMBLEMS.pin)
+export const FolderFireIcon = makeFolderIcon(EMBLEMS.fire)
+export const FolderPaintIcon = makeFolderIcon(EMBLEMS.paint)
+export const FolderPromptIcon = makeFolderIcon(EMBLEMS.prompt)
+export const FolderApikeyIcon = makeFolderIcon(EMBLEMS.apikey)
+export const FolderTokenIcon = makeFolderIcon(EMBLEMS.token)
+export const FolderCardIcon = makeFolderIcon(EMBLEMS.card)
+export const FolderTagIcon = makeFolderIcon(EMBLEMS.tag)
+export const FolderModelIcon = makeFolderIcon(EMBLEMS.model)
+export const FolderAttachmentIcon = makeFolderIcon(EMBLEMS.attachment)

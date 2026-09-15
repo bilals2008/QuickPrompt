@@ -22,6 +22,18 @@ import {
   FolderClockIcon,
   FolderCheckIcon,
   FolderFlagIcon,
+  FolderCameraIcon,
+  FolderGlobeIcon,
+  FolderPinIcon,
+  FolderFireIcon,
+  FolderPaintIcon,
+  FolderPromptIcon,
+  FolderApikeyIcon,
+  FolderTokenIcon,
+  FolderCardIcon,
+  FolderTagIcon,
+  FolderModelIcon,
+  FolderAttachmentIcon,
 } from "@/components/folders/FolderIcons"
 
 // Available folder icons. `id` is what we persist in the folders.icon column.
@@ -51,6 +63,18 @@ export const FOLDER_ICON_OPTIONS = [
   { id: "clock", label: "Recent", Icon: FolderClockIcon },
   { id: "check", label: "Done", Icon: FolderCheckIcon },
   { id: "flag", label: "Flagged", Icon: FolderFlagIcon },
+  { id: "camera", label: "Camera", Icon: FolderCameraIcon },
+  { id: "globe", label: "Web", Icon: FolderGlobeIcon },
+  { id: "pin", label: "Pinned", Icon: FolderPinIcon },
+  { id: "fire", label: "Trending", Icon: FolderFireIcon },
+  { id: "paint", label: "Design", Icon: FolderPaintIcon },
+  { id: "prompt", label: "Prompts", Icon: FolderPromptIcon },
+  { id: "apikey", label: "API Key", Icon: FolderApikeyIcon },
+  { id: "token", label: "Token", Icon: FolderTokenIcon },
+  { id: "card", label: "Card", Icon: FolderCardIcon },
+  { id: "tag", label: "Tags", Icon: FolderTagIcon },
+  { id: "model", label: "Model", Icon: FolderModelIcon },
+  { id: "attachment", label: "Attachment", Icon: FolderAttachmentIcon },
 ]
 
 // Empty value means "use the theme default" (yellow folder).
@@ -72,7 +96,33 @@ export const FOLDER_COLOR_OPTIONS = [
   { value: "#64748b", label: "Slate" },
 ]
 
-export const DEFAULT_FOLDER_APPEARANCE = { icon: "folder", color: "" }
+export const FOLDER_SIZE_OPTIONS = [
+  { id: "small", label: "Small", pixelSize: 20 },
+  { id: "normal", label: "Normal", pixelSize: 28 },
+  { id: "large", label: "Large", pixelSize: 36 },
+  { id: "xlarge", label: "Extra large", pixelSize: 48 },
+]
+
+export const DEFAULT_FOLDER_APPEARANCE = { icon: "folder", color: "", size: "normal" }
+
+export function parseAppearance(appearance) {
+  if (!appearance || typeof appearance !== "string") return {}
+  try { return JSON.parse(appearance) } catch { return {} }
+}
+
+export function serializeAppearance(patch) {
+  return JSON.stringify(patch)
+}
+
+export function getFolderSize(folder) {
+  const raw = parseAppearance(folder?.appearance)
+  return raw.size || "normal"
+}
+
+export function getFolderPixelSize(folder) {
+  const sizeId = getFolderSize(folder)
+  return FOLDER_SIZE_OPTIONS.find((o) => o.id === sizeId)?.pixelSize || 28
+}
 
 export const DEFAULT_FOLDER_COLOR_CLASS = "text-yellow-500/80"
 

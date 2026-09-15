@@ -708,6 +708,7 @@ export default function CollectionsPage() {
         existingFolders={folders}
         defaultIcon={folderDisplay.defaultIcon}
         defaultColor={folderDisplay.defaultColor}
+        defaultSize={folderDisplay.defaultSize}
         isSubfolder={Boolean(newFolderParentId)}
       />
 

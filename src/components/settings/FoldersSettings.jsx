@@ -87,8 +87,10 @@ export function FoldersSettings() {
             <FolderAppearancePicker
               icon={display.defaultIcon}
               color={display.defaultColor}
+              size={display.defaultSize || "normal"}
               onIconChange={(v) => setDisplay({ defaultIcon: v })}
               onColorChange={(v) => setDisplay({ defaultColor: v })}
+              onSizeChange={(v) => setDisplay({ defaultSize: v })}
             />
           </div>
         </SettingGroup>

@@ -937,6 +937,7 @@ export default function VaultPage() {
         existingFolders={vaultFolders}
         defaultIcon={folderDisplay.defaultIcon}
         defaultColor={folderDisplay.defaultColor}
+        defaultSize={folderDisplay.defaultSize}
         isSubfolder={Boolean(newFolderParentId)}
       />
 

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import { FolderAppearancePicker } from "@/components/folders/FolderAppearancePicker"
-import { DEFAULT_FOLDER_APPEARANCE } from "@/lib/folder-appearance"
+import { DEFAULT_FOLDER_APPEARANCE, parseAppearance, serializeAppearance, getFolderSize, getFolderPixelSize } from "@/lib/folder-appearance"
 
 /**
  * Edit a folder's name, icon and color. Shared between prompt folders,
@@ -25,6 +25,7 @@ export function FolderCustomizeDialog({
   const [name, setName] = useState("")
   const [icon, setIcon] = useState(DEFAULT_FOLDER_APPEARANCE.icon)
   const [color, setColor] = useState(DEFAULT_FOLDER_APPEARANCE.color)
+  const [size, setSize] = useState(DEFAULT_FOLDER_APPEARANCE.size)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export function FolderCustomizeDialog({
     setName(folder.name || "")
     setIcon(folder.icon || DEFAULT_FOLDER_APPEARANCE.icon)
     setColor(folder.color || "")
+    setSize(getFolderSize(folder))
   }, [folder])
 
   const handleSave = async () => {
@@ -39,7 +41,8 @@ export function FolderCustomizeDialog({
     if (!trimmed || !folder) return
     setSaving(true)
     try {
-      await onSave(folder.id, { name: trimmed, icon, color })
+      const appearance = serializeAppearance({ size })
+      await onSave(folder.id, { name: trimmed, icon, color, appearance })
       onOpenChange(false)
     } finally {
       setSaving(false)
@@ -55,7 +58,7 @@ export function FolderCustomizeDialog({
 
         {/* Live preview */}
         <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-          <FolderGlyph folder={{ icon, color }} size={26} />
+          <FolderGlyph folder={{ icon, color, appearance: serializeAppearance({ size }) }} size={getFolderPixelSize({ appearance: serializeAppearance({ size }) })} />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
               {name.trim() || "Untitled folder"}
@@ -84,8 +87,10 @@ export function FolderCustomizeDialog({
         <FolderAppearancePicker
           icon={icon}
           color={color}
+          size={size}
           onIconChange={setIcon}
           onColorChange={setColor}
+          onSizeChange={setSize}
         />
 
         <div className="flex justify-end gap-2">

@@ -142,7 +142,6 @@ export function FolderTile({
       <FolderGlyph
         folder={folder}
         showCustom={showCustomAppearance}
-        size={28}
         className="transition-transform duration-200 group-hover:scale-110"
       />
 
