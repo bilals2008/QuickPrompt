@@ -46,7 +46,7 @@ export function VaultViewToggle({ view, sort, onViewChange, onSortChange }) {
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+              className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border/40 text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
               aria-label={`View: ${active.label}. Sort: ${activeSort.label}`}
             >
               <ActiveIcon size={14} />

@@ -4,7 +4,7 @@ import { toast } from "sonner"
 import {
   IconArrowLeft,
   IconCheckbox,
-  IconFiles,
+  IconFolder,
   IconFolderPlus,
   IconLoader2,
   IconPlus,
@@ -44,7 +44,6 @@ import { SectionHeader } from "@/components/section-header"
 import { EmptyState } from "@/components/empty-state"
 import { useVaultFolders } from "@/hooks/useVaultFolders"
 import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
-import { cn } from "@/lib/utils"
 
 function EncryptionNotice() {
   return (
@@ -82,7 +81,7 @@ export default function VaultPage() {
   const [attachmentCounts, setAttachmentCounts] = useState({})
 
   const [activeVaultFolder, setActiveVaultFolder] = useState(null)
-  const [showFolders, setShowFolders] = useState(true)
+  const [vaultView, setVaultView] = useState("items") // "items" | "folders"
   const [newFolderOpen, setNewFolderOpen] = useState(false)
   const [newFolderParentId, setNewFolderParentId] = useState(null)
   const [moveItemId, setMoveItemId] = useState(null)
@@ -260,6 +259,7 @@ export default function VaultPage() {
 
   const goBackToVaultFolders = useCallback(() => {
     setActiveVaultFolder(null)
+    setVaultView("items")
     setNewFolderOpen(false)
     setSelectedFolderIds(new Set())
   }, [])
@@ -524,7 +524,7 @@ export default function VaultPage() {
   /* ---------------- derived ---------------- */
 
   const query = search.trim().toLowerCase()
-  const view = activeVaultFolder ? "items" : "folders"
+  const view = activeVaultFolder ? "items" : vaultView
 
   const folderQuery = searchInput.trim().toLowerCase()
   const visibleRootFolders = roots.filter((f) => f.name.toLowerCase().includes(folderQuery))
@@ -532,13 +532,11 @@ export default function VaultPage() {
     ? childFolders.filter((f) => f.name.toLowerCase().includes(folderQuery))
     : childFolders
 
-  const visibleItems = activeVaultFolder
-    ? items.filter(
-        (i) =>
-          i.title?.toLowerCase().includes(query) ||
-          i.notes?.toLowerCase().includes(query)
-      )
-    : items
+  const visibleItems = items.filter(
+    (i) =>
+      i.title?.toLowerCase().includes(query) ||
+      i.notes?.toLowerCase().includes(query)
+  )
 
   const tileProps = {
     showCustomAppearance: folderDisplay.showFolderAppearance,
@@ -642,7 +640,7 @@ export default function VaultPage() {
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-border/30 px-3 py-2.5 sm:px-4">
         <button
-          onClick={view === "items" ? goBackToVaultFolders : () => navigate("/")}
+          onClick={view === "items" && activeVaultFolder ? () => { setActiveVaultFolder(null); setVaultView("folders") } : () => navigate("/")}
           className="shrink-0 cursor-pointer rounded p-1 transition-colors hover:bg-accent/50"
           aria-label="Back"
         >
@@ -655,38 +653,6 @@ export default function VaultPage() {
 
         <div className="flex-1" />
 
-        <div className="relative flex items-center">
-          <IconSearch size={12} className="absolute left-2 text-muted-foreground" />
-          <Input
-            ref={searchRef}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                e.preventDefault()
-                setSearchInput("")
-                setSearch("")
-                searchRef.current?.blur()
-              }
-            }}
-            placeholder="Search..."
-            className="h-7 w-[120px] border-border/40 bg-background/60 pl-7 pr-7 text-xs sm:w-44"
-          />
-          {searchInput && (
-            <button
-              onClick={() => {
-                setSearchInput("")
-                setSearch("")
-                searchRef.current?.focus()
-              }}
-              className="absolute right-2 cursor-pointer text-muted-foreground hover:text-foreground"
-              aria-label="Clear search"
-            >
-              <IconX size={12} />
-            </button>
-          )}
-        </div>
-
         <VaultViewToggle
           view={itemViewMode}
           sort={sortOrder}
@@ -694,13 +660,29 @@ export default function VaultPage() {
           onSortChange={changeSortOrder}
         />
 
+        {!activeVaultFolder && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={vaultView === "folders" ? "secondary" : "ghost"}
+                size="icon"
+                className="size-7 shrink-0 border border-border/40"
+                onClick={() => setVaultView(vaultView === "folders" ? "items" : "folders")}
+              >
+                <IconFolder size={14} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{vaultView === "folders" ? "Show items" : "Show folders"}</TooltipContent>
+          </Tooltip>
+        )}
+
         {view === "items" && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7 shrink-0"
+                className="size-7 shrink-0 border border-border/40"
                 onClick={openAddItems}
               >
                 <IconPlus size={14} />
@@ -715,7 +697,7 @@ export default function VaultPage() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-7 shrink-0"
+              className="size-7 shrink-0 border border-border/40"
               onClick={() => startCreating(activeVaultFolder?.id ?? null)}
             >
               <IconFolderPlus size={14} />
@@ -730,7 +712,7 @@ export default function VaultPage() {
               <Button
                 variant={selectionActive ? "secondary" : "ghost"}
                 size="icon"
-                className="size-7 shrink-0"
+                className="size-7 shrink-0 border border-border/40"
                 onClick={toggleSelectionActive}
               >
                 <IconCheckbox size={14} />
@@ -740,21 +722,41 @@ export default function VaultPage() {
           </Tooltip>
         )}
 
-        {view === "folders" && vaultFolders.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn("size-7 shrink-0", showFolders && "bg-accent text-foreground")}
-                onClick={() => setShowFolders((s) => !s)}
-              >
-                <IconFiles size={14} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{showFolders ? "Hide folders" : "Show folders"}</TooltipContent>
-          </Tooltip>
-        )}
+      </div>
+
+      {/* Search bar below header actions */}
+      <div className="border-b border-border/30 px-3 py-2 sm:px-4">
+        <div className="relative flex items-center">
+          <IconSearch size={12} className="absolute left-2.5 text-muted-foreground" />
+          <Input
+            ref={searchRef}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault()
+                setSearchInput("")
+                setSearch("")
+                searchRef.current?.blur()
+              }
+            }}
+            placeholder="Search..."
+            className="h-7 w-full border-border/40 bg-background/60 pl-7 pr-7 text-xs"
+          />
+          {searchInput && (
+            <button
+              onClick={() => {
+                setSearchInput("")
+                setSearch("")
+                searchRef.current?.focus()
+              }}
+              className="absolute right-2.5 cursor-pointer text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <IconX size={12} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Bulk selection toolbar */}
@@ -791,7 +793,7 @@ export default function VaultPage() {
         </div>
       )}
 
-      {view === "items" && (
+      {view === "items" && activeVaultFolder && (
         <FolderBreadcrumb
           breadcrumb={breadcrumb}
           activeFolder={activeVaultFolder}
@@ -807,24 +809,27 @@ export default function VaultPage() {
 
         {view === "folders" ? (
           <>
-            <div
-              className="overflow-hidden transition-all duration-300 ease-in-out"
-              style={{
-                maxHeight: showFolders && visibleRootFolders.length > 0 ? "600px" : "0px",
-                opacity: showFolders && visibleRootFolders.length > 0 ? 1 : 0,
-                transform: showFolders && visibleRootFolders.length > 0 ? "translateY(0)" : "translateY(-8px)",
-              }}
-            >
-              {visibleRootFolders.length > 0 && (
-                <div className="mb-5">
-                  <SectionHeader label="Folders" count={visibleRootFolders.length} />
-                  {renderFolderGrid(visibleRootFolders)}
-                </div>
-              )}
-            </div>
-
-            <SectionHeader label="Credentials" count={visibleItems.length} />
-            {renderItems()}
+            {visibleRootFolders.length > 0 ? (
+              <div className="mb-5">
+                <SectionHeader label="Folders" count={visibleRootFolders.length} />
+                {renderFolderGrid(visibleRootFolders)}
+              </div>
+            ) : (
+              <EmptyState
+                icon={IconFolderPlus}
+                title="No folders yet"
+                hint="Create your first vault folder to organize credentials"
+                action={
+                  <Button
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs"
+                    onClick={() => startCreating(null)}
+                  >
+                    <IconPlus size={12} /> New folder
+                  </Button>
+                }
+              />
+            )}
           </>
         ) : (
           <>
@@ -838,14 +843,6 @@ export default function VaultPage() {
             <SectionHeader
               label="Items"
               count={visibleItems.length}
-              action={
-                <button
-                  onClick={openAddItems}
-                  className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <IconPlus size={11} /> Add
-                </button>
-              }
             />
             {renderItems()}
           </>
