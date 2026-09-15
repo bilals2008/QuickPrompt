@@ -1,3 +1,53 @@
+# 🚀 QuickPrompt v2.2.0
+
+**Release Date:** September 15, 2026 ✨
+🏷️ Version: v2.2.0
+
+---
+
+## ✨ Added
+
+### 🎬 Splash Screen
+
+* Splash screen with animated loading indicator and smooth transition into the app
+
+### ⬇️ Update & Download Progress
+
+* Download progress now shows speed, total size, and estimated time remaining (ETA)
+* Restart option in settings after an update finishes downloading
+
+### 🔐 Vault Views
+
+* Vault view toggle with **Grid** and **Accordion** layout options
+* Sorting options for vault items within each view mode
+
+### 🎨 Themes & Appearance
+
+* New **Ember** theme with a soft warm amber tint
+
+### 📂 Folder Icons & Appearance
+
+* Folder icon picker for customizing folder appearance
+* Appearance property for both regular and vault folder creation
+* Updated folder icons component with expanded icon set
+
+---
+
+## 🔄 Changed
+
+### ⚡ Vault Refactor
+
+* VaultItemCard merged into VaultItemViews for a simpler component structure
+* VaultItemViews now uses a maskValue utility for secret masking
+
+---
+
+## 🙏 Thank You
+
+A feature-packed update — splash screen, vault view toggle with sorting, a warm Ember theme, folder icon customization, and smarter update downloads with ETA. QuickPrompt keeps getting better! ✨
+
+---
+
 # 🚀 QuickPrompt v2.1.0
 
 **Release Date:** September 13, 2026 ✨
