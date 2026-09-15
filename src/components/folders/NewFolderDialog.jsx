@@ -9,13 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import { FolderAppearancePicker } from "@/components/folders/FolderAppearancePicker"
-import { DEFAULT_FOLDER_APPEARANCE, parseAppearance, serializeAppearance, getFolderPixelSize } from "@/lib/folder-appearance"
+import { DEFAULT_FOLDER_APPEARANCE, serializeAppearance, getFolderPixelSize } from "@/lib/folder-appearance"
 
-/**
- * Generate a Windows-style unique folder name.
- * If "New Folder" doesn't exist, use it. Otherwise try "New Folder (1)",
- * "New Folder (2)", etc.
- */
 function generateUniqueName(baseName, existingNames) {
   const existingSet = new Set(existingNames.map((n) => n.toLowerCase()))
   if (!existingSet.has(baseName.toLowerCase())) return baseName
@@ -24,10 +19,6 @@ function generateUniqueName(baseName, existingNames) {
   return `${baseName} (${i})`
 }
 
-/**
- * Dialog for creating a new folder with name, icon and color pickers.
- * Replaces the inline NewFolderInput for a cleaner Windows-style UX.
- */
 export function NewFolderDialog({
   open,
   onOpenChange,
@@ -54,17 +45,14 @@ export function NewFolderDialog({
   const [icon, setIcon] = useState(defaultIcon)
   const [color, setColor] = useState(defaultColor)
   const [size, setSize] = useState(defaultSize)
-  const [appearanceStr, setAppearanceStr] = useState("")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (open) {
-      const fresh = generateUniqueName(isSubfolder ? "New Subfolder" : "New Folder", siblingNames)
-      setName(fresh)
+      setName(generateUniqueName(isSubfolder ? "New Subfolder" : "New Folder", siblingNames))
       setIcon(defaultIcon)
       setColor(defaultColor)
       setSize(defaultSize)
-      setAppearanceStr("")
     }
   }, [open, siblingNames, defaultIcon, defaultColor, defaultSize, isSubfolder])
 
@@ -73,8 +61,7 @@ export function NewFolderDialog({
     if (!trimmed) return
     setSaving(true)
     try {
-      const existing = parseAppearance(appearanceStr)
-      const appearance = serializeAppearance({ ...existing, size })
+      const appearance = serializeAppearance({ size })
       await onSubmit({ name: trimmed, icon, color, appearance })
       onOpenChange(false)
     } finally {
@@ -84,16 +71,15 @@ export function NewFolderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-4 sm:max-w-sm">
+      <DialogContent className="gap-4 sm:max-w-sm max-h-[calc(100vh-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-sm">
             {isSubfolder ? "New subfolder" : "New folder"}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Live preview */}
         <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-          <FolderGlyph folder={{ icon, color, appearance: appearanceStr }} size={getFolderPixelSize({ appearance: appearanceStr })} />
+          <FolderGlyph folder={{ icon, color }} size={getFolderPixelSize({ appearance: serializeAppearance({ size }) })} />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
               {name.trim() || "Untitled folder"}
@@ -124,11 +110,9 @@ export function NewFolderDialog({
           icon={icon}
           color={color}
           size={size}
-          appearance={appearanceStr}
           onIconChange={setIcon}
           onColorChange={setColor}
           onSizeChange={setSize}
-          onAppearanceChange={setAppearanceStr}
         />
 
         <div className="flex justify-end gap-2">
