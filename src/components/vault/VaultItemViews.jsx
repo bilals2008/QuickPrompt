@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 import { parseTagsString } from "@/lib/tag-utils"
 import { TAG_CLASS, getTagColor } from "@/lib/tag-colors"
 import { getVaultType } from "@/components/vault-item-dialog"
-import { maskValue } from "@/components/vault/VaultItemCard"
+import { maskValue } from "@/lib/vault-types"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,7 +65,18 @@ function FavoriteBtn({ item, onToggleFavorite, size = 13 }) {
   )
 }
 
-function ItemMenu({ item, inFolder, onEdit, onTogglePin, onMove, onRemoveFromFolder, onDelete }) {
+function ItemMenu({
+  item,
+  inFolder,
+  onEdit,
+  onTogglePin,
+  onMove,
+  onRemoveFromFolder,
+  onDelete,
+  onToggleFavorite,
+  onToggleReveal,
+  revealed,
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -78,6 +89,23 @@ function ItemMenu({ item, inFolder, onEdit, onTogglePin, onMove, onRemoveFromFol
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
+        {onToggleFavorite && (
+          <DropdownMenuItem onClick={() => onToggleFavorite(item.id)}>
+            {item.favorite ? (
+              <IconStarFilled className="size-3.5" />
+            ) : (
+              <IconStar className="size-3.5" />
+            )}
+            {item.favorite ? "Remove favorite" : "Add favorite"}
+          </DropdownMenuItem>
+        )}
+        {onToggleReveal && item.type !== "note" && (
+          <DropdownMenuItem onClick={() => onToggleReveal(item)}>
+            {revealed ? <IconEyeOff className="size-3.5" /> : <IconEye className="size-3.5" />}
+            {revealed ? "Hide value" : "Reveal value"}
+          </DropdownMenuItem>
+        )}
+        {(onToggleFavorite || onToggleReveal) && <DropdownMenuSeparator />}
         <DropdownMenuItem onClick={() => onEdit(item)}>
           <IconEdit className="size-3.5" /> Edit
         </DropdownMenuItem>
@@ -373,60 +401,84 @@ function ListRow({ item, revealed, value, copied, attachmentCount, inFolder, isL
       onDoubleClick={edit}
       title={copyable ? "Click to copy · double-click to edit" : "Double-click to edit"}
       className={cn(
-        "group flex items-center gap-2 px-2 py-1.5 transition-colors hover:bg-accent/40",
+        "group flex items-center gap-2 px-2.5 py-1.5 transition-colors hover:bg-accent/40",
         copyable && "cursor-pointer",
         !isLast && "border-b border-border/30",
         hasCustomColor && "sticky-note",
         copied[item.id] && "bg-primary/5"
       )}
     >
-      {item.pinned && <span className="h-5 w-[3px] shrink-0 rounded-full bg-primary/70" />}
+      {item.pinned && <span className="h-4 w-[3px] shrink-0 rounded-full bg-primary/70" />}
 
       <div className={cn("flex size-5 shrink-0 items-center justify-center rounded border", type.color)}>
-        <TypeIcon type={type} size={12} />
+        <TypeIcon type={type} size={11} />
       </div>
 
-      <span className="min-w-0 flex-1 truncate text-[12px] font-medium">{item.title}</span>
+      <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight">
+        {item.title}
+      </span>
 
       {item.type !== "note" && (
-        <span className="max-w-[110px] shrink-0 truncate font-mono text-[11px] text-muted-foreground">
+        <span
+          className={cn(
+            "max-w-[38%] shrink-0 truncate font-mono text-[11px]",
+            isRevealed ? "text-foreground" : "text-muted-foreground"
+          )}
+        >
           {isRevealed ? value[item.id] || "—" : maskedPreview(item)}
         </span>
       )}
 
-      <FavoriteBtn item={item} onToggleFavorite={actions.onToggleFavorite} size={11} />
-
       {attachmentCount > 0 && (
-        <span className="flex shrink-0 items-center gap-0.5 text-[10px] text-foreground/50">
+        <span className="flex shrink-0 items-center gap-0.5 text-[10px] text-foreground/45">
           <IconPaperclip size={10} />
           {attachmentCount}
         </span>
       )}
 
-      {item.type !== "note" && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          actions.onToggleFavorite(item.id)
+        }}
+        className={cn(
+          "shrink-0 cursor-pointer transition-all hover:scale-110",
+          item.favorite ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"
+        )}
+        aria-label={item.favorite ? "Remove from favorites" : "Add to favorites"}
+      >
+        {item.favorite ? (
+          <IconStarFilled size={12} className="text-amber-500" />
+        ) : (
+          <IconStar size={12} className="text-foreground/30 hover:text-amber-500" />
+        )}
+      </button>
+
+      {copyable && (
         <button
           onClick={(e) => {
             e.stopPropagation()
-            actions.onToggleReveal(item)
+            actions.onCopy(item)
           }}
-          className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-          aria-label={isRevealed ? "Hide" : "Reveal"}
+          className={cn(
+            "flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors",
+            copied[item.id]
+              ? "bg-primary/10 text-primary"
+              : "text-foreground/45 hover:bg-foreground/10 hover:text-foreground"
+          )}
+          aria-label="Copy"
+          title="Copy"
         >
-          {isRevealed ? <IconEyeOff size={12} /> : <IconEye size={12} />}
+          {copied[item.id] ? <IconCheck size={12} /> : <IconCopy size={12} />}
         </button>
-      )}
-
-      {copyable && (
-        <CopyBtn
-          copied={copied[item.id]}
-          subtle
-          onCopy={() => actions.onCopy(item)}
-        />
       )}
 
       <ItemMenu
         item={item}
         inFolder={inFolder}
+        revealed={isRevealed}
+        onToggleReveal={actions.onToggleReveal}
+        onToggleFavorite={actions.onToggleFavorite}
         onEdit={actions.onEdit}
         onTogglePin={actions.onTogglePin}
         onMove={actions.onMove}

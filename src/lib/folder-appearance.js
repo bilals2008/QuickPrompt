@@ -1,62 +1,56 @@
 import {
-  IconFolderFilled,
-  IconFolders,
-  IconFolderStar,
-  IconFolderHeart,
-  IconFolderCode,
-  IconBriefcase,
-  IconBook,
-  IconNote,
-  IconTag,
-  IconBulb,
-  IconRocket,
-  IconBookmark,
-  IconArchive,
-  IconMusic,
-  IconPhoto,
-  IconCamera,
-  IconPalette,
-  IconChartBar,
-  IconGlobe,
-  IconHome,
-  IconUsers,
-  IconShield,
-  IconFlame,
-  IconLeaf,
-  IconSparkles,
-  IconPin,
-  IconFlag,
-} from "@tabler/icons-react"
+  FolderPlainIcon,
+  FolderStackIcon,
+  FolderOpenIcon,
+  FolderPlusIcon,
+  FolderCrossIcon,
+  FolderSearchIcon,
+  FolderSyncIcon,
+  FolderStarIcon,
+  FolderHeartIcon,
+  FolderLockIcon,
+  FolderCodeIcon,
+  FolderBookIcon,
+  FolderNoteIcon,
+  FolderBriefcaseIcon,
+  FolderUsersIcon,
+  FolderMusicIcon,
+  FolderPhotoIcon,
+  FolderCloudIcon,
+  FolderDownloadIcon,
+  FolderDollarIcon,
+  FolderClockIcon,
+  FolderCheckIcon,
+  FolderFlagIcon,
+} from "@/components/folders/FolderIcons"
 
 // Available folder icons. `id` is what we persist in the folders.icon column.
+// Every entry is a real Windows 11 style folder; the colour picker below tints
+// the folder body, the same way Explorer folders work.
 export const FOLDER_ICON_OPTIONS = [
-  { id: "folder", label: "Folder", Icon: IconFolderFilled },
-  { id: "folders", label: "Collection", Icon: IconFolders },
-  { id: "star", label: "Starred", Icon: IconFolderStar },
-  { id: "heart", label: "Favorites", Icon: IconFolderHeart },
-  { id: "code", label: "Code", Icon: IconFolderCode },
-  { id: "briefcase", label: "Work", Icon: IconBriefcase },
-  { id: "book", label: "Docs", Icon: IconBook },
-  { id: "note", label: "Notes", Icon: IconNote },
-  { id: "tag", label: "Tags", Icon: IconTag },
-  { id: "bulb", label: "Ideas", Icon: IconBulb },
-  { id: "rocket", label: "Launch", Icon: IconRocket },
-  { id: "bookmark", label: "Saved", Icon: IconBookmark },
-  { id: "archive", label: "Archive", Icon: IconArchive },
-  { id: "music", label: "Music", Icon: IconMusic },
-  { id: "photo", label: "Images", Icon: IconPhoto },
-  { id: "camera", label: "Camera", Icon: IconCamera },
-  { id: "palette", label: "Design", Icon: IconPalette },
-  { id: "chart", label: "Data", Icon: IconChartBar },
-  { id: "globe", label: "Web", Icon: IconGlobe },
-  { id: "home", label: "Home", Icon: IconHome },
-  { id: "users", label: "People", Icon: IconUsers },
-  { id: "shield", label: "Secure", Icon: IconShield },
-  { id: "flame", label: "Hot", Icon: IconFlame },
-  { id: "leaf", label: "Nature", Icon: IconLeaf },
-  { id: "sparkles", label: "Magic", Icon: IconSparkles },
-  { id: "pin", label: "Pinned", Icon: IconPin },
-  { id: "flag", label: "Flagged", Icon: IconFlag },
+  { id: "folder", label: "Folder", Icon: FolderPlainIcon },
+  { id: "folders", label: "Folder stack", Icon: FolderStackIcon },
+  { id: "open", label: "Open folder", Icon: FolderOpenIcon },
+  { id: "plus", label: "Add", Icon: FolderPlusIcon },
+  { id: "cross", label: "Delete", Icon: FolderCrossIcon },
+  { id: "search", label: "Search", Icon: FolderSearchIcon },
+  { id: "sync", label: "Sync", Icon: FolderSyncIcon },
+  { id: "star", label: "Starred", Icon: FolderStarIcon },
+  { id: "heart", label: "Favorites", Icon: FolderHeartIcon },
+  { id: "lock", label: "Secure", Icon: FolderLockIcon },
+  { id: "code", label: "Code", Icon: FolderCodeIcon },
+  { id: "book", label: "Docs", Icon: FolderBookIcon },
+  { id: "note", label: "Notes", Icon: FolderNoteIcon },
+  { id: "briefcase", label: "Work", Icon: FolderBriefcaseIcon },
+  { id: "users", label: "People", Icon: FolderUsersIcon },
+  { id: "music", label: "Music", Icon: FolderMusicIcon },
+  { id: "photo", label: "Images", Icon: FolderPhotoIcon },
+  { id: "cloud", label: "Cloud", Icon: FolderCloudIcon },
+  { id: "download", label: "Downloads", Icon: FolderDownloadIcon },
+  { id: "dollar", label: "Finance", Icon: FolderDollarIcon },
+  { id: "clock", label: "Recent", Icon: FolderClockIcon },
+  { id: "check", label: "Done", Icon: FolderCheckIcon },
+  { id: "flag", label: "Flagged", Icon: FolderFlagIcon },
 ]
 
 // Empty value means "use the theme default" (yellow folder).
@@ -84,8 +78,12 @@ export const DEFAULT_FOLDER_COLOR_CLASS = "text-yellow-500/80"
 
 const ICON_MAP = Object.fromEntries(FOLDER_ICON_OPTIONS.map((o) => [o.id, o.Icon]))
 
+/**
+ * Folder icons removed from the picker still live in the database, so unknown
+ * ids resolve to the plain folder instead of breaking.
+ */
 export function resolveFolderIcon(iconId) {
-  return ICON_MAP[iconId] || IconFolderFilled
+  return ICON_MAP[iconId] || FolderPlainIcon
 }
 
 export function isValidFolderIcon(iconId) {

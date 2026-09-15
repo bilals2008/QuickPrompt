@@ -154,6 +154,15 @@ const themeCategories = [
         accent: "#ff6b6b",
         text: "#fafafa",
       },
+      {
+        id: "ember",
+        label: "Ember",
+        desc: "Soft warm amber tint",
+        bg: "#17110d",
+        card: "#221912",
+        accent: "#e2a35f",
+        text: "#f0e6db",
+      },
     ],
   },
 ]
@@ -171,6 +180,7 @@ export default function Settings() {
   const [checking, setChecking] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState({ percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 })
+  const smoothedSpeedRef = useRef(0)
   const [closeBehavior, setCloseBehavior] = useState("tray")
   const [autoCopy, setAutoCopy] = useState(true)
   const [defaultView, setDefaultView] = useState("grid")
@@ -213,12 +223,20 @@ export default function Settings() {
         setUpdateInfo({ version: event.version, releaseNotes: event.releaseNotes })
       }
       if (event.status === "downloading") {
+        // Ease the raw sample so the readout doesn't flicker between ticks.
+        const rawSpeed = event.bytesPerSecond || 0
+        smoothedSpeedRef.current = smoothedSpeedRef.current
+          ? smoothedSpeedRef.current * 0.7 + rawSpeed * 0.3
+          : rawSpeed
         setDownloadProgress({
           percent: event.percent || 0,
-          bytesPerSecond: event.bytesPerSecond || 0,
+          bytesPerSecond: smoothedSpeedRef.current,
           total: event.total || 0,
           transferred: event.transferred || 0,
         })
+      }
+      if (event.status === "downloaded" || event.status === "error") {
+        smoothedSpeedRef.current = 0
       }
       if (event.status === "available") {
         toast.success(`Update available: v${event.version}`)
@@ -267,6 +285,7 @@ export default function Settings() {
 
   async function handleDownloadUpdate() {
     setDownloading(true)
+    smoothedSpeedRef.current = 0
     setDownloadProgress({ percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 })
     try {
       await window.updateAPI?.downloadUpdate()
@@ -892,7 +911,7 @@ export default function Settings() {
                           </div>
                         )}
                         {updateStatus === "downloading" && (
-                          <div className="flex items-center gap-1.5 text-xs text-blue-500">
+                          <div className="flex items-center gap-1.5 text-xs text-primary">
                             <IconLoader2 className="size-3 animate-spin" />
                             Downloading...
                           </div>
@@ -917,53 +936,46 @@ export default function Settings() {
                     {updateStatus === "downloading" && (
                       <>
                         <div className="px-4 py-4">
-                          <div className="mb-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="flex size-7 items-center justify-center rounded-lg bg-blue-500/10">
-                                <IconDownload className="size-3.5 text-blue-500" />
+                          <div className="mb-2.5 flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                                <IconDownload className="size-3.5 text-primary" />
                               </div>
-                              <span className="text-[13px] font-medium text-foreground">
+                              <span className="min-w-0 truncate text-[13px] font-medium text-foreground">
                                 {updateInfo?.version ? `Downloading v${updateInfo.version}` : "Downloading update"}
                               </span>
                             </div>
-                            <span className="text-xs font-semibold text-blue-500">
-                              {downloadProgress.percent.toFixed(1)}%
+                            <span className="shrink-0 text-xs font-semibold text-primary tabular-nums">
+                              {Math.floor(downloadProgress.percent)}%
                             </span>
                           </div>
 
-                          <div className="relative mb-3 h-2 w-full overflow-hidden rounded-full bg-primary/10">
+                          <div className="relative mb-3 h-2 w-full overflow-hidden rounded-full bg-foreground/10">
                             <div
-                              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-300 ease-out"
-                              style={{ width: `${downloadProgress.percent}%` }}
+                              className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-300 ease-out"
+                              style={{
+                                width: `${Math.min(100, Math.max(0, downloadProgress.percent))}%`,
+                              }}
                             />
                           </div>
 
-                          <div className="grid grid-cols-[1fr_1.4fr_1fr] gap-3">
-                            <div className="rounded-lg bg-muted/50 px-3 py-2">
-                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                                Speed
-                              </p>
-                              <p className="mt-0.5 text-xs font-semibold text-foreground tabular-nums">
-                                {formatSpeed(downloadProgress.bytesPerSecond)}
-                              </p>
-                            </div>
-                            <div className="rounded-lg bg-muted/50 px-3 py-2">
-                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                                Downloaded
-                              </p>
-                              <p className="mt-0.5 whitespace-nowrap text-xs font-semibold text-foreground tabular-nums">
-                                {formatBytes(downloadProgress.transferred)}
-                                <span className="font-normal text-muted-foreground"> / {formatBytes(downloadProgress.total)}</span>
-                              </p>
-                            </div>
-                            <div className="rounded-lg bg-muted/50 px-3 py-2">
-                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                                ETA
-                              </p>
-                              <p className="mt-0.5 text-xs font-semibold text-foreground tabular-nums">
-                                {formatETA(downloadProgress.bytesPerSecond, downloadProgress.total, downloadProgress.transferred)}
-                              </p>
-                            </div>
+                          <div className="flex items-center justify-between gap-3 text-[11px]">
+                            <span className="font-medium text-foreground tabular-nums">
+                              {formatBytes(downloadProgress.transferred)}
+                              <span className="font-normal text-muted-foreground">
+                                {" "}of {formatBytes(downloadProgress.total)}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-muted-foreground tabular-nums">
+                              {formatSpeed(downloadProgress.bytesPerSecond)}
+                              <span className="mx-1.5 opacity-40">·</span>
+                              {formatETA(
+                                downloadProgress.bytesPerSecond,
+                                downloadProgress.total,
+                                downloadProgress.transferred
+                              )}{" "}
+                              left
+                            </span>
                           </div>
                         </div>
                         <Separator />
@@ -990,7 +1002,7 @@ export default function Settings() {
 
                     <Separator />
 
-                    <div className="flex gap-2 py-3">
+                    <div className="flex flex-wrap gap-2 py-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -1019,6 +1031,17 @@ export default function Settings() {
                             <IconDownload className="size-3.5 mr-1.5" />
                           )}
                           Download
+                        </Button>
+                      )}
+
+                      {updateStatus === "downloaded" && (
+                        <Button
+                          size="sm"
+                          className="cursor-pointer"
+                          onClick={() => window.updateAPI?.installUpdate()}
+                        >
+                          <IconRefresh className="size-3.5 mr-1.5" />
+                          Restart &amp; Install
                         </Button>
                       )}
                     </div>

@@ -57,13 +57,13 @@ export function FolderAppearancePicker({
               aria-pressed={icon === id}
               onClick={() => onIconChange(id)}
               className={cn(
-                "flex size-7 items-center justify-center rounded-md border transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "flex size-9 items-center justify-center rounded-md border transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 icon === id
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
-              <Icon size={14} strokeWidth={1.75} />
+              <Icon size={20} />
             </button>
           ))}
         </div>

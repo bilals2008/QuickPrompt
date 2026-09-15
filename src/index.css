@@ -20,7 +20,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="noir"]));
+@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="noir"], [data-theme="ember"]));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -180,6 +180,37 @@
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #262626;
   --sidebar-ring: #ff6b6b;
+}
+
+/* Soft warm amber tint — muted surfaces, no neon, no neutral gray. */
+[data-theme="ember"] {
+  --background: #17110d;
+  --foreground: #f0e6db;
+  --card: #221912;
+  --card-foreground: #f0e6db;
+  --popover: #221912;
+  --popover-foreground: #f0e6db;
+  --primary: #e2a35f;
+  --primary-foreground: #1a120b;
+  --secondary: #2a1f17;
+  --secondary-foreground: #f0e6db;
+  --muted: #2a1f17;
+  --muted-foreground: #b0987c;
+  --accent: #33261b;
+  --accent-foreground: #f0e6db;
+  --destructive: #e5564a;
+  --destructive-foreground: #fff5f0;
+  --border: #33261b;
+  --input: #33261b;
+  --ring: #e2a35f;
+  --sidebar: #120d0a;
+  --sidebar-foreground: #d9c9b6;
+  --sidebar-primary: #e2a35f;
+  --sidebar-primary-foreground: #1a120b;
+  --sidebar-accent: #2a1f17;
+  --sidebar-accent-foreground: #f0e6db;
+  --sidebar-border: #2b2018;
+  --sidebar-ring: #e2a35f;
 }
 
 * {
@@ -398,6 +429,38 @@ html *::after {
 
 [data-theme="noir"] .sticky-tint-rose {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.1) 0%, rgba(244, 63, 94, 0.06) 100%);
+}
+
+[data-theme="ember"] .sticky-tint-yellow {
+  background: linear-gradient(145deg, rgba(254, 240, 138, 0.12) 0%, rgba(253, 224, 71, 0.07) 100%);
+}
+
+[data-theme="ember"] .sticky-tint-green {
+  background: linear-gradient(145deg, rgba(134, 239, 172, 0.12) 0%, rgba(74, 222, 128, 0.07) 100%);
+}
+
+[data-theme="ember"] .sticky-tint-blue {
+  background: linear-gradient(145deg, rgba(147, 197, 253, 0.12) 0%, rgba(96, 165, 250, 0.07) 100%);
+}
+
+[data-theme="ember"] .sticky-tint-pink {
+  background: linear-gradient(145deg, rgba(244, 114, 182, 0.12) 0%, rgba(236, 72, 153, 0.07) 100%);
+}
+
+[data-theme="ember"] .sticky-tint-purple {
+  background: linear-gradient(145deg, rgba(192, 132, 252, 0.12) 0%, rgba(168, 85, 247, 0.07) 100%);
+}
+
+[data-theme="ember"] .sticky-tint-orange {
+  background: linear-gradient(145deg, rgba(251, 146, 60, 0.12) 0%, rgba(249, 115, 22, 0.07) 100%);
+}
+
+[data-theme="ember"] .sticky-tint-teal {
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.07) 100%);
+}
+
+[data-theme="ember"] .sticky-tint-rose {
+  background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.07) 100%);
 }
 
 @keyframes stickyAppear {

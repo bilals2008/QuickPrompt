@@ -61,3 +61,15 @@ export function cardLast4(value) {
   const digits = String(value || "").replace(/\D/g, "")
   return digits.length >= 4 ? digits.slice(-4) : ""
 }
+
+/**
+ * Display-only masking for a secret. Never call this on a value that is about
+ * to be written back — it is for rendering, not storage.
+ */
+export function maskValue(value, type) {
+  const raw = value || ""
+  if (!raw) return "Empty"
+  if (type === "password" || type === "card") return "••••••••••••"
+  if (raw.length <= 8) return "•".repeat(raw.length)
+  return `${raw.slice(0, 4)}${"•".repeat(8)}${raw.slice(-4)}`
+}
