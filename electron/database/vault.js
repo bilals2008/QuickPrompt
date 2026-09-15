@@ -61,7 +61,7 @@ function serializeMeta(meta) {
   return ''
 }
 
-function mapRow(row) {
+export function mapRow(row) {
   if (!row) return null
   return {
     id: row.id,
@@ -71,8 +71,8 @@ function mapRow(row) {
     meta: parseMeta(row.meta),
     tags: row.tags ? String(row.tags).split(',').map((t) => t.trim().toLowerCase()).filter(Boolean) : [],
     url: row.url || '',
-    favorite: row.favorite,
-    pinned: row.pinned,
+    favorite: Boolean(row.favorite),
+    pinned: Boolean(row.pinned),
     sort_order: row.sort_order,
     color_bg: row.color_bg || '',
     color_text: row.color_text || '',

@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { getDatabase } from './db.js'
+import { mapRow } from './vault.js'
 
 export async function createVaultFolder({ name, parentId = null, icon = 'folder', color = '' }) {
   const db = getDatabase()
@@ -111,7 +112,7 @@ export async function getVaultItemsInFolder(folderId, { limit = 200, offset = 0 
      LIMIT ? OFFSET ?`,
     [folderId, limit, offset]
   )
-  return { items: rows, total: countRow?.count ?? 0 }
+  return { items: rows.map(mapRow), total: countRow?.count ?? 0 }
 }
 
 export async function getVaultItemFolders(vaultItemId) {
