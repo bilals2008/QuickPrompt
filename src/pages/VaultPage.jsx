@@ -12,10 +12,15 @@ import {
   IconShieldLock,
   IconX,
 } from "@tabler/icons-react"
-import { VaultViewToggle, VAULT_VIEW_MODES } from "@/components/vault/VaultViewToggle"
+import {
+  VaultViewToggle,
+  VAULT_VIEW_MODES,
+  VAULT_SORT_ORDERS,
+} from "@/components/vault/VaultViewToggle"
 import {
   VaultGridView,
-  VaultAccordionView,
+  VaultListView,
+  VaultSpotlightView,
 } from "@/components/vault/VaultItemViews"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -93,14 +98,8 @@ export default function VaultPage() {
   const [selectedFolderIds, setSelectedFolderIds] = useState(new Set())
   const [selectionActive, setSelectionActive] = useState(false)
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
-  const [itemViewMode, setItemViewMode] = useState(() => {
-    try {
-      const stored = localStorage.getItem("vault-item-view-mode")
-      return VAULT_VIEW_MODES.includes(stored) ? stored : "grid"
-    } catch {
-      return "grid"
-    }
-  })
+  const [itemViewMode, setItemViewMode] = useState("grid")
+  const [sortOrder, setSortOrder] = useState("newest")
 
   const searchRef = useRef(null)
   const mini = !sidebarVisible
@@ -132,7 +131,7 @@ export default function VaultPage() {
   const loadGlobalItems = useCallback(async () => {
     setLoading(true)
     try {
-      const list = await window.vaultAPI.list({ sortOrder: "newest", search })
+      const list = await window.vaultAPI.list({ sortOrder, search })
       const arr = Array.isArray(list) ? list : []
       setItems(arr)
       await loadAttachmentCounts(arr)
@@ -142,14 +141,14 @@ export default function VaultPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, loadAttachmentCounts])
+  }, [search, sortOrder, loadAttachmentCounts])
 
   const loadFolderItems = useCallback(
     async (folder) => {
       if (!folder) return
       setLoading(true)
       try {
-        const itemsResult = await window.vaultFolderAPI.getItems(folder.id)
+        const itemsResult = await window.vaultFolderAPI.getItems(folder.id, { sortOrder })
         const arr = itemsResult?.items || []
         setItems(arr)
         await loadAttachmentCounts(arr)
@@ -159,7 +158,7 @@ export default function VaultPage() {
         setLoading(false)
       }
     },
-    [loadAttachmentCounts]
+    [sortOrder, loadAttachmentCounts]
   )
 
   /** Reloads whatever list is currently visible (folder items or all items). */
@@ -178,6 +177,25 @@ export default function VaultPage() {
       ?.health?.()
       .then((h) => setEncryptionAvailable(Boolean(h?.encryptionAvailable)))
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    window.settingsAPI?.get("vaultViewMode", "grid").then((v) => {
+      if (VAULT_VIEW_MODES.includes(v)) setItemViewMode(v)
+    })
+    window.settingsAPI?.get("vaultSortOrder", "newest").then((v) => {
+      if (VAULT_SORT_ORDERS.includes(v)) setSortOrder(v)
+    })
+  }, [])
+
+  const changeViewMode = useCallback((mode) => {
+    setItemViewMode(mode)
+    window.settingsAPI?.set("vaultViewMode", mode)
+  }, [])
+
+  const changeSortOrder = useCallback((order) => {
+    setSortOrder(order)
+    window.settingsAPI?.set("vaultSortOrder", order)
   }, [])
 
   // Per-folder item counts for the tile badges.
@@ -209,12 +227,6 @@ export default function VaultPage() {
     const t = setTimeout(() => setSearch(searchInput), 200)
     return () => clearTimeout(t)
   }, [searchInput])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("vault-item-view-mode", itemViewMode)
-    } catch {}
-  }, [itemViewMode])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -613,16 +625,14 @@ export default function VaultPage() {
       onRemoveFromFolder: removeVaultItemFromFolder,
     }
 
-    if (!activeVaultFolder) {
-      return <VaultGridView {...viewProps} />
-    }
-
     switch (itemViewMode) {
-      case "accordion":
-        return <VaultAccordionView {...viewProps} />
+      case "list":
+        return <VaultListView {...viewProps} />
+      case "spotlight":
+        return <VaultSpotlightView {...viewProps} />
       case "grid":
       default:
-        return <VaultGridView {...viewProps} />
+        return <VaultGridView mini={mini} {...viewProps} />
     }
   }
 
@@ -676,9 +686,12 @@ export default function VaultPage() {
           )}
         </div>
 
-        {view === "items" && (
-          <VaultViewToggle value={itemViewMode} onChange={setItemViewMode} />
-        )}
+        <VaultViewToggle
+          view={itemViewMode}
+          sort={sortOrder}
+          onViewChange={changeViewMode}
+          onSortChange={changeSortOrder}
+        />
 
         {view === "items" && (
           <Tooltip>

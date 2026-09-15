@@ -1,7 +1,12 @@
 # Taste
-- Prefers a minimal UI surface: favors removing extra/redundant options and view modes, keeping only the essentials (e.g. pruning a list of views down to just the ones in active use). Confidence: 0.8
+- Prefers a minimal UI surface: favors removing extra/redundant options and view modes, keeping only the essentials (e.g. pruning a list of views down to just the ones in active use, such as stripping a vault page down to grid-only). Confidence: 0.85
 - Dislikes colored borders on cards/UI elements (e.g. the theme accent-colored card outlines); prefers borderless cards with visible borders/dividers removed. Confidence: 0.8
 - Dislikes shadows on cards, including hover shadows (e.g. `shadow-sm` / `hover:shadow-md`); prefers completely flat cards with no shadow at all. Confidence: 0.8
 - For view/mode switching, prefers a dropdown menu whose items show both an icon and a text name (with the active one marked), over a row of icon-only buttons. Confidence: 0.8
 - Writes instructions as short, casual Hinglish (Roman-script Hindi mixed with English), e.g. "shadow hatao yar", "yeh modes ki dropdown bana do like with icon and name ok", "baki modes del karo". Confidence: 0.7
 - Prefers no type badges/labels on vault items (e.g. "Note", "Token" pill badges); wants items to show only the icon and title. Confidence: 0.8
+- Dislikes unilateral or "random" changes: wants the agent to propose options and reach agreement before removing or replacing existing features/UI (e.g. pushed back after alternate vault view modes were deleted without asking). Confidence: 0.75
+- Wants a "desktop-level" layout for the mini window: dense 2-up card columns side by side rather than a single-column list. Confidence: 0.6
+- Wants copying from item cards to be trivially easy — a visible, one-click copy affordance instead of relying on hover to discover it. Confidence: 0.6
+- Never uses the full/maximized app window — always works inside the narrow mini window (~360–500px). UI must be designed for that width (e.g. avoid viewport breakpoints like `sm:`/`lg:` that never fire). Confidence: 0.85
+- Wants multiple view modes/options, not a single one, but each must be polished/"professional" and consistent with the app's existing conventions (e.g. matching HomePage's grid/list toggle + `settingsAPI` persistence) rather than implemented ad hoc. Confidence: 0.7

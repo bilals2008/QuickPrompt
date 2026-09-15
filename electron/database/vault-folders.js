@@ -98,17 +98,25 @@ export async function removeVaultItemFromFolder(vaultItemId, folderId) {
   return { success: true }
 }
 
-export async function getVaultItemsInFolder(folderId, { limit = 200, offset = 0 } = {}) {
+const FOLDER_ITEM_SORTS = {
+  newest: 'v.pinned DESC, v.favorite DESC, v.created_at DESC',
+  oldest: 'v.pinned DESC, v.favorite DESC, v.created_at ASC',
+  alpha: 'v.pinned DESC, v.favorite DESC, v.title COLLATE NOCASE ASC',
+  custom: 'v.pinned DESC, v.favorite DESC, vf.sort_order ASC, v.created_at DESC',
+}
+
+export async function getVaultItemsInFolder(folderId, { limit = 200, offset = 0, sortOrder = 'newest' } = {}) {
   const db = getDatabase()
   const countRow = await db.get(
     'SELECT COUNT(*) AS count FROM vault_item_folders WHERE folder_id = ?',
     [folderId]
   )
+  const orderBy = FOLDER_ITEM_SORTS[sortOrder] || FOLDER_ITEM_SORTS.newest
   const rows = await db.all(
     `SELECT v.* FROM vault_items v
      INNER JOIN vault_item_folders vf ON v.id = vf.vault_item_id
      WHERE vf.folder_id = ?
-     ORDER BY vf.sort_order ASC, v.created_at DESC
+     ORDER BY ${orderBy}
      LIMIT ? OFFSET ?`,
     [folderId, limit, offset]
   )
