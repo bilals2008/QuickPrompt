@@ -653,6 +653,40 @@ export default function VaultPage() {
 
         <div className="flex-1" />
 
+        {view === "folders" && (
+          <div className="relative flex items-center">
+            <IconSearch size={14} className="absolute left-3 text-muted-foreground" />
+            <Input
+              ref={searchRef}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault()
+                  setSearchInput("")
+                  setSearch("")
+                  searchRef.current?.blur()
+                }
+              }}
+              placeholder="Search..."
+              className="h-9 w-48 rounded-lg border-border/40 bg-background/60 pl-9 pr-9 text-sm"
+            />
+            {searchInput && (
+              <button
+                onClick={() => {
+                  setSearchInput("")
+                  setSearch("")
+                  searchRef.current?.focus()
+                }}
+                className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <IconX size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
         <VaultViewToggle
           view={itemViewMode}
           sort={sortOrder}
@@ -724,40 +758,42 @@ export default function VaultPage() {
 
       </div>
 
-      {/* Search bar below header actions */}
-      <div className="border-b border-border/30 px-3 py-2.5 sm:px-4">
-        <div className="relative flex items-center">
-          <IconSearch size={14} className="absolute left-3 text-muted-foreground" />
-          <Input
-            ref={searchRef}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                e.preventDefault()
-                setSearchInput("")
-                setSearch("")
-                searchRef.current?.blur()
-              }
-            }}
-            placeholder="Search..."
-            className="h-9 w-full rounded-lg border-border/40 bg-background/60 pl-9 pr-9 text-sm"
-          />
-          {searchInput && (
-            <button
-              onClick={() => {
-                setSearchInput("")
-                setSearch("")
-                searchRef.current?.focus()
+      {/* Search bar below header - only show in items view */}
+      {view === "items" && (
+        <div className="border-b border-border/30 px-3 py-2.5 sm:px-4">
+          <div className="relative flex items-center">
+            <IconSearch size={14} className="absolute left-3 text-muted-foreground" />
+            <Input
+              ref={searchRef}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault()
+                  setSearchInput("")
+                  setSearch("")
+                  searchRef.current?.blur()
+                }
               }}
-              className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground"
-              aria-label="Clear search"
-            >
-              <IconX size={14} />
-            </button>
-          )}
+              placeholder="Search..."
+              className="h-9 w-full rounded-lg border-border/40 bg-background/60 pl-9 pr-9 text-sm"
+            />
+            {searchInput && (
+              <button
+                onClick={() => {
+                  setSearchInput("")
+                  setSearch("")
+                  searchRef.current?.focus()
+                }}
+                className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <IconX size={14} />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Bulk selection toolbar */}
       {selectionMode && (
