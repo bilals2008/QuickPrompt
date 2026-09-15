@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import { FolderAppearancePicker } from "@/components/folders/FolderAppearancePicker"
-import { DEFAULT_FOLDER_APPEARANCE, serializeAppearance, getFolderPixelSize } from "@/lib/folder-appearance"
+import { DEFAULT_FOLDER_APPEARANCE, parseAppearance, serializeAppearance, getFolderPixelSize } from "@/lib/folder-appearance"
 
 /**
  * Generate a Windows-style unique folder name.
@@ -54,6 +54,7 @@ export function NewFolderDialog({
   const [icon, setIcon] = useState(defaultIcon)
   const [color, setColor] = useState(defaultColor)
   const [size, setSize] = useState(defaultSize)
+  const [appearanceStr, setAppearanceStr] = useState("")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export function NewFolderDialog({
       setIcon(defaultIcon)
       setColor(defaultColor)
       setSize(defaultSize)
+      setAppearanceStr("")
     }
   }, [open, siblingNames, defaultIcon, defaultColor, defaultSize, isSubfolder])
 
@@ -71,7 +73,8 @@ export function NewFolderDialog({
     if (!trimmed) return
     setSaving(true)
     try {
-      const appearance = serializeAppearance({ size })
+      const existing = parseAppearance(appearanceStr)
+      const appearance = serializeAppearance({ ...existing, size })
       await onSubmit({ name: trimmed, icon, color, appearance })
       onOpenChange(false)
     } finally {
@@ -90,7 +93,7 @@ export function NewFolderDialog({
 
         {/* Live preview */}
         <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-          <FolderGlyph folder={{ icon, color, appearance: serializeAppearance({ size }) }} size={getFolderPixelSize({ appearance: serializeAppearance({ size }) })} />
+          <FolderGlyph folder={{ icon, color, appearance: appearanceStr }} size={getFolderPixelSize({ appearance: appearanceStr })} />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
               {name.trim() || "Untitled folder"}
@@ -121,9 +124,11 @@ export function NewFolderDialog({
           icon={icon}
           color={color}
           size={size}
+          appearance={appearanceStr}
           onIconChange={setIcon}
           onColorChange={setColor}
           onSizeChange={setSize}
+          onAppearanceChange={setAppearanceStr}
         />
 
         <div className="flex justify-end gap-2">

@@ -26,6 +26,7 @@ export function FolderCustomizeDialog({
   const [icon, setIcon] = useState(DEFAULT_FOLDER_APPEARANCE.icon)
   const [color, setColor] = useState(DEFAULT_FOLDER_APPEARANCE.color)
   const [size, setSize] = useState(DEFAULT_FOLDER_APPEARANCE.size)
+  const [appearanceStr, setAppearanceStr] = useState("")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export function FolderCustomizeDialog({
     setIcon(folder.icon || DEFAULT_FOLDER_APPEARANCE.icon)
     setColor(folder.color || "")
     setSize(getFolderSize(folder))
+    setAppearanceStr(folder.appearance || "")
   }, [folder])
 
   const handleSave = async () => {
@@ -41,7 +43,8 @@ export function FolderCustomizeDialog({
     if (!trimmed || !folder) return
     setSaving(true)
     try {
-      const appearance = serializeAppearance({ size })
+      const existing = parseAppearance(appearanceStr)
+      const appearance = serializeAppearance({ ...existing, size })
       await onSave(folder.id, { name: trimmed, icon, color, appearance })
       onOpenChange(false)
     } finally {
@@ -58,7 +61,7 @@ export function FolderCustomizeDialog({
 
         {/* Live preview */}
         <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-          <FolderGlyph folder={{ icon, color, appearance: serializeAppearance({ size }) }} size={getFolderPixelSize({ appearance: serializeAppearance({ size }) })} />
+          <FolderGlyph folder={{ icon, color, appearance: appearanceStr }} size={getFolderPixelSize({ appearance: appearanceStr })} />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
               {name.trim() || "Untitled folder"}
@@ -88,9 +91,11 @@ export function FolderCustomizeDialog({
           icon={icon}
           color={color}
           size={size}
+          appearance={appearanceStr}
           onIconChange={setIcon}
           onColorChange={setColor}
           onSizeChange={setSize}
+          onAppearanceChange={setAppearanceStr}
         />
 
         <div className="flex justify-end gap-2">

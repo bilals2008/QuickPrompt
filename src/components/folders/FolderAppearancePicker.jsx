@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { FOLDER_ICON_OPTIONS, FOLDER_COLOR_OPTIONS, FOLDER_SIZE_OPTIONS } from "@/lib/folder-appearance"
+import { FOLDER_ICON_OPTIONS, FOLDER_COLOR_OPTIONS, FOLDER_SIZE_OPTIONS, parseAppearance } from "@/lib/folder-appearance"
 
 const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
 
@@ -14,13 +14,18 @@ export function FolderAppearancePicker({
   icon,
   color,
   size = "normal",
+  appearance = "",
   onIconChange,
   onColorChange,
   onSizeChange,
+  onAppearanceChange,
   className,
 }) {
   const [hexDraft, setHexDraft] = useState(color || "")
   const [iconSearch, setIconSearch] = useState("")
+  const fileInputRef = useRef(null)
+  const appearanceData = parseAppearance(appearance)
+  const customIcon = appearanceData.customIcon || null
 
   const filteredIcons = useMemo(() => {
     if (!iconSearch.trim()) return FOLDER_ICON_OPTIONS
@@ -52,6 +57,26 @@ export function FolderAppearancePicker({
 
   const wheelValue = HEX_PATTERN.test(color || "") ? color : "#f59e0b"
 
+  const handleCustomIconUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith("image/")) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result
+      onAppearanceChange?.(JSON.stringify({ ...appearanceData, customIcon: dataUrl }))
+      onIconChange?.("custom")
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ""
+  }
+
+  const clearCustomIcon = () => {
+    const { customIcon: _, ...rest } = appearanceData
+    onAppearanceChange?.(JSON.stringify(rest))
+    onIconChange?.("folder")
+  }
+
   return (
     <div className={cn("space-y-4", className)}>
       <div>
@@ -67,9 +92,9 @@ export function FolderAppearancePicker({
             aria-label="Search folder icons"
           />
         </div>
-        <div className="flex max-h-[180px] flex-wrap gap-1.5 overflow-y-auto pr-1">
+        <div className="grid max-h-[240px] grid-cols-5 gap-2 overflow-y-auto pr-1">
           {filteredIcons.length === 0 && (
-            <p className="py-2 text-center text-[11px] text-muted-foreground">No icons match.</p>
+            <p className="col-span-5 py-2 text-center text-[11px] text-muted-foreground">No icons match.</p>
           )}
           {filteredIcons.map(({ id, label, Icon }) => (
             <button
@@ -78,18 +103,67 @@ export function FolderAppearancePicker({
               title={label}
               aria-label={label}
               aria-pressed={icon === id}
-              onClick={() => onIconChange(id)}
+              onClick={() => {
+                onIconChange(id)
+                if (id !== "custom" && customIcon) clearCustomIcon()
+              }}
               className={cn(
-                "flex size-11 items-center justify-center rounded-lg border transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                icon === id
+                "flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                icon === id && !customIcon
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
               <Icon size={24} />
+              <span className="w-full truncate text-center text-[9px] leading-tight">{label}</span>
             </button>
           ))}
+
+          {/* Custom image upload button */}
+          {onAppearanceChange && (
+            <button
+              type="button"
+              title="Upload custom image"
+              aria-label="Upload custom image"
+              onClick={() => fileInputRef.current?.click()}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                customIcon
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground"
+              )}
+            >
+              {customIcon ? (
+                <img src={customIcon} alt="Custom" className="size-6 rounded-sm object-cover" />
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              )}
+              <span className="w-full truncate text-center text-[9px] leading-tight">Custom</span>
+            </button>
+          )}
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleCustomIconUpload}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        {customIcon && (
+          <button
+            type="button"
+            onClick={clearCustomIcon}
+            className="mt-1.5 cursor-pointer text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Remove custom image
+          </button>
+        )}
       </div>
 
       <div>
