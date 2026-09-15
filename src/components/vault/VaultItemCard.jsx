@@ -341,7 +341,7 @@ export function VaultItemCard({
     <div
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-xl transition-all",
-        hasCustomColor ? "sticky-note" : "border border-border bg-card hover:ring-1 hover:ring-primary/30",
+        hasCustomColor ? "sticky-note" : "border-y border-r border-border bg-card hover:ring-1 hover:ring-primary/30",
         copied && "ring-1 ring-primary/40"
       )}
       style={inlineStyle}

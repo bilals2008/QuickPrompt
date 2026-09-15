@@ -12,6 +12,11 @@ import {
   IconShieldLock,
   IconX,
 } from "@tabler/icons-react"
+import { VaultViewToggle, VAULT_VIEW_MODES } from "@/components/vault/VaultViewToggle"
+import {
+  VaultGridView,
+  VaultAccordionView,
+} from "@/components/vault/VaultItemViews"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -22,7 +27,6 @@ import {
 } from "@/components/ui/dialog"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { VaultItemDialog } from "@/components/vault-item-dialog"
-import { VaultItemCard } from "@/components/vault/VaultItemCard"
 import { VaultAddItemsDialog } from "@/components/vault/VaultAddItemsDialog"
 import { VaultMoveToFolderDialog } from "@/components/vault/VaultMoveToFolderDialog"
 import { VaultFolderDetailsDialog } from "@/components/vault/VaultFolderDetailsDialog"
@@ -35,7 +39,6 @@ import { SectionHeader } from "@/components/section-header"
 import { EmptyState } from "@/components/empty-state"
 import { useVaultFolders } from "@/hooks/useVaultFolders"
 import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
-import { getStickyTint } from "@/lib/sticky-tint"
 import { cn } from "@/lib/utils"
 
 function EncryptionNotice() {
@@ -90,6 +93,14 @@ export default function VaultPage() {
   const [selectedFolderIds, setSelectedFolderIds] = useState(new Set())
   const [selectionActive, setSelectionActive] = useState(false)
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [itemViewMode, setItemViewMode] = useState(() => {
+    try {
+      const stored = localStorage.getItem("vault-item-view-mode")
+      return VAULT_VIEW_MODES.includes(stored) ? stored : "grid"
+    } catch {
+      return "grid"
+    }
+  })
 
   const searchRef = useRef(null)
   const mini = !sidebarVisible
@@ -198,6 +209,12 @@ export default function VaultPage() {
     const t = setTimeout(() => setSearch(searchInput), 200)
     return () => clearTimeout(t)
   }, [searchInput])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("vault-item-view-mode", itemViewMode)
+    } catch {}
+  }, [itemViewMode])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -578,39 +595,35 @@ export default function VaultPage() {
         />
       )
     }
-    return (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {visibleItems.map((item) => (
-          <VaultItemCard
-            key={item.id}
-            item={item}
-            mini={mini}
-            revealed={Boolean(revealed[item.id])}
-            value={values[item.id] || ""}
-            copied={Boolean(copied[item.id])}
-            attachmentCount={attachmentCounts[item.id] || 0}
-            tint={getStickyTint(item.title + item.type)}
-            inlineStyle={
-              item.color_bg
-                ? {
-                    background: `linear-gradient(145deg, ${item.color_bg}dd 0%, ${item.color_bg}99 100%)`,
-                    color: item.color_text || "var(--foreground)",
-                  }
-                : {}
-            }
-            inFolder={Boolean(activeVaultFolder)}
-            onCopy={() => (item.type === "note" ? copyNote(item) : copySecret(item.id))}
-            onToggleReveal={() => handleToggleReveal(item)}
-            onToggleFavorite={() => handleToggleFavorite(item.id)}
-            onTogglePin={handleTogglePin}
-            onDelete={handleDelete}
-            onEdit={setEditItem}
-            onMove={setMoveItemId}
-            onRemoveFromFolder={removeVaultItemFromFolder}
-          />
-        ))}
-      </div>
-    )
+
+    const viewProps = {
+      items: visibleItems,
+      revealed,
+      value: values,
+      copied,
+      attachmentCounts,
+      inFolder: Boolean(activeVaultFolder),
+      onCopy: (item) => (item.type === "note" ? copyNote(item) : copySecret(item.id)),
+      onToggleReveal: handleToggleReveal,
+      onToggleFavorite: handleToggleFavorite,
+      onTogglePin: handleTogglePin,
+      onDelete: handleDelete,
+      onEdit: setEditItem,
+      onMove: setMoveItemId,
+      onRemoveFromFolder: removeVaultItemFromFolder,
+    }
+
+    if (!activeVaultFolder) {
+      return <VaultGridView {...viewProps} />
+    }
+
+    switch (itemViewMode) {
+      case "accordion":
+        return <VaultAccordionView {...viewProps} />
+      case "grid":
+      default:
+        return <VaultGridView {...viewProps} />
+    }
   }
 
   return (
@@ -662,6 +675,10 @@ export default function VaultPage() {
             </button>
           )}
         </div>
+
+        {view === "items" && (
+          <VaultViewToggle value={itemViewMode} onChange={setItemViewMode} />
+        )}
 
         {view === "items" && (
           <Tooltip>
