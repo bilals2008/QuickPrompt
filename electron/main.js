@@ -62,6 +62,14 @@ import {
   searchVaultFolders,
 } from "./database/vault-folders.js"
 import updater from "electron-updater"
+import {
+  createBackup,
+  restoreBackup,
+  cleanupOldBackups,
+  encryptPassphrase,
+  decryptPassphrase,
+  isBackupDue,
+} from "./backup.js"
 const { autoUpdater } = updater
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -468,6 +476,8 @@ app.whenReady().then(async () => {
     }, 3000)
   }
 
+  startBackupSchedule()
+
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -482,7 +492,44 @@ app.on("before-quit", () => {
   closeDatabase()
 })
 
+let backupTimerId = null
+
+async function runScheduledBackup() {
+  const passphrase = decryptPassphrase(getSetting("backupPassphraseEncrypted", ""))
+  const backupDir = getSetting("backupLocation", "")
+  if (!passphrase || !backupDir) return
+
+  try {
+    const result = await createBackup({ backupDir, passphrase })
+    if (result.success) {
+      setSetting("lastBackupTime", new Date().toISOString())
+      cleanupOldBackups(backupDir, getSetting("backupRetention", 10))
+    }
+  } catch (err) {
+    console.error("[Backup] Scheduled backup failed:", err.message)
+  }
+}
+
+function startBackupSchedule() {
+  const schedule = getSetting("backupSchedule", "off")
+  const lastBackupTime = getSetting("lastBackupTime", null)
+  if (isBackupDue(schedule, lastBackupTime)) {
+    setTimeout(() => runScheduledBackup(), 5000)
+  }
+
+  backupTimerId = setInterval(() => {
+    const autoBackup = getSetting("autoBackup", false)
+    const sched = getSetting("backupSchedule", "off")
+    if (!autoBackup || sched === "off") return
+    const last = getSetting("lastBackupTime", null)
+    if (isBackupDue(sched, last)) {
+      runScheduledBackup()
+    }
+  }, 30 * 60 * 1000)
+}
+
 app.on("will-quit", () => {
+  if (backupTimerId) clearInterval(backupTimerId)
   globalShortcut.unregisterAll()
   if (tray) tray.destroy()
 })
@@ -530,20 +577,75 @@ ipcMain.handle("db:getPromptsPaginated", async (_event, options) => {
   return getPromptsPaginated(options || {})
 })
 
-ipcMain.handle("db:backup", async () => {
-  const src = path.join(app.getPath("userData"), "QuickPrompt", "quickprompt.db")
-  const destDir = getSetting("backupLocation", "")
-  if (!destDir || !fs.existsSync(destDir)) {
+ipcMain.handle("backup:create", async () => {
+  const backupDir = getSetting("backupLocation", "")
+  if (!backupDir || !fs.existsSync(backupDir)) {
     return { success: false, reason: "backup-location-not-set" }
   }
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-")
-  const dest = path.join(destDir, `quickprompt-backup-${stamp}.db`)
+  const passphrase = decryptPassphrase(getSetting("backupPassphraseEncrypted", ""))
+  if (!passphrase) {
+    return { success: false, reason: "passphrase-not-set" }
+  }
   try {
-    fs.copyFileSync(src, dest)
-    return { success: true, path: dest }
+    const result = await createBackup({ backupDir, passphrase })
+    if (result.success) {
+      setSetting("lastBackupTime", new Date().toISOString())
+      cleanupOldBackups(backupDir, getSetting("backupRetention", 10))
+    }
+    return result
   } catch (err) {
     return { success: false, reason: err.message }
   }
+})
+
+ipcMain.handle("backup:restore", async (_event, { filePath, passphrase }) => {
+  try {
+    const dbDir = path.join(app.getPath("userData"), "QuickPrompt")
+    const dbPath = path.join(dbDir, "quickprompt.db")
+    await closeDatabase()
+    restoreBackup({ backupFilePath: filePath, passphrase, dbPath })
+    app.relaunch({ args: process.argv.slice(1) })
+    app.exit(0)
+    return { success: true }
+  } catch (err) {
+    return { success: false, reason: err.message }
+  }
+})
+
+ipcMain.handle("backup:pick-file", async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ["openFile"],
+    title: "Select backup file",
+    filters: [
+      { name: "QuickPrompt Backup", extensions: ["qpbak"] },
+      { name: "All files", extensions: ["*"] },
+    ],
+  })
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false }
+  }
+  return { success: true, path: result.filePaths[0] }
+})
+
+ipcMain.handle("backup:set-passphrase", (_event, passphrase) => {
+  if (!passphrase || typeof passphrase !== "string") {
+    return { success: false, reason: "invalid-passphrase" }
+  }
+  const encrypted = encryptPassphrase(passphrase)
+  if (!encrypted) {
+    return { success: false, reason: "encryption-unavailable" }
+  }
+  setSetting("backupPassphraseEncrypted", encrypted)
+  return { success: true }
+})
+
+ipcMain.handle("backup:has-passphrase", () => {
+  return Boolean(getSetting("backupPassphraseEncrypted", ""))
+})
+
+ipcMain.handle("app:relaunch", () => {
+  app.relaunch({ args: process.argv.slice(1) })
+  app.exit(0)
 })
 
 ipcMain.handle("db:updatePrompt", async (_event, id, data) => {

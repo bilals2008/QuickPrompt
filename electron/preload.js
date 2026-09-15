@@ -67,7 +67,18 @@ contextBridge.exposeInMainWorld("db", {
   searchPrompts: (query) => ipcRenderer.invoke("db:searchPrompts", query),
   toggleFavorite: (id) => ipcRenderer.invoke("db:toggleFavorite", id),
   updatePromptOrder: (updates) => ipcRenderer.invoke("db:updatePromptOrder", updates),
-  backup: () => ipcRenderer.invoke("db:backup"),
+})
+
+contextBridge.exposeInMainWorld("backupAPI", {
+  create: () => ipcRenderer.invoke("backup:create"),
+  restore: (filePath, passphrase) => ipcRenderer.invoke("backup:restore", { filePath, passphrase }),
+  pickFile: () => ipcRenderer.invoke("backup:pick-file"),
+  setPassphrase: (passphrase) => ipcRenderer.invoke("backup:set-passphrase", passphrase),
+  hasPassphrase: () => ipcRenderer.invoke("backup:has-passphrase"),
+})
+
+contextBridge.exposeInMainWorld("appAPI", {
+  relaunch: () => ipcRenderer.invoke("app:relaunch"),
 })
 
 contextBridge.exposeInMainWorld("vaultAPI", {

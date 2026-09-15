@@ -73,7 +73,7 @@ export function FolderTile({
       }}
       onClick={handleClick}
       className={cn(
-        "group relative flex flex-col items-center gap-1 rounded-lg border bg-card/50 p-2 cursor-pointer transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "group relative flex flex-col items-center rounded-lg border bg-card/50 p-2 pt-3 pb-1.5 cursor-pointer transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring h-[88px]",
         selected
           ? "border-primary bg-primary/10 ring-1 ring-primary/30"
           : "border-border/30 hover:border-border/60 hover:bg-accent/30 hover:shadow-sm",
@@ -139,13 +139,15 @@ export function FolderTile({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <FolderGlyph
-        folder={folder}
-        showCustom={showCustomAppearance}
-        className="transition-transform duration-200 group-hover:scale-110"
-      />
+      <div className="flex flex-1 items-center justify-center">
+        <FolderGlyph
+          folder={folder}
+          showCustom={showCustomAppearance}
+          className="transition-transform duration-200 group-hover:scale-110"
+        />
+      </div>
 
-      <p className="w-full min-w-0 truncate text-center text-[10px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+      <p className="w-full min-w-0 truncate text-center text-[10px] font-medium text-muted-foreground transition-colors group-hover:text-foreground mt-auto">
         {folder.name}
       </p>
     </div>

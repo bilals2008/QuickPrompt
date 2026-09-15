@@ -57,6 +57,9 @@ import {
   IconBrandLinkedin,
   IconMail,
   IconExternalLink,
+  IconKey,
+  IconUpload,
+  IconDatabase,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -193,6 +196,13 @@ export default function Settings() {
   const [startMinimized, setStartMinimized] = useState(false)
   const [autoBackup, setAutoBackup] = useState(false)
   const [backupLocation, setBackupLocation] = useState("")
+  const [backupSchedule, setBackupSchedule] = useState("off")
+  const [backupRetention, setBackupRetention] = useState(10)
+  const [hasPassphrase, setHasPassphrase] = useState(false)
+  const [passphraseInput, setPassphraseInput] = useState("")
+  const [restoreFile, setRestoreFile] = useState(null)
+  const [restorePassphrase, setRestorePassphrase] = useState("")
+  const [restoring, setRestoring] = useState(false)
   const [defaultSortOrder, setDefaultSortOrder] = useState("newest")
   const searchRef = useRef(null)
 
@@ -214,6 +224,9 @@ export default function Settings() {
     window.settingsAPI?.get("startMinimized", false).then((v) => setStartMinimized(Boolean(v)))
     window.settingsAPI?.get("autoBackup", false).then((v) => setAutoBackup(Boolean(v)))
     window.settingsAPI?.get("backupLocation", "").then((v) => setBackupLocation(v || ""))
+    window.settingsAPI?.get("backupSchedule", "off").then((v) => setBackupSchedule(v || "off"))
+    window.settingsAPI?.get("backupRetention", 10).then((v) => setBackupRetention(Number(v) || 10))
+    window.backupAPI?.hasPassphrase()?.then((v) => setHasPassphrase(Boolean(v)))
     window.settingsAPI?.get("defaultSortOrder", "newest").then((v) => setDefaultSortOrder(v))
     window.windowAPI?.getAlwaysOnTop?.().then((v) => setAlwaysOnTop(Boolean(v)))
 
@@ -356,11 +369,62 @@ export default function Settings() {
     window.settingsAPI?.set("autoBackup", checked)
   }
 
+  function handleBackupSchedule(value) {
+    setBackupSchedule(value)
+    window.settingsAPI?.set("backupSchedule", value)
+  }
+
+  function handleBackupRetention(value) {
+    setBackupRetention(value)
+    window.settingsAPI?.set("backupRetention", value)
+  }
+
   async function handlePickBackupLocation() {
     const res = await window.settingsAPI?.pickFolder()
     if (res?.success) {
       setBackupLocation(res.path)
       window.settingsAPI?.set("backupLocation", res.path)
+    }
+  }
+
+  async function handleSetPassphrase() {
+    if (!passphraseInput || passphraseInput.length < 4) {
+      toast.error("Passphrase must be at least 4 characters")
+      return
+    }
+    const res = await window.backupAPI?.setPassphrase(passphraseInput)
+    if (res?.success) {
+      setHasPassphrase(true)
+      setPassphraseInput("")
+      toast.success("Backup passphrase set")
+    } else {
+      toast.error(res?.reason || "Failed to set passphrase")
+    }
+  }
+
+  async function handleRestore() {
+    if (!restoreFile) {
+      const res = await window.backupAPI?.pickFile()
+      if (!res?.success) return
+      setRestoreFile(res.path)
+      return
+    }
+    if (!restorePassphrase) {
+      toast.error("Enter your backup passphrase")
+      return
+    }
+    setRestoring(true)
+    try {
+      const res = await window.backupAPI?.restore(restoreFile, restorePassphrase)
+      if (res?.success) {
+        toast.success("Restore complete. App will restart.")
+      } else {
+        toast.error(res?.reason || "Restore failed")
+        setRestoring(false)
+      }
+    } catch {
+      toast.error("Restore failed")
+      setRestoring(false)
     }
   }
 
@@ -790,9 +854,9 @@ export default function Settings() {
 
             {activeSection === "backup" && (
               <section>
-                <SectionHeading icon={IconCloudUpload} title="Backup" description="Automatically back up your prompts database" />
+                <SectionHeading icon={IconCloudUpload} title="Backup" description="Back up your prompts database with encryption" />
                 <div className="space-y-5">
-                  <SettingGroup>
+                  <SettingGroup title="Schedule">
                     <SettingRow
                       icon={IconCloudUpload}
                       label="Auto-backup"
@@ -800,14 +864,36 @@ export default function Settings() {
                     >
                       <Switch checked={autoBackup} onCheckedChange={handleAutoBackup} className="cursor-pointer" />
                     </SettingRow>
-                    <Separator />
+                    {autoBackup && (
+                      <>
+                        <Separator />
+                        <SettingRow
+                          icon={IconClock}
+                          label="Backup frequency"
+                          description="How often automatic backups are created"
+                        >
+                          <Select value={backupSchedule} onValueChange={handleBackupSchedule}>
+                            <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </SettingRow>
+                      </>
+                    )}
+                  </SettingGroup>
+
+                  <SettingGroup title="Storage">
                     <SettingRow
                       icon={IconFolder}
                       label="Backup location"
                       description={backupLocation ? backupLocation : "No folder selected"}
                     >
                       <Button
-                        variant="outline"
                         size="sm"
                         className="cursor-pointer text-xs h-8"
                         onClick={handlePickBackupLocation}
@@ -816,6 +902,52 @@ export default function Settings() {
                       </Button>
                     </SettingRow>
                     <Separator />
+                    <SettingRow
+                      icon={IconDatabase}
+                      label="Keep backups"
+                      description="Maximum number of backup files to keep"
+                    >
+                      <Select value={String(backupRetention)} onValueChange={(v) => handleBackupRetention(Number(v))}>
+                        <SelectTrigger className="w-[100px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <SettingGroup title="Encryption">
+                    <SettingRow
+                      icon={IconKey}
+                      label="Backup passphrase"
+                      description={hasPassphrase ? "Passphrase is set (encrypted with OS keychain)" : "Set a passphrase to encrypt backup files"}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="password"
+                          value={passphraseInput}
+                          onChange={(e) => setPassphraseInput(e.target.value)}
+                          placeholder={hasPassphrase ? "••••••••" : "Enter passphrase"}
+                          className="h-8 w-[160px] text-xs"
+                          onKeyDown={(e) => { if (e.key === "Enter") handleSetPassphrase() }}
+                        />
+                        <Button
+                          size="sm"
+                          className="cursor-pointer text-xs h-8 shrink-0"
+                          onClick={handleSetPassphrase}
+                        >
+                          {hasPassphrase ? "Change" : "Set"}
+                        </Button>
+                      </div>
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <SettingGroup title="Actions">
                     <div className="flex items-center justify-between py-3">
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
@@ -823,18 +955,17 @@ export default function Settings() {
                         </div>
                         <div>
                           <p className="text-[13px] font-medium text-foreground">Backup now</p>
-                          <p className="text-xs text-muted-foreground">Create a one-time backup of your data</p>
+                          <p className="text-xs text-muted-foreground">Create an encrypted backup immediately</p>
                         </div>
                       </div>
                       <Button
-                        variant="outline"
                         size="sm"
                         className="cursor-pointer text-xs"
-                        disabled={!backupLocation}
+                        disabled={!backupLocation || !hasPassphrase}
                         onClick={async () => {
-                          const res = await window.db?.backup()
+                          const res = await window.backupAPI?.create()
                           if (res?.success) {
-                            toast.success("Backup created!")
+                            toast.success("Encrypted backup created!")
                           } else {
                             toast.error(res?.reason || "Backup failed")
                           }
@@ -842,6 +973,53 @@ export default function Settings() {
                       >
                         Backup now
                       </Button>
+                    </div>
+                    <Separator />
+                    <div className="py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
+                            <IconUpload className="size-4" />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-medium text-foreground">Restore from backup</p>
+                            <p className="text-xs text-muted-foreground">
+                              {restoreFile ? restoreFile.split(/[\\/]/).pop() : "Select a .qpbak backup file"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="cursor-pointer text-xs"
+                          onClick={handleRestore}
+                          disabled={restoring}
+                        >
+                          {restoring ? (
+                            <IconLoader2 className="size-3.5 animate-spin mr-1.5" />
+                          ) : null}
+                          {restoreFile ? "Confirm Restore" : "Choose file"}
+                        </Button>
+                      </div>
+                      {restoreFile && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <Input
+                            type="password"
+                            value={restorePassphrase}
+                            onChange={(e) => setRestorePassphrase(e.target.value)}
+                            placeholder="Backup passphrase"
+                            className="h-8 flex-1 text-xs"
+                            onKeyDown={(e) => { if (e.key === "Enter") handleRestore() }}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="cursor-pointer text-xs h-8"
+                            onClick={() => { setRestoreFile(null); setRestorePassphrase("") }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </SettingGroup>
                 </div>

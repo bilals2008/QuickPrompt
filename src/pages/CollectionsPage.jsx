@@ -172,13 +172,14 @@ export default function CollectionsPage() {
     setNewFolderOpen(true)
   }
 
-  const handleCreateFolder = async ({ name, icon, color }) => {
+  const handleCreateFolder = async ({ name, icon, color, appearance }) => {
     try {
       await createFolder({
         name,
         parentId: newFolderParentId ?? null,
         icon,
         color,
+        appearance,
       })
       toast.success(newFolderParentId ? "Subfolder created" : "Folder created")
     } catch {
