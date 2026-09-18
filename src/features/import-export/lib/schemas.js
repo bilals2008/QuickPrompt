@@ -50,7 +50,6 @@ export function normalizeImportedPrompt(raw) {
       title: asTitle(raw.title ?? raw.name ?? raw.heading),
       content,
       tags: asTagsString(raw.tags ?? raw.tag),
-      model: asString(raw.model).trim(),
       favorite: asFavorite(raw.favorite ?? raw.isFavorite),
       created_at: asTimestamp(raw.created_at ?? raw.createdAt),
       updated_at: asTimestamp(raw.updated_at ?? raw.updatedAt ?? raw.created_at),

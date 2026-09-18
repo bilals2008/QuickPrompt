@@ -30,7 +30,6 @@ function buildSection(prompt) {
       .join(" ")
     if (tags) meta.push(`**Tags:** ${tags}`)
   }
-  if (prompt.model) meta.push(`**Model:** ${prompt.model}`)
   if (prompt.created_at) meta.push(`**Created:** ${prompt.created_at}`)
   if (prompt.favorite) meta.push(`**Favorite:** ⭐`)
 
@@ -74,7 +73,6 @@ function parseSection(block) {
     }
     if (inMeta) {
       const tagsMatch = line.match(/^\*\*Tags:\*\*\s*(.+)$/i)
-      const modelMatch = line.match(/^\*\*Model:\*\*\s*(.+)$/i)
       const createdMatch = line.match(/^\*\*Created:\*\*\s*(.+)$/i)
       const favoriteMatch = line.match(/^\*\*Favorite:\*\*\s*(\S+)/i)
       if (tagsMatch) {
@@ -83,8 +81,6 @@ function parseSection(block) {
           .map((tag) => tag.replace(/`/g, "").trim())
           .filter(Boolean)
           .join(",")
-      } else if (modelMatch) {
-        meta.model = modelMatch[1].trim()
       } else if (createdMatch) {
         meta.created_at = createdMatch[1].trim()
       } else if (favoriteMatch) {

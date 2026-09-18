@@ -10,6 +10,7 @@ import { useExport } from "./hooks/useExport"
 import { ImportDropzone } from "./components/ImportDropzone"
 import { ImportSummary } from "./components/ImportSummary"
 import { ExportPanel } from "./components/ExportPanel"
+import { NO_FOLDER } from "@/components/folders/FolderSelect"
 
 function Section({ icon: Icon, title, description, children }) {
   return (
@@ -36,6 +37,8 @@ export default function ImportExportPage() {
   const import_ = useImport()
   const exporter = useExport()
   const [promptCount, setPromptCount] = useState(0)
+  const [folders, setFolders] = useState([])
+  const [selectedFolderId, setSelectedFolderId] = useState(NO_FOLDER)
 
   useEffect(() => {
     let cancelled = false
@@ -46,6 +49,24 @@ export default function ImportExportPage() {
       cancelled = true
     }
   }, [import_.result.status])
+
+  useEffect(() => {
+    window.folderAPI?.list().then((f) => {
+      setFolders(Array.isArray(f) ? f : [])
+    }).catch(() => setFolders([]))
+  }, [])
+
+  async function createFolderInline(name) {
+    const created = await window.folderAPI?.create({ name, parentId: null })
+    const list = await window.folderAPI?.list()
+    setFolders(Array.isArray(list) ? list : [])
+    return created
+  }
+
+  function handleCommit() {
+    const folderId = selectedFolderId === NO_FOLDER ? null : selectedFolderId
+    import_.commit(folderId)
+  }
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -92,10 +113,14 @@ export default function ImportExportPage() {
             />
             <ImportSummary
               result={import_.result}
-              onCommit={import_.commit}
+              onCommit={handleCommit}
               onReset={import_.reset}
               onImportMore={import_.reset}
               busy={import_.busy}
+              folders={folders}
+              selectedFolderId={selectedFolderId}
+              onFolderChange={setSelectedFolderId}
+              onCreateFolder={createFolderInline}
             />
           </Section>
 

@@ -15,7 +15,6 @@ function buildEnvelope(prompts, { includeRaw = true } = {}) {
           content: p.content ?? "",
           tags: p.tags ?? "",
           favorite: p.favorite ? 1 : 0,
-          model: p.model ?? "",
           created_at: p.created_at ?? null,
           updated_at: p.updated_at ?? null,
         }))

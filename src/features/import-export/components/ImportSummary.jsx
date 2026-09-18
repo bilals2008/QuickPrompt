@@ -5,11 +5,14 @@ import {
   IconCircleCheck,
   IconChevronDown,
   IconChevronRight,
+  IconFolderFilled,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { FormatBadge } from "./FormatBadge"
+import { FolderSelect } from "@/components/folders/FolderSelect"
 
 function StatusRow({ icon: Icon, label, value, tone = "default" }) {
   const toneClass =
@@ -70,7 +73,17 @@ function SkippedDetails({ skipped }) {
   )
 }
 
-export function ImportSummary({ result, onCommit, onReset, onImportMore, busy }) {
+export function ImportSummary({
+  result,
+  onCommit,
+  onReset,
+  onImportMore,
+  busy,
+  folders = [],
+  selectedFolderId,
+  onFolderChange,
+  onCreateFolder,
+}) {
   if (result.status === "idle") return null
 
   if (result.status === "error") {
@@ -137,18 +150,35 @@ export function ImportSummary({ result, onCommit, onReset, onImportMore, busy })
           </>
         )}
 
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onReset} disabled={busy} className="h-7 cursor-pointer text-xs">
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            onClick={onCommit}
-            disabled={busy || result.valid === 0}
-            className="h-7 cursor-pointer text-xs"
-          >
-            Import {result.valid} prompt{result.valid === 1 ? "" : "s"}
-          </Button>
+        <div className="mt-4 space-y-3">
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5 text-xs">
+              <IconFolderFilled size={12} />
+              Save to folder
+            </Label>
+            <FolderSelect
+              value={selectedFolderId}
+              onChange={onFolderChange}
+              folders={folders}
+              onCreate={onCreateFolder}
+              placeholder="No folder (root)"
+              triggerClassName="h-8 text-xs"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={onReset} disabled={busy} className="h-7 cursor-pointer text-xs">
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={onCommit}
+              disabled={busy || result.valid === 0}
+              className="h-7 cursor-pointer text-xs"
+            >
+              Import {result.valid} prompt{result.valid === 1 ? "" : "s"}
+            </Button>
+          </div>
         </div>
       </div>
     )

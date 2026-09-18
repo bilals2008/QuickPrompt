@@ -83,7 +83,7 @@ export function useImport() {
     }
   }, [])
 
-  const commit = useCallback(async () => {
+  const commit = useCallback(async (folderId) => {
     if (result.status !== "preview" || result.prompts.length === 0) return { success: false }
     setBusy(true)
     let inserted = 0
@@ -91,13 +91,15 @@ export function useImport() {
     try {
       for (const prompt of result.prompts) {
         try {
-          await window.db.createPrompt({
+          const created = await window.db.createPrompt({
             title: prompt.title,
             content: prompt.content,
             tags: prompt.tags,
-            model: prompt.model,
             favorite: prompt.favorite,
           })
+          if (folderId && created?.id) {
+            await window.folderAPI?.addPrompt(created.id, folderId).catch(() => {})
+          }
           inserted += 1
         } catch {
           failed += 1

@@ -1,6 +1,6 @@
 import { normalizeAllImported } from "./schemas"
 
-const COLUMNS = ["title", "content", "tags", "favorite", "model", "created_at", "updated_at"]
+const COLUMNS = ["title", "content", "tags", "favorite", "created_at", "updated_at"]
 
 function escapeCell(value) {
   const str = value === null || value === undefined ? "" : String(value)
@@ -54,7 +54,6 @@ export function serializeCsv(prompts) {
       escapeCell(prompt.content ?? ""),
       escapeCell(prompt.tags ?? ""),
       escapeCell(prompt.favorite ? 1 : 0),
-      escapeCell(prompt.model ?? ""),
       escapeCell(prompt.created_at ?? ""),
       escapeCell(prompt.updated_at ?? ""),
     ]
