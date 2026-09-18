@@ -37,6 +37,7 @@ import {
   IconX,
   IconPin,
   IconSparkles,
+  IconGift,
   IconTag,
   IconStar,
   IconCopy,
@@ -146,6 +147,15 @@ const themeCategories = [
         bg: "#03080a",
         card: "#081216",
         accent: "#c8ff00",
+        text: "#d4e4e8",
+      },
+      {
+        id: "volt-blue",
+        label: "Volt Blue",
+        desc: "Cool sky-blue on deep volt surfaces",
+        bg: "#03080a",
+        card: "#081216",
+        accent: "#38bdf8",
         text: "#d4e4e8",
       },
       {
@@ -1290,6 +1300,21 @@ export default function Settings() {
                           <IconMail className="size-4" />
                         </a>
                       </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="py-3 space-y-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Debug</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 cursor-pointer gap-1.5 text-xs"
+                        onClick={() => window.__showWhatsNew?.()}
+                      >
+                        <IconGift size={13} />
+                        Show What&apos;s New
+                      </Button>
                     </div>
                   </SettingGroup>
                 </div>

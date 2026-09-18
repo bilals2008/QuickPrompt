@@ -20,7 +20,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="noir"], [data-theme="ember"]));
+@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="volt-blue"], [data-theme="noir"], [data-theme="ember"]));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -211,6 +211,37 @@
   --sidebar-accent-foreground: #f0e6db;
   --sidebar-border: #2b2018;
   --sidebar-ring: #e2a35f;
+}
+
+/* Same soft volt surfaces with a cool sky-blue primary. */
+[data-theme="volt-blue"] {
+  --background: #03080a;
+  --foreground: #d4e4e8;
+  --card: #081216;
+  --card-foreground: #d4e4e8;
+  --popover: #081216;
+  --popover-foreground: #d4e4e8;
+  --primary: #38bdf8;
+  --primary-foreground: #03080a;
+  --secondary: #0c1a1f;
+  --secondary-foreground: #c4d8dc;
+  --muted: #0c1a1f;
+  --muted-foreground: #5a7a82;
+  --accent: #0e2028;
+  --accent-foreground: #c4d8dc;
+  --destructive: #ff4444;
+  --destructive-foreground: #ffffff;
+  --border: #122830;
+  --input: #122830;
+  --ring: #38bdf8;
+  --sidebar: #020608;
+  --sidebar-foreground: #d4e4e8;
+  --sidebar-primary: #38bdf8;
+  --sidebar-primary-foreground: #03080a;
+  --sidebar-accent: #0e2028;
+  --sidebar-accent-foreground: #c4d8dc;
+  --sidebar-border: #122830;
+  --sidebar-ring: #38bdf8;
 }
 
 * {
@@ -461,6 +492,32 @@ html *::after {
 
 [data-theme="ember"] .sticky-tint-rose {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.07) 100%);
+}
+
+/* Volt Blue — same soft opacity as volt, blue-shifted */
+[data-theme="volt-blue"] .sticky-tint-yellow {
+  background: linear-gradient(145deg, rgba(254, 240, 138, 0.12) 0%, rgba(253, 224, 71, 0.08) 100%);
+}
+[data-theme="volt-blue"] .sticky-tint-green {
+  background: linear-gradient(145deg, rgba(134, 239, 172, 0.12) 0%, rgba(74, 222, 128, 0.08) 100%);
+}
+[data-theme="volt-blue"] .sticky-tint-blue {
+  background: linear-gradient(145deg, rgba(147, 197, 253, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
+}
+[data-theme="volt-blue"] .sticky-tint-pink {
+  background: linear-gradient(145deg, rgba(244, 114, 182, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%);
+}
+[data-theme="volt-blue"] .sticky-tint-purple {
+  background: linear-gradient(145deg, rgba(192, 132, 252, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
+}
+[data-theme="volt-blue"] .sticky-tint-orange {
+  background: linear-gradient(145deg, rgba(251, 146, 60, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%);
+}
+[data-theme="volt-blue"] .sticky-tint-teal {
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%);
+}
+[data-theme="volt-blue"] .sticky-tint-rose {
+  background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.08) 100%);
 }
 
 @keyframes stickyAppear {
