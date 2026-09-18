@@ -1,6 +1,7 @@
 // File: src/pages/Settings.jsx
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useNavigate, useOutletContext } from "react-router-dom"
+import faviconSvg from "/favicon.svg"
 import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -53,7 +54,6 @@ import {
   IconPalette,
   IconFolders,
   IconBrandGithub,
-  IconBrandTwitter,
   IconBrandLinkedin,
   IconMail,
   IconExternalLink,
@@ -1234,7 +1234,7 @@ export default function Settings() {
                 <div className="space-y-5">
                   <SettingGroup>
                     <div className="flex flex-col items-center py-6 text-center">
-                      <img src="/favicon.svg" alt="QuickPrompt" className="mb-4 size-20 rounded-2xl shadow-sm" />
+                      <img src={faviconSvg} alt="QuickPrompt" className="mb-4 size-20 rounded-2xl shadow-sm" />
                       <h3 className="text-lg font-semibold text-foreground">{pkg.productName}</h3>
                       <p className="text-xs text-muted-foreground">Version {pkg.version}</p>
                     </div>
@@ -1265,7 +1265,7 @@ export default function Settings() {
                         </a>
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground">Landing</p>
+                        <p className="text-xs text-muted-foreground">Webpage</p>
                         <a href="https://quickprompt-web.netlify.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
                           quickprompt-web.netlify.app <IconExternalLink className="size-3" />
                         </a>
@@ -1284,7 +1284,7 @@ export default function Settings() {
                           <IconBrandLinkedin className="size-4" />
                         </a>
                         <a href="https://x.com/MBilal7555" target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="X / Twitter">
-                          <IconBrandTwitter className="size-4" />
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg>
                         </a>
                         <a href="mailto:bilaldev7575@gmail.com" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="Email">
                           <IconMail className="size-4" />
