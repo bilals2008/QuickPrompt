@@ -26,6 +26,20 @@ export const SECTION_META = {
 
 export const CHANGELOG = [
   {
+    version: "2.4.1",
+    date: "2026-09-19",
+    title: "Improvements and bug fixes",
+    sections: [
+      {
+        type: "fixed",
+        items: [
+          { icon: IconDownload, title: "macOS download", desc: "The macOS installer is back on the releases page" },
+          { icon: IconBug, title: "Stability fixes", desc: "Small fixes and polish across the app" },
+        ],
+      },
+    ],
+  },
+  {
     version: "2.4.0",
     date: "2026-09-19",
     title: "What's New dialog and silent updates",

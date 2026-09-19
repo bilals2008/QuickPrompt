@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.1] - September 19, 2026
+
+### Fixed
+
+#### Release Pipeline
+
+- macOS DMG is now built and published with every release
+
+---
+
 ## [2.4.0] - September 19, 2026
 
 ### Added
