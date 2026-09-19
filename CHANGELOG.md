@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0] - September 19, 2026
+
+### Added
+
+#### What's New
+
+- What's New dialog that opens after an update and highlights what changed
+- Feature list grouped into New, Improved and Fixed sections
+- Shows every release you skipped when updating across multiple versions
+- Direct link to the full changelog on GitHub
+
+### Changed
+
+#### Windows Installer
+
+- Switched to a one-click installer so updates install silently and restart the app
+- No more setup wizard or installation folder prompt on every update
+
+### Fixed
+
+#### Dialog Backdrop
+
+- Added the missing `--overlay` theme token so dialog backdrops now dim the background
+
+---
+
 ## [2.3.0] - September 15, 2026
 
 ### Added
