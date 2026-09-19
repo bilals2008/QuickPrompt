@@ -10,3 +10,4 @@ app-update.yml
 *.log
 .DS_Store
 Thumbs.db
+.commandcode
