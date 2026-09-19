@@ -1,19 +1,57 @@
 import { useState } from "react"
+import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { IconCopy, IconCheck } from "@tabler/icons-react"
-import { getPromptTitle, getPromptBody } from "@/lib/prompt-utils"
+import { toast } from "sonner"
+import { getPromptTitle } from "@/lib/prompt-utils"
 import { parseTagsString } from "@/lib/tag-utils"
 import { TAG_CLASS, getTagColor } from "@/lib/tag-colors"
 import { cn } from "@/lib/utils"
+
+const markdownPlugins = [remarkGfm]
+
+const markdownComponents = {
+  a: ({ href, children }) => {
+    if (!href) return <span>{children}</span>
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={async (event) => {
+          if (!window.shellAPI?.openExternal) return
+          event.preventDefault()
+          try {
+            const result = await window.shellAPI.openExternal(href)
+            if (!result?.success) toast.error("Could not open link")
+          } catch {
+            toast.error("Could not open link")
+          }
+        }}
+      >
+        {children}
+      </a>
+    )
+  },
+  img: ({ alt }) => <span className="text-muted-foreground">[Image: {alt || "not loaded"}]</span>,
+  table: ({ children }) => (
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Markdown table">
+      <table>{children}</table>
+    </div>
+  ),
+}
+
+function markdownUrlTransform(url) {
+  return /^https?:\/\//i.test(url) ? url : ""
+}
 
 function TagChips({ tags }) {
   const list = parseTagsString(tags)
@@ -42,6 +80,7 @@ function formatDateTime(date) {
 
 export function PromptDetailDialog({ prompt, open, onOpenChange }) {
   const [copied, setCopied] = useState(false)
+  const [preview, setPreview] = useState(true)
 
   if (!prompt) return null
 
@@ -49,10 +88,14 @@ export function PromptDetailDialog({ prompt, open, onOpenChange }) {
   const content = typeof prompt.content === "string" ? prompt.content : ""
   const hasTags = parseTagsString(prompt.tags).length > 0
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      toast.error("Could not copy prompt")
+    }
   }
 
   return (
@@ -66,11 +109,43 @@ export function PromptDetailDialog({ prompt, open, onOpenChange }) {
             )}
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0 px-5">
-            <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground pb-5">
-              {content}
-            </div>
-          </ScrollArea>
+          <div className="flex items-center gap-3 px-5 pb-2 text-xs text-muted-foreground" role="group" aria-label="Prompt display">
+            <span
+              className={cn("cursor-pointer select-none transition-colors", preview ? "text-foreground font-medium" : "hover:text-foreground/70")}
+              onClick={() => setPreview(true)}
+              aria-pressed={preview}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && setPreview(true)}
+            >
+              Preview
+            </span>
+            <span className="text-border">/</span>
+            <span
+              className={cn("cursor-pointer select-none transition-colors", !preview ? "text-foreground font-medium" : "hover:text-foreground/70")}
+              onClick={() => setPreview(false)}
+              aria-pressed={!preview}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && setPreview(false)}
+            >
+              Source
+            </span>
+          </div>
+
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-5 pb-5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" tabIndex={0} role="region" aria-label={preview ? "Markdown preview" : "Prompt source"}>
+            {preview ? (
+              <div className="prompt-markdown">
+                <Markdown remarkPlugins={markdownPlugins} components={markdownComponents} urlTransform={markdownUrlTransform}>
+                  {content}
+                </Markdown>
+              </div>
+            ) : (
+              <div className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-muted-foreground">
+                {content}
+              </div>
+            )}
+          </div>
 
           {hasTags && (
             <div className="px-5 pt-2 pb-1">
