@@ -5,6 +5,7 @@ import { IconSettings, IconHome2, IconArrowsTransferUpDown, IconShieldLock } fro
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { SpotlightSearch } from "@/features/spotlight-search/SpotlightSearch"
+import { WhatsNewProvider } from "@/features/whats-new/WhatsNewProvider"
 import { toast } from "sonner"
 
 function App() {
@@ -12,6 +13,11 @@ function App() {
   const navigate = useNavigate()
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const containerRef = useRef(null)
+  const [appVersion, setAppVersion] = useState(null)
+
+  useEffect(() => {
+    window.electronAPI?.getAppVersion?.().then(setAppVersion)
+  }, [])
 
   useEffect(() => {
     window.settingsAPI?.get("onboardingComplete", false).then((complete) => {
@@ -57,82 +63,84 @@ function App() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <SpotlightSearch />
-      <div ref={containerRef} className="flex h-screen w-full bg-background overflow-hidden">
-        {sidebarVisible && (
-          <nav className="flex flex-col items-center gap-3 py-4 px-2 border-r border-border/30 bg-sidebar w-14 shrink-0">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/"
-                  className={cn(
-                    "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
-                    location.pathname === "/"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  <IconHome2 size={18} />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={12}>Home</TooltipContent>
-            </Tooltip>
-            <div className="flex-1" />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/vault"
-                  className={cn(
-                    "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
-                    location.pathname === "/vault"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  <IconShieldLock size={18} />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={12}>Vault</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/import-export"
-                  className={cn(
-                    "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
-                    location.pathname === "/import-export"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  <IconArrowsTransferUpDown size={18} />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={12}>Import / Export</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/settings"
-                  className={cn(
-                    "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
-                    location.pathname === "/settings"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  <IconSettings size={18} />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={12}>Settings</TooltipContent>
-            </Tooltip>
-          </nav>
-        )}
-        <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <Outlet context={{ sidebarVisible }} />
-        </main>
-        <Toaster />
-      </div>
+      <WhatsNewProvider currentVersion={appVersion}>
+        <SpotlightSearch />
+        <div ref={containerRef} className="flex h-screen w-full bg-background overflow-hidden">
+          {sidebarVisible && (
+            <nav className="flex flex-col items-center gap-3 py-4 px-2 border-r border-border/30 bg-sidebar w-14 shrink-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/"
+                    className={cn(
+                      "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
+                      location.pathname === "/"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <IconHome2 size={18} />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={12}>Home</TooltipContent>
+              </Tooltip>
+              <div className="flex-1" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/vault"
+                    className={cn(
+                      "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
+                      location.pathname === "/vault"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <IconShieldLock size={18} />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={12}>Vault</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/import-export"
+                    className={cn(
+                      "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
+                      location.pathname === "/import-export"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <IconArrowsTransferUpDown size={18} />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={12}>Import / Export</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/settings"
+                    className={cn(
+                      "flex items-center justify-center w-9 h-9 rounded-lg transition-colors cursor-pointer",
+                      location.pathname === "/settings"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <IconSettings size={18} />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={12}>Settings</TooltipContent>
+              </Tooltip>
+            </nav>
+          )}
+          <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+            <Outlet context={{ sidebarVisible }} />
+          </main>
+          <Toaster />
+        </div>
+      </WhatsNewProvider>
     </TooltipProvider>
   )
 }

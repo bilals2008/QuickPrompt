@@ -37,7 +37,6 @@ import {
   IconX,
   IconPin,
   IconSparkles,
-  IconGift,
   IconTag,
   IconStar,
   IconCopy,
@@ -1300,21 +1299,6 @@ export default function Settings() {
                           <IconMail className="size-4" />
                         </a>
                       </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="py-3 space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Debug</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 cursor-pointer gap-1.5 text-xs"
-                        onClick={() => window.__showWhatsNew?.()}
-                      >
-                        <IconGift size={13} />
-                        Show What&apos;s New
-                      </Button>
                     </div>
                   </SettingGroup>
                 </div>
