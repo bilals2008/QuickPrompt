@@ -26,6 +26,6 @@ jobs:
       - run: npm ci
 
       - name: Build & Publish
-        run: npm run release:${{ matrix.os == 'windows-latest' && 'win' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
+        run: npm run release:${{ startsWith(matrix.os, 'macos') && 'mac' || matrix.os == 'windows-latest' && 'win' || 'linux' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
