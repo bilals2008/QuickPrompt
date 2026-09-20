@@ -26,6 +26,32 @@ export const SECTION_META = {
 
 export const CHANGELOG = [
   {
+    version: "2.5.0",
+    date: "2026-09-20",
+    title: "Two new themes, a cleaner picker",
+    sections: [
+      {
+        type: "added",
+        items: [
+          { icon: IconSun, title: "Ayu Dark theme", desc: "Deep blue-black with a warm gold accent" },
+          { icon: IconPalette, title: "Ayu Light theme", desc: "A clean daytime look with an orange accent" },
+        ],
+      },
+      {
+        type: "removed",
+        items: [
+          { icon: IconPalette, title: "Trimmed theme list", desc: "Noir, Volt Blue and Ember are gone" },
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          { icon: IconBug, title: "Theme fallback", desc: "A missing theme now falls back to Volt" },
+        ],
+      },
+    ],
+  },
+  {
     version: "2.4.1",
     date: "2026-09-19",
     title: "Improvements and bug fixes",

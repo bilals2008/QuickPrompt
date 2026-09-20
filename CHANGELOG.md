@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.0] - September 20, 2026
+
+### Added
+
+#### Themes
+
+- New **Ayu Dark** theme — deep blue-black surfaces with the signature Ayu gold accent
+- New **Ayu Light** theme — a clean daytime variant with a warm orange accent
+
+### Removed
+
+#### Themes
+
+- Removed the **Noir**, **Volt Blue** and **Ember** themes to keep the picker focused
+
+### Fixed
+
+#### Appearance
+
+- A stored theme that no longer exists now falls back to Volt instead of leaving the window unstyled
+
+---
+
 ## [2.4.1] - September 19, 2026
 
 ### Fixed

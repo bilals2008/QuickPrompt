@@ -2,10 +2,12 @@ import { createContext, useContext, useEffect, useState } from "react"
 
 export const ThemeContext = createContext(undefined)
 
-export function ThemeProvider({ children, defaultTheme = "dark" }) {
+export const THEMES = ["light", "ayu-light", "cyberpunk", "volt", "ayu-dark"]
+
+export function ThemeProvider({ children, defaultTheme = "volt" }) {
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem("qp-theme")
-    return stored || defaultTheme
+    return THEMES.includes(stored) ? stored : defaultTheme
   })
 
   useEffect(() => {

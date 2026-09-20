@@ -20,7 +20,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="volt-blue"], [data-theme="noir"], [data-theme="ember"]));
+@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="ayu-dark"]));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -154,96 +154,66 @@
   --sidebar-ring: #c8ff00;
 }
 
-[data-theme="noir"] {
-  --background: #0a0a0a;
-  --foreground: #fafafa;
-  --card: #171717;
-  --card-foreground: #fafafa;
-  --popover: #171717;
-  --popover-foreground: #fafafa;
-  --primary: #ff6b6b;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #fafafa;
-  --muted: #1a1a1a;
-  --muted-foreground: #a3a3a3;
-  --accent: #262626;
-  --accent-foreground: #fafafa;
-  --destructive: #ff4444;
-  --destructive-foreground: #ffffff;
-  --border: #262626;
-  --input: #262626;
-  --ring: #ff6b6b;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #a3a3a3;
-  --sidebar-primary: #ff6b6b;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #262626;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #262626;
-  --sidebar-ring: #ff6b6b;
+/* Ayu Dark — deep blue-black with the signature Ayu gold accent. */
+[data-theme="ayu-dark"] {
+  --background: #0b0e14;
+  --foreground: #b3b1ad;
+  --card: #0f131a;
+  --card-foreground: #b3b1ad;
+  --popover: #0f131a;
+  --popover-foreground: #b3b1ad;
+  --primary: #e6b450;
+  --primary-foreground: #0b0e14;
+  --secondary: #14191f;
+  --secondary-foreground: #b3b1ad;
+  --muted: #14191f;
+  --muted-foreground: #6c7680;
+  --accent: #1a212b;
+  --accent-foreground: #d9d7d0;
+  --destructive: #f07178;
+  --destructive-foreground: #0b0e14;
+  --border: #1e2632;
+  --input: #1e2632;
+  --ring: #e6b450;
+  --sidebar: #0a0e14;
+  --sidebar-foreground: #8a9199;
+  --sidebar-primary: #e6b450;
+  --sidebar-primary-foreground: #0b0e14;
+  --sidebar-accent: #14191f;
+  --sidebar-accent-foreground: #b3b1ad;
+  --sidebar-border: #1a212b;
+  --sidebar-ring: #e6b450;
 }
 
-/* Soft warm amber tint — muted surfaces, no neon, no neutral gray. */
-[data-theme="ember"] {
-  --background: #17110d;
-  --foreground: #f0e6db;
-  --card: #221912;
-  --card-foreground: #f0e6db;
-  --popover: #221912;
-  --popover-foreground: #f0e6db;
-  --primary: #e2a35f;
-  --primary-foreground: #1a120b;
-  --secondary: #2a1f17;
-  --secondary-foreground: #f0e6db;
-  --muted: #2a1f17;
-  --muted-foreground: #b0987c;
-  --accent: #33261b;
-  --accent-foreground: #f0e6db;
-  --destructive: #e5564a;
-  --destructive-foreground: #fff5f0;
-  --border: #33261b;
-  --input: #33261b;
-  --ring: #e2a35f;
-  --sidebar: #120d0a;
-  --sidebar-foreground: #d9c9b6;
-  --sidebar-primary: #e2a35f;
-  --sidebar-primary-foreground: #1a120b;
-  --sidebar-accent: #2a1f17;
-  --sidebar-accent-foreground: #f0e6db;
-  --sidebar-border: #2b2018;
-  --sidebar-ring: #e2a35f;
-}
-
-/* Same soft volt surfaces with a cool sky-blue primary. */
-[data-theme="volt-blue"] {
-  --background: #03080a;
-  --foreground: #d4e4e8;
-  --card: #081216;
-  --card-foreground: #d4e4e8;
-  --popover: #081216;
-  --popover-foreground: #d4e4e8;
-  --primary: #38bdf8;
-  --primary-foreground: #03080a;
-  --secondary: #0c1a1f;
-  --secondary-foreground: #c4d8dc;
-  --muted: #0c1a1f;
-  --muted-foreground: #5a7a82;
-  --accent: #0e2028;
-  --accent-foreground: #c4d8dc;
-  --destructive: #ff4444;
+/* Ayu Light — clean day variant with the Ayu orange accent. */
+[data-theme="ayu-light"] {
+  --background: #fcfcfc;
+  --foreground: #5c6773;
+  --card: #ffffff;
+  --card-foreground: #5c6773;
+  --popover: #ffffff;
+  --popover-foreground: #5c6773;
+  --primary: #ff9940;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f5;
+  --secondary-foreground: #5c6773;
+  --muted: #f3f4f5;
+  --muted-foreground: #8a9199;
+  --accent: #eceff1;
+  --accent-foreground: #5c6773;
+  --destructive: #f07171;
   --destructive-foreground: #ffffff;
-  --border: #122830;
-  --input: #122830;
-  --ring: #38bdf8;
-  --sidebar: #020608;
-  --sidebar-foreground: #d4e4e8;
-  --sidebar-primary: #38bdf8;
-  --sidebar-primary-foreground: #03080a;
-  --sidebar-accent: #0e2028;
-  --sidebar-accent-foreground: #c4d8dc;
-  --sidebar-border: #122830;
-  --sidebar-ring: #38bdf8;
+  --border: #e7eaed;
+  --input: #e7eaed;
+  --ring: #ff9940;
+  --sidebar: #f5f6f7;
+  --sidebar-foreground: #5c6773;
+  --sidebar-primary: #ff9940;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eceff1;
+  --sidebar-accent-foreground: #5c6773;
+  --sidebar-border: #e7eaed;
+  --sidebar-ring: #ff9940;
 }
 
 * {
@@ -432,93 +402,29 @@ html *::after {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.08) 100%);
 }
 
-[data-theme="noir"] .sticky-tint-yellow {
-  background: linear-gradient(145deg, rgba(254, 240, 138, 0.1) 0%, rgba(253, 224, 71, 0.06) 100%);
-}
-
-[data-theme="noir"] .sticky-tint-green {
-  background: linear-gradient(145deg, rgba(134, 239, 172, 0.1) 0%, rgba(74, 222, 128, 0.06) 100%);
-}
-
-[data-theme="noir"] .sticky-tint-blue {
-  background: linear-gradient(145deg, rgba(147, 197, 253, 0.1) 0%, rgba(96, 165, 250, 0.06) 100%);
-}
-
-[data-theme="noir"] .sticky-tint-pink {
-  background: linear-gradient(145deg, rgba(244, 114, 182, 0.1) 0%, rgba(236, 72, 153, 0.06) 100%);
-}
-
-[data-theme="noir"] .sticky-tint-purple {
-  background: linear-gradient(145deg, rgba(192, 132, 252, 0.1) 0%, rgba(168, 85, 247, 0.06) 100%);
-}
-
-[data-theme="noir"] .sticky-tint-orange {
-  background: linear-gradient(145deg, rgba(251, 146, 60, 0.1) 0%, rgba(249, 115, 22, 0.06) 100%);
-}
-
-[data-theme="noir"] .sticky-tint-teal {
-  background: linear-gradient(145deg, rgba(45, 212, 191, 0.1) 0%, rgba(20, 184, 166, 0.06) 100%);
-}
-
-[data-theme="noir"] .sticky-tint-rose {
-  background: linear-gradient(145deg, rgba(251, 113, 133, 0.1) 0%, rgba(244, 63, 94, 0.06) 100%);
-}
-
-[data-theme="ember"] .sticky-tint-yellow {
-  background: linear-gradient(145deg, rgba(254, 240, 138, 0.12) 0%, rgba(253, 224, 71, 0.07) 100%);
-}
-
-[data-theme="ember"] .sticky-tint-green {
-  background: linear-gradient(145deg, rgba(134, 239, 172, 0.12) 0%, rgba(74, 222, 128, 0.07) 100%);
-}
-
-[data-theme="ember"] .sticky-tint-blue {
-  background: linear-gradient(145deg, rgba(147, 197, 253, 0.12) 0%, rgba(96, 165, 250, 0.07) 100%);
-}
-
-[data-theme="ember"] .sticky-tint-pink {
-  background: linear-gradient(145deg, rgba(244, 114, 182, 0.12) 0%, rgba(236, 72, 153, 0.07) 100%);
-}
-
-[data-theme="ember"] .sticky-tint-purple {
-  background: linear-gradient(145deg, rgba(192, 132, 252, 0.12) 0%, rgba(168, 85, 247, 0.07) 100%);
-}
-
-[data-theme="ember"] .sticky-tint-orange {
-  background: linear-gradient(145deg, rgba(251, 146, 60, 0.12) 0%, rgba(249, 115, 22, 0.07) 100%);
-}
-
-[data-theme="ember"] .sticky-tint-teal {
-  background: linear-gradient(145deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.07) 100%);
-}
-
-[data-theme="ember"] .sticky-tint-rose {
-  background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.07) 100%);
-}
-
-/* Volt Blue — same soft opacity as volt, blue-shifted */
-[data-theme="volt-blue"] .sticky-tint-yellow {
+/* Ayu Dark — deep base, low-opacity tints to match. */
+[data-theme="ayu-dark"] .sticky-tint-yellow {
   background: linear-gradient(145deg, rgba(254, 240, 138, 0.12) 0%, rgba(253, 224, 71, 0.08) 100%);
 }
-[data-theme="volt-blue"] .sticky-tint-green {
+[data-theme="ayu-dark"] .sticky-tint-green {
   background: linear-gradient(145deg, rgba(134, 239, 172, 0.12) 0%, rgba(74, 222, 128, 0.08) 100%);
 }
-[data-theme="volt-blue"] .sticky-tint-blue {
-  background: linear-gradient(145deg, rgba(147, 197, 253, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
+[data-theme="ayu-dark"] .sticky-tint-blue {
+  background: linear-gradient(145deg, rgba(147, 197, 253, 0.12) 0%, rgba(96, 165, 250, 0.08) 100%);
 }
-[data-theme="volt-blue"] .sticky-tint-pink {
+[data-theme="ayu-dark"] .sticky-tint-pink {
   background: linear-gradient(145deg, rgba(244, 114, 182, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%);
 }
-[data-theme="volt-blue"] .sticky-tint-purple {
+[data-theme="ayu-dark"] .sticky-tint-purple {
   background: linear-gradient(145deg, rgba(192, 132, 252, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
 }
-[data-theme="volt-blue"] .sticky-tint-orange {
+[data-theme="ayu-dark"] .sticky-tint-orange {
   background: linear-gradient(145deg, rgba(251, 146, 60, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%);
 }
-[data-theme="volt-blue"] .sticky-tint-teal {
-  background: linear-gradient(145deg, rgba(45, 212, 191, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%);
+[data-theme="ayu-dark"] .sticky-tint-teal {
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.08) 100%);
 }
-[data-theme="volt-blue"] .sticky-tint-rose {
+[data-theme="ayu-dark"] .sticky-tint-rose {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.08) 100%);
 }
 
