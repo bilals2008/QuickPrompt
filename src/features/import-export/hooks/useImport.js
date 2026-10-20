@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { importFromUnknownFormat, getFormat } from "../lib"
-import { validatePromptForInsert } from "../lib/schemas"
+import { resolveFolderPath } from "../lib/folder-resolver"
 
 const INITIAL_RESULT = {
   status: "idle",
@@ -14,6 +14,8 @@ const INITIAL_RESULT = {
   error: null,
   inserted: 0,
   failed: 0,
+  folders: [],
+  foldersCreated: [],
 }
 
 function readFileAsText(file) {
@@ -45,18 +47,17 @@ export function useImport() {
         toast.error(parsed.error || "Import failed")
         return
       }
-      const errors = parsed.prompts
-        .map((prompt, index) => ({ index, errors: validatePromptForInsert(prompt) }))
-        .filter((entry) => entry.errors.length > 0)
 
-      if (errors.length > 0) {
+      // A readable file with no usable rows is still a dead end; say so instead of
+      // showing a preview with nothing importable.
+      if (parsed.prompts.length === 0) {
         setResult({
           ...INITIAL_RESULT,
           status: "error",
           filename: file.name,
-          error: `${errors.length} prompt(s) failed validation`,
+          error: "No prompts with content found in this file",
         })
-        toast.error("Some prompts failed validation")
+        toast.error("No prompts found in this file")
         return
       }
 
@@ -69,6 +70,7 @@ export function useImport() {
         skipped: parsed.skipped ?? [],
         total: parsed.total,
         valid: parsed.valid,
+        folders: [...new Set(parsed.prompts.map((p) => p.folder).filter(Boolean))],
       })
     } catch (err) {
       setResult({
@@ -88,6 +90,7 @@ export function useImport() {
     setBusy(true)
     let inserted = 0
     let failed = 0
+    const foldersCreated = []
     try {
       for (const prompt of result.prompts) {
         try {
@@ -96,9 +99,20 @@ export function useImport() {
             content: prompt.content,
             tags: prompt.tags,
             favorite: prompt.favorite,
+            model: prompt.model,
+            created_at: prompt.created_at,
+            updated_at: prompt.updated_at,
           })
-          if (folderId && created?.id) {
-            await window.folderAPI?.addPrompt(created.id, folderId).catch(() => {})
+          // A folder named in the file wins: it is reused when it already exists and
+          // created when it does not. Prompts without one go to the chosen folder.
+          let targetFolderId = folderId
+          if (prompt.folder) {
+            const resolved = await resolveFolderPath(prompt.folder, window.folderAPI)
+            targetFolderId = resolved.id ?? folderId
+            foldersCreated.push(...resolved.created)
+          }
+          if (targetFolderId && created?.id) {
+            await window.folderAPI?.addPrompt(created.id, targetFolderId).catch(() => {})
           }
           inserted += 1
         } catch {
@@ -106,16 +120,23 @@ export function useImport() {
         }
       }
       const fmt = getFormat(result.format)
+      const createdList = [...new Set(foldersCreated)]
       toast.success(
-        failed === 0
-          ? `Imported ${inserted} prompt(s) from ${fmt?.label ?? result.format}`
-          : `Imported ${inserted} prompt(s); ${failed} failed`,
+        [
+          failed === 0
+            ? `Imported ${inserted} prompt(s) from ${fmt?.label ?? result.format}`
+            : `Imported ${inserted} prompt(s); ${failed} failed`,
+          createdList.length > 0 ? `Created folder${createdList.length === 1 ? "" : "s"} ${createdList.join(", ")}` : "",
+        ]
+          .filter(Boolean)
+          .join(". "),
       )
       setResult((prev) => ({
         ...prev,
         status: "done",
         inserted,
         failed,
+        foldersCreated: [...new Set(foldersCreated)],
       }))
       return { success: failed === 0, inserted, failed }
     } finally {

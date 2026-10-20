@@ -160,6 +160,69 @@ Output is generated in the `release/` directory.
 
 ---
 
+## Import & Export
+
+Open **Import & Export** from the sidebar, then drop a file or pick one. The format is read from
+the extension, or sniffed from the content when the extension is missing.
+
+| Format | Extensions | Notes |
+|--------|------------|-------|
+| Markdown | `.md`, `.markdown` | Human-readable. Every top-level `#` heading starts a prompt. |
+| JSON | `.json` | Full fidelity. An array of objects, or `{ "prompts": [...] }`. |
+| CSV | `.csv` | Spreadsheet export. Needs a `content` column; `,`, `;` and tabs are accepted. |
+
+Only `content` is required. `title`, `tags`, `favorite`, `model`, `folder`, `created_at` and
+`updated_at` are optional and are restored when present. Files saved with a UTF-8 BOM
+(Notepad, Excel, PowerShell) import fine.
+
+### Folders
+
+A prompt can name the folder it belongs to. If that folder already exists it is reused, if it
+does not it is created — a `Parent/Child` path creates the levels it needs.
+
+- Markdown: a `**Folder:** Work` line under the title
+- JSON: a `"folder": "Work"` field
+- CSV: a `folder` column
+
+Prompts without a folder go to the folder chosen in the import panel.
+
+### Markdown example
+
+```markdown
+---
+tool: QuickPrompt
+schema: 1
+exported_at: 2026-01-01T00:00:00.000Z
+count: 2
+---
+
+# Code review
+**Tags:** `work` `dev`
+**Model:** gpt-4o
+**Folder:** Work
+**Favorite:** yes
+
+Review this diff for:
+
+1. correctness
+2. readability
+
+<!-- quickprompt:section -->
+
+# Summarise notes
+**Tags:** `writing`
+**Folder:** Personal
+
+Summarise the notes below in five bullets.
+```
+
+The `<!-- quickprompt:section -->` markers only appear in files exported by QuickPrompt. A
+hand-written file works too: each `#` heading becomes a prompt, and a file with no heading is
+imported as a single prompt. Ready-to-import samples live in [`examples/`](examples), and the
+same example is available in the app under **What should the file look like?**.
+
+---
+
 ## Project Structure
 
 ```

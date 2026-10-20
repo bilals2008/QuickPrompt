@@ -1,14 +1,21 @@
 import crypto from 'node:crypto'
 import { getDatabase } from './db.js'
 
-export async function createPrompt({ content, title = '', model = '', tags = '', favorite = 0 }) {
+function isIsoTimestamp(value) {
+  return typeof value === 'string' && !Number.isNaN(new Date(value).getTime())
+}
+
+export async function createPrompt({ content, title = '', model = '', tags = '', favorite = 0, created_at, updated_at } = {}) {
   const db = getDatabase()
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
   const safeTitle = typeof title === 'string' ? title.trim() : ''
+  // Import passes the original timestamps through so an export/import round-trip is lossless.
+  const createdAt = isIsoTimestamp(created_at) ? created_at : now
+  const updatedAt = isIsoTimestamp(updated_at) ? updated_at : createdAt
   await db.run(
     'INSERT INTO prompts (id, title, content, model, tags, favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [id, safeTitle, content, model, tags, favorite, now, now]
+    [id, safeTitle, content, model, tags, favorite, createdAt, updatedAt]
   )
   return getPromptById(id)
 }

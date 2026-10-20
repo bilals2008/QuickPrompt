@@ -10,6 +10,7 @@ import { useExport } from "./hooks/useExport"
 import { ImportDropzone } from "./components/ImportDropzone"
 import { ImportSummary } from "./components/ImportSummary"
 import { ExportPanel } from "./components/ExportPanel"
+import { FormatExample } from "./components/FormatExample"
 import { NO_FOLDER } from "@/components/folders/FolderSelect"
 
 function Section({ icon: Icon, title, description, children }) {
@@ -63,9 +64,16 @@ export default function ImportExportPage() {
     return created
   }
 
-  function handleCommit() {
+  async function handleCommit() {
     const folderId = selectedFolderId === NO_FOLDER ? null : selectedFolderId
-    import_.commit(folderId)
+    await import_.commit(folderId)
+    // The import may have created folders named in the file; refresh the picker.
+    try {
+      const list = await window.folderAPI?.list()
+      if (Array.isArray(list)) setFolders(list)
+    } catch {
+      // keep the current list
+    }
   }
 
   return (
@@ -122,6 +130,7 @@ export default function ImportExportPage() {
               onFolderChange={setSelectedFolderId}
               onCreateFolder={createFolderInline}
             />
+            <FormatExample />
           </Section>
 
           <Separator className="bg-border/40" />

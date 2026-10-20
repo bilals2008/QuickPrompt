@@ -15,6 +15,8 @@ function buildEnvelope(prompts, { includeRaw = true } = {}) {
           content: p.content ?? "",
           tags: p.tags ?? "",
           favorite: p.favorite ? 1 : 0,
+          model: p.model ?? "",
+          folder: p.folder ?? "",
           created_at: p.created_at ?? null,
           updated_at: p.updated_at ?? null,
         }))
@@ -34,7 +36,7 @@ export function parseJson(text) {
     return { ok: false, error: "Invalid JSON syntax", prompts: [] }
   }
 
-  let rawPrompts = []
+  let rawPrompts
   if (Array.isArray(data)) {
     rawPrompts = data
   } else if (data && typeof data === "object" && Array.isArray(data.prompts)) {

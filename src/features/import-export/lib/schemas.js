@@ -50,6 +50,9 @@ export function normalizeImportedPrompt(raw) {
       title: asTitle(raw.title ?? raw.name ?? raw.heading),
       content,
       tags: asTagsString(raw.tags ?? raw.tag),
+      model: asTitle(raw.model),
+      // Not a prompt column: the folder a prompt should land in, resolved on import.
+      folder: asTitle(raw.folder ?? raw.folder_name ?? raw.folderName),
       favorite: asFavorite(raw.favorite ?? raw.isFavorite),
       created_at: asTimestamp(raw.created_at ?? raw.createdAt),
       updated_at: asTimestamp(raw.updated_at ?? raw.updatedAt ?? raw.created_at),
@@ -68,18 +71,4 @@ export function normalizeAllImported(rows) {
     else skipped.push({ index, reason: result.reason })
   })
   return { prompts, skipped }
-}
-
-export function validatePromptForInsert(prompt) {
-  const errors = []
-  if (!prompt?.content || typeof prompt.content !== "string") {
-    errors.push("content is required")
-  }
-  if (prompt && prompt.content && prompt.content.length > 10000) {
-    errors.push("content exceeds 10000 characters")
-  }
-  if (prompt && prompt.title && prompt.title.length > 200) {
-    errors.push("title exceeds 200 characters")
-  }
-  return errors
 }

@@ -12,10 +12,20 @@ export function detectFormatFromContent(text) {
   const trimmed = text.trimStart()
   if (!trimmed) return null
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) return "json"
-  if (/^---\s*$/.test(trimmed.split("\n", 1)[0] || "")) return "markdown"
-  if (trimmed.startsWith("#")) return "markdown"
-  if (/^content,|content\t/.test(trimmed.split("\n", 1)[0] || "")) return "csv"
-  if (trimmed.includes(",")) return "csv"
+
+  const lines = trimmed.split(/\r?\n/)
+  const firstLine = lines[0] || ""
+  if (/^---\s*$/.test(firstLine)) return "markdown"
+  if (firstLine.startsWith("#")) return "markdown"
+  // Only guess CSV when the file looks tabular: a header row naming a content column,
+  // plus at least one data row. Prose with a comma is not a CSV.
+  if (
+    lines.length > 1 &&
+    /[,;\t]/.test(firstLine) &&
+    /\b(content|text|body|prompt|instruction|message|description)\b/i.test(firstLine)
+  ) {
+    return "csv"
+  }
   return null
 }
 

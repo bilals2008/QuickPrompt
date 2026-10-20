@@ -67,11 +67,14 @@ export function importPrompts(formatId, text) {
 }
 
 export function importFromUnknownFormat({ text, filename, hint }) {
-  const formatId = resolveFormat({ filename, content: text, hint })
+  // Notepad, Excel and PowerShell all prepend a UTF-8 BOM. JSON.parse chokes on it and
+  // CSV headers would not match, so strip it once here for every format.
+  const content = typeof text === "string" ? text.replace(/^\uFEFF/, "") : text
+  const formatId = resolveFormat({ filename, content, hint })
   if (!formatId) {
     return { ok: false, error: "Could not detect file format. Use .json, .csv, or .md", prompts: [], format: null }
   }
-  const result = importPrompts(formatId, text)
+  const result = importPrompts(formatId, content)
   return { ...result, format: formatId }
 }
 

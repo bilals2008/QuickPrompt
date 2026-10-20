@@ -24,12 +24,12 @@ function StatusRow({ icon: Icon, label, value, tone = "default" }) {
       ? "text-destructive"
       : "text-muted-foreground"
   return (
-    <div className="flex items-center justify-between text-xs">
-      <div className={cn("flex items-center gap-1.5", toneClass)}>
+    <div className="flex items-center justify-between gap-3 text-xs">
+      <div className={cn("flex shrink-0 items-center gap-1.5", toneClass)}>
         <Icon size={14} stroke={2.2} />
         <span>{label}</span>
       </div>
-      <span className="font-mono text-foreground">{value}</span>
+      <span className="min-w-0 break-words text-right font-mono text-foreground">{value}</span>
     </div>
   )
 }
@@ -137,6 +137,13 @@ export function ImportSummary({
               tone="warning"
             />
           )}
+          {result.folders?.length > 0 && (
+            <StatusRow
+              icon={IconFolderFilled}
+              label="Folders in file"
+              value={result.folders.join(", ")}
+            />
+          )}
         </div>
 
         {skippedCount > 0 && <SkippedDetails skipped={result.skipped} />}
@@ -164,6 +171,12 @@ export function ImportSummary({
               placeholder="No folder (root)"
               triggerClassName="h-8 text-xs"
             />
+            {result.folders?.length > 0 && (
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                Prompts naming a folder go to that folder. An existing folder is reused, a
+                missing one is created. Everything else goes to the folder selected here.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-2">
@@ -193,6 +206,9 @@ export function ImportSummary({
             <p className="text-sm font-medium text-foreground">Import complete</p>
             <p className="text-xs text-muted-foreground">
               {result.inserted} added{result.failed > 0 ? `, ${result.failed} failed` : ""}
+              {result.foldersCreated?.length > 0
+                ? ` · created folder${result.foldersCreated.length === 1 ? "" : "s"} ${result.foldersCreated.join(", ")}`
+                : ""}
             </p>
           </div>
         </div>
