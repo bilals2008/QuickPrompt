@@ -27,7 +27,6 @@ import {
  */
 export function FolderTile({
   folder,
-  index = 0,
   subfolderCount = 0,
   itemCount = 0,
   showCustomAppearance = true,

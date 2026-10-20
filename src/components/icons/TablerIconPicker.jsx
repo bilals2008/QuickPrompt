@@ -2,7 +2,7 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
-import { IconSearch, IconPlus } from "@tabler/icons-react"
+import { IconSearch } from "@tabler/icons-react"
 import {
   IconFolder, IconFolderPlus, IconFolderStar, IconFolderHeart,
   IconFolderCheck, IconFolderCode, IconFolderOpen,
@@ -16,7 +16,7 @@ import {
   IconWorld, IconSettings,
   IconUser, IconUsers, IconCheck, IconX,
   IconEye, IconClock, IconBell, IconPin,
-  IconBookmarkFilled, IconHeartFilled,
+  IconBookmarkFilled,
 } from "@tabler/icons-react"
 
 export const TABLER_ICONS = [

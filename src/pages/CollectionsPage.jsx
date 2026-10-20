@@ -378,7 +378,6 @@ export default function CollectionsPage() {
         >
           <FolderTile
             folder={folder}
-            index={idx}
             itemCount={stats.prompts[folder.id] || 0}
             subfolderCount={stats.subfolders[folder.id] || 0}
             selected={selectedFolderIds.has(folder.id)}

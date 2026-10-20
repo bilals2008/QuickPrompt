@@ -561,7 +561,6 @@ export default function VaultPage() {
         >
           <FolderTile
             folder={folder}
-            index={idx}
             itemCount={folderStats[folder.id] || 0}
             subfolderCount={childrenOf(folder.id).length}
             selected={selectedFolderIds.has(folder.id)}

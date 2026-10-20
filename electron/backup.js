@@ -84,7 +84,7 @@ export async function createBackup({ backupDir, passphrase }) {
     fs.writeFileSync(destPath, encrypted)
     return { success: true, path: destPath }
   } finally {
-    try { fs.unlinkSync(tempPath) } catch {}
+    try { fs.unlinkSync(tempPath) } catch { /* ignore: temp cleanup is best-effort */ }
   }
 }
 
@@ -112,7 +112,7 @@ export function cleanupOldBackups(dir, maxKeep = 10) {
     .sort((a, b) => b.time - a.time)
 
   for (let i = maxKeep; i < files.length; i++) {
-    try { fs.unlinkSync(files[i].path) } catch {}
+    try { fs.unlinkSync(files[i].path) } catch { /* ignore: rotation is best-effort */ }
   }
 }
 

@@ -13,20 +13,20 @@ export default defineConfig({
         entry: "electron/main.js",
         vite: {
           build: {
-            rollupOptions: {
+            rolldownOptions: {
               external: ["sqlite3", "electron", "electron-updater", "node:fs", "node:path", "node:url", "node:os"],
             },
           },
         },
       },
       preload: {
-        input: path.join(__dirname, "electron/preload.js"),
+        input: path.join(import.meta.dirname, "electron/preload.js"),
       },
     }),
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });
