@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown, IconShieldLock, IconFolder } from "@tabler/icons-react"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown, IconShieldLock, IconFolder, IconChecks, IconTrash } from "@tabler/icons-react"
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { SortableContext, arrayMove, rectSortingStrategy, verticalListSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,7 @@ import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
 import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 
 const PROMPT_PAGE_SIZE = 100
 
@@ -43,6 +43,10 @@ export default function HomePage() {
   const [folderDisplay] = useFolderDisplaySettings()
   const [movePromptId, setMovePromptId] = useState(null)
   const [folders, setFolders] = useState([])
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -106,6 +110,12 @@ export default function HomePage() {
 
   useEffect(() => {
     const onKey = (e) => {
+      if (e.key === "Escape" && selectionMode) {
+        e.preventDefault()
+        setSelectionMode(false)
+        setSelectedIds(new Set())
+        return
+      }
       if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const tag = (e.target?.tagName || "").toLowerCase()
         const isEditable =
@@ -122,7 +132,7 @@ export default function HomePage() {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [])
+  }, [selectionMode])
 
   const loadTags = useCallback(async () => {
     try {
@@ -210,6 +220,44 @@ export default function HomePage() {
       if (notifications) toast.error("Failed to delete prompt")
       console.error(err)
     }
+  }
+
+  function toggleSelect(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function selectAllLoaded() {
+    setSelectedIds(new Set(prompts.map((p) => p.id)))
+  }
+
+  function exitSelection() {
+    setSelectionMode(false)
+    setSelectedIds(new Set())
+  }
+
+  async function deleteSelected() {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    setDeleting(true)
+    let failed = 0
+    for (const id of ids) {
+      try {
+        await window.db.deletePrompt(id)
+      } catch {
+        failed += 1
+      }
+    }
+    setDeleting(false)
+    setDeleteOpen(false)
+    exitSelection()
+    await refresh()
+    if (failed === 0) toast.success(`Deleted ${ids.length} prompt${ids.length === 1 ? "" : "s"}`)
+    else toast.error(`Deleted ${ids.length - failed} prompt(s); ${failed} failed`)
   }
 
   async function toggleFavoriteHandler(id) {
@@ -374,10 +422,78 @@ export default function HomePage() {
                     {showFavoritesOnly ? "Showing favorites" : "Show favorites only"}
                   </TooltipContent>
                 </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("h-9 w-9 cursor-pointer", selectionMode && "text-primary")}
+                      onClick={() => (selectionMode ? exitSelection() : setSelectionMode(true))}
+                      aria-label={selectionMode ? "Exit selection" : "Select prompts"}
+                    >
+                      <IconChecks size={16} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {selectionMode ? "Exit selection" : "Select prompts"}
+                  </TooltipContent>
+                </Tooltip>
               </>
             )}
           </div>
         </div>
+
+        {selectionMode && (
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+            <div className="flex items-center gap-2 text-xs">
+              <IconChecks size={14} className="text-muted-foreground" />
+              <span className="font-medium tabular-nums text-foreground">{selectedIds.size}</span>
+              <span className="text-muted-foreground">
+                selected{selectedIds.size === 1 ? "" : "s"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={selectAllLoaded}
+                disabled={prompts.length === 0}
+                className="h-7 cursor-pointer text-xs"
+              >
+                Select all
+              </Button>
+              {selectedIds.size > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="h-7 cursor-pointer text-xs"
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setDeleteOpen(true)}
+                disabled={selectedIds.size === 0}
+                className="h-7 cursor-pointer text-xs"
+              >
+                <IconTrash size={13} />
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={exitSelection}
+                aria-label="Exit selection"
+                className="cursor-pointer"
+              >
+                <IconX size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
 
         {(totalPromptsInDb > 0 || searchInput) && (
           <div
@@ -479,6 +595,9 @@ export default function HomePage() {
                       display={cardDisplay}
                       {...folderInfo(prompt.id)}
                       onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
+                      selectable={selectionMode}
+                      selected={selectedIds.has(prompt.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   ))}
                 </div>
@@ -506,6 +625,9 @@ export default function HomePage() {
                   display={cardDisplay}
                   {...folderInfo(prompt.id)}
                   onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
+                  selectable={selectionMode}
+                  selected={selectedIds.has(prompt.id)}
+                  onToggleSelect={toggleSelect}
                 />
               ))}
             </div>
@@ -530,6 +652,9 @@ export default function HomePage() {
                     display={cardDisplay}
                     {...folderInfo(prompt.id)}
                     onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
+                    selectable={selectionMode}
+                    selected={selectedIds.has(prompt.id)}
+                    onToggleSelect={toggleSelect}
                   />
                 ))}
               </div>
@@ -552,6 +677,9 @@ export default function HomePage() {
                 display={cardDisplay}
                 {...folderInfo(prompt.id)}
                 onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
+                selectable={selectionMode}
+                selected={selectedIds.has(prompt.id)}
+                onToggleSelect={toggleSelect}
               />
             ))}
           </div>
@@ -593,6 +721,40 @@ export default function HomePage() {
       </div>
 
       <AddPromptDialog onSaved={refresh} allTags={allTags} mini={!sidebarVisible} />
+
+      <Dialog open={deleteOpen} onOpenChange={(v) => { if (!v && !deleting) setDeleteOpen(false) }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">
+              Delete {selectedIds.size} prompt{selectedIds.size === 1 ? "" : "s"}?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              The selected prompts are removed from your library and from every folder. This
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleting}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={deleteSelected}
+              disabled={deleting}
+              className="cursor-pointer"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!movePromptId} onOpenChange={(v) => { if (!v) setMovePromptId(null) }}>
         <DialogContent className="sm:max-w-xs p-0 gap-0">

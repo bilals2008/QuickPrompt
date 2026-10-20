@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled, IconEdit, IconArrowMoveRight } from "@tabler/icons-react"
+import { IconCopy, IconTrash, IconDotsVertical, IconStar, IconStarFilled, IconEdit, IconArrowMoveRight, IconCheck } from "@tabler/icons-react"
 import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import {
   DropdownMenu,
@@ -81,7 +81,7 @@ function formatTime(date) {
   return new Date(date).toLocaleDateString()
 }
 
-export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display, dragHandle, folderName, folderColor, folderIcon, onMoveToFolder }) {
+export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, viewMode = "grid", allTags = [], mini = false, onSaved, autoCopy = true, display, dragHandle, folderName, folderColor, folderIcon, onMoveToFolder, selectable = false, selected = false, onToggleSelect }) {
   const showTags = display?.showTags ?? true
   const showTitle = display?.showTitle ?? true
   const showBody = display?.showBody ?? true
@@ -111,6 +111,10 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
   }
 
   const handleCardClick = () => {
+    if (selectable) {
+      onToggleSelect?.(prompt.id)
+      return
+    }
     if (autoCopy) {
       onCopy(prompt.content)
       setCopied(true)
@@ -127,8 +131,26 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
 
   const handleDoubleClick = (e) => {
     e.stopPropagation()
+    if (selectable) return
     setDetailOpen(true)
   }
+
+  const selectBtn = selectable ? (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onToggleSelect?.(prompt.id) }}
+      aria-pressed={selected}
+      aria-label={selected ? `Deselect ${title}` : `Select ${title}`}
+      className={cn(
+        "flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors",
+        selected
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border/70 bg-background/70 hover:border-primary/60"
+      )}
+    >
+      {selected && <IconCheck size={12} stroke={3} />}
+    </button>
+  ) : null
 
   const starBtn = (
     <button
@@ -199,7 +221,8 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
       onDoubleClick={handleDoubleClick}
       className={cn(
         "group flex cursor-pointer items-center gap-4 rounded-lg border border-border bg-card px-4 py-3 transition-all hover:bg-accent/50 hover:ring-1 hover:ring-primary/20",
-        clicked && "scale-[0.98] ring-2 ring-primary/40"
+        clicked && "scale-[0.98] ring-2 ring-primary/40",
+        selected && "ring-2 ring-primary/50"
       )}
     >
       {dragHandle && (
@@ -207,6 +230,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
           {dragHandle}
         </div>
       )}
+      {selectBtn}
       {showStar && (
         <button onClick={handleFavorite} className="shrink-0 cursor-pointer">
           {prompt.favorite ? (
@@ -245,7 +269,8 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
           : colorByTag
             ? `border border-border/60 ${getStickyTint(tintTag || prompt.content)} hover:ring-1 hover:ring-primary/30`
             : "border border-border bg-card hover:ring-1 hover:ring-primary/30",
-        clicked && "scale-[0.98] ring-2 ring-primary/40"
+        clicked && "scale-[0.98] ring-2 ring-primary/40",
+        selected && "ring-2 ring-primary/50"
       )}
     >
       {/* Compact layout (mini window) - Sticky Note Style */}
@@ -257,6 +282,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
                 {dragHandle}
               </div>
             )}
+            {selectBtn}
             <div className="min-w-0 flex-1">
               {showTitle && (
                 <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">
@@ -326,6 +352,7 @@ export function PromptCardItem({ prompt, onCopy, onDelete, onToggleFavorite, vie
                 {dragHandle}
               </div>
             )}
+            {selectBtn}
             <div className="min-w-0 flex-1">
               {showTitle && (
                 <h3 className="line-clamp-1 text-[13px] font-semibold text-foreground leading-snug">

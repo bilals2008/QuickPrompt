@@ -47,6 +47,7 @@ QuickPrompt is a **fast, offline-first prompt manager** designed for developers,
 - Edit prompts from card menu or double-click to view full content
 - Favorite system with filtering
 - Grid/List toggle view
+- Multi-select mode to delete several prompts at once
 - Drag & drop reorder with keyboard support
 
 ### Vault (Encrypted)
