@@ -134,6 +134,15 @@ const themeCategories = [
         accent: "#ff9940",
         text: "#5c6773",
       },
+      {
+        id: "bloom",
+        label: "Bloom",
+        desc: "Warm paper, honey accent",
+        bg: "#fff8f3",
+        card: "#fbf2eb",
+        accent: "#8a5100",
+        text: "#1f1b16",
+      },
     ],
   },
   {
@@ -147,6 +156,15 @@ const themeCategories = [
         card: "#12121a",
         accent: "#00ff9f",
         text: "#e0e0e0",
+      },
+      {
+        id: "hive",
+        label: "Hive",
+        desc: "Honey on charcoal",
+        bg: "#121214",
+        card: "#1a1a1d",
+        accent: "#ffb95f",
+        text: "#ede6dd",
       },
       {
         id: "volt",

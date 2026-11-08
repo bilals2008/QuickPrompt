@@ -66,6 +66,12 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
     if (open) setTimeout(() => titleRef.current?.focus(), 100)
   }, [open])
 
+  useEffect(() => {
+    const onOpen = () => setOpen(true)
+    window.addEventListener("qp:new-prompt", onOpen)
+    return () => window.removeEventListener("qp:new-prompt", onOpen)
+  }, [])
+
   function addTag() {
     const input = inputRef.current
     if (!input) return

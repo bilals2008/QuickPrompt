@@ -275,6 +275,25 @@ export default function HomePage() {
   }, [total])
 
   useEffect(() => {
+    const onShowFavorites = () => setShowFavoritesOnly(true)
+    const onSelectMode = () => setSelectionMode(true)
+    const onSetView = (e) => {
+      const next = e.detail
+      if (!next) return
+      setViewMode(next)
+      window.settingsAPI?.set("defaultView", next)
+    }
+    window.addEventListener("qp:show-favorites", onShowFavorites)
+    window.addEventListener("qp:select-mode", onSelectMode)
+    window.addEventListener("qp:set-view", onSetView)
+    return () => {
+      window.removeEventListener("qp:show-favorites", onShowFavorites)
+      window.removeEventListener("qp:select-mode", onSelectMode)
+      window.removeEventListener("qp:set-view", onSetView)
+    }
+  }, [])
+
+  useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 200)
     return () => clearTimeout(t)
   }, [searchInput])

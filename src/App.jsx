@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react"
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
 import { Toaster } from "@/components/ui/sonner"
-import { IconSettings, IconHome2, IconArrowsTransferUpDown, IconShieldLock } from "@tabler/icons-react"
+import { IconSettings, IconHome2, IconArrowsTransferUpDown, IconShieldLock, IconCommand } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { SpotlightSearch } from "@/features/spotlight-search/SpotlightSearch"
+import { CommandPalette } from "@/features/command-palette/CommandPalette"
 import { WhatsNewProvider } from "@/features/whats-new/WhatsNewProvider"
 import { toast } from "sonner"
 
@@ -65,6 +66,7 @@ function App() {
     <TooltipProvider delayDuration={300}>
       <WhatsNewProvider currentVersion={appVersion}>
         <SpotlightSearch />
+        <CommandPalette />
         <div ref={containerRef} className="flex h-screen w-full bg-background overflow-hidden">
           {sidebarVisible && (
             <nav className="flex flex-col items-center gap-3 py-4 px-2 border-r border-border/30 bg-sidebar w-14 shrink-0">
@@ -85,6 +87,20 @@ function App() {
                 <TooltipContent side="right" sideOffset={12}>Home</TooltipContent>
               </Tooltip>
               <div className="flex-1" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => window.dispatchEvent(new Event("qp:open-command-palette"))}
+                    className="flex w-9 h-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+                    aria-label="Command palette"
+                  >
+                    <IconCommand size={18} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={12}>
+                  Command palette (Ctrl+Shift+K)
+                </TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link

@@ -3,7 +3,7 @@ import { useTheme } from "@/hooks/use-theme"
 import { Toaster as Sonner } from "sonner";
 import { IconCircleCheck, IconInfoCircle, IconAlertTriangle, IconCircleX, IconLoader2 } from "@tabler/icons-react"
 
-const TOASTER_THEMES = { light: "light", "ayu-light": "light", cyberpunk: "dark", volt: "dark", "ayu-dark": "dark" }
+const TOASTER_THEMES = { light: "light", "ayu-light": "light", bloom: "light", cyberpunk: "dark", volt: "dark", "ayu-dark": "dark", hive: "dark" }
 
 const Toaster = ({
   ...props

@@ -20,7 +20,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="ayu-dark"]));
+@custom-variant dark (&:where([data-theme="cyberpunk"], [data-theme="volt"], [data-theme="ayu-dark"], [data-theme="hive"]));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -214,6 +214,69 @@
   --sidebar-accent-foreground: #5c6773;
   --sidebar-border: #e7eaed;
   --sidebar-ring: #ff9940;
+}
+
+/* Hive — honey on charcoal: warm light on a near-black canvas, soft corners. */
+[data-theme="hive"] {
+  --radius: 0.875rem;
+  --background: #121214;
+  --foreground: #ede6dd;
+  --card: #1a1a1d;
+  --card-foreground: #ede6dd;
+  --popover: #212124;
+  --popover-foreground: #ede6dd;
+  --primary: #ffb95f;
+  --primary-foreground: #2c1600;
+  --secondary: #2f2a24;
+  --secondary-foreground: #f0e0cc;
+  --muted: #1a1a1d;
+  --muted-foreground: #aba195;
+  --accent: #29292d;
+  --accent-foreground: #ede6dd;
+  --destructive: #f0a39c;
+  --destructive-foreground: #3b0b07;
+  --border: #34312d;
+  --input: #34312d;
+  --ring: #ffb95f;
+  --sidebar: #0e0e10;
+  --sidebar-foreground: #ede6dd;
+  --sidebar-primary: #ffb95f;
+  --sidebar-primary-foreground: #2c1600;
+  --sidebar-accent: #29292d;
+  --sidebar-accent-foreground: #ede6dd;
+  --sidebar-border: #34312d;
+  --sidebar-ring: #ffb95f;
+}
+
+/* Bloom — Material You warmth on a paper canvas; honey only where it carries meaning. */
+[data-theme="bloom"] {
+  --background: #fff8f3;
+  --foreground: #1f1b16;
+  --card: #fbf2eb;
+  --card-foreground: #1f1b16;
+  --popover: #f5ece4;
+  --popover-foreground: #1f1b16;
+  --primary: #8a5100;
+  --primary-foreground: #ffffff;
+  --secondary: #f3e0cb;
+  --secondary-foreground: #261a0c;
+  --muted: #f5ece4;
+  --muted-foreground: #51453a;
+  --accent: #ffddb8;
+  --accent-foreground: #2c1600;
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --border: #d5c3b5;
+  --input: #d5c3b5;
+  --ring: #8a5100;
+  --sidebar: #f5ece4;
+  --sidebar-foreground: #1f1b16;
+  --sidebar-primary: #8a5100;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3e0cb;
+  --sidebar-accent-foreground: #1f1b16;
+  --sidebar-border: #d5c3b5;
+  --sidebar-ring: #8a5100;
 }
 
 * {
@@ -425,6 +488,31 @@ html *::after {
   background: linear-gradient(145deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.08) 100%);
 }
 [data-theme="ayu-dark"] .sticky-tint-rose {
+  background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.08) 100%);
+}
+/* Hive — honey on charcoal, warm low-opacity gel tints. */
+[data-theme="hive"] .sticky-tint-yellow {
+  background: linear-gradient(145deg, rgba(255, 185, 95, 0.14) 0%, rgba(255, 214, 150, 0.09) 100%);
+}
+[data-theme="hive"] .sticky-tint-green {
+  background: linear-gradient(145deg, rgba(134, 239, 172, 0.12) 0%, rgba(74, 222, 128, 0.08) 100%);
+}
+[data-theme="hive"] .sticky-tint-blue {
+  background: linear-gradient(145deg, rgba(147, 197, 253, 0.12) 0%, rgba(96, 165, 250, 0.08) 100%);
+}
+[data-theme="hive"] .sticky-tint-pink {
+  background: linear-gradient(145deg, rgba(244, 114, 182, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%);
+}
+[data-theme="hive"] .sticky-tint-purple {
+  background: linear-gradient(145deg, rgba(192, 132, 252, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
+}
+[data-theme="hive"] .sticky-tint-orange {
+  background: linear-gradient(145deg, rgba(251, 146, 60, 0.14) 0%, rgba(255, 185, 95, 0.1) 100%);
+}
+[data-theme="hive"] .sticky-tint-teal {
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.08) 100%);
+}
+[data-theme="hive"] .sticky-tint-rose {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.12) 0%, rgba(244, 63, 94, 0.08) 100%);
 }
 

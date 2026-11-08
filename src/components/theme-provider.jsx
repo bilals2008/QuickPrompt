@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 
 export const ThemeContext = createContext(undefined)
 
-export const THEMES = ["light", "ayu-light", "cyberpunk", "volt", "ayu-dark"]
+export const THEMES = ["light", "ayu-light", "bloom", "cyberpunk", "volt", "ayu-dark", "hive"]
 
 export function ThemeProvider({ children, defaultTheme = "volt" }) {
   const [theme, setTheme] = useState(() => {

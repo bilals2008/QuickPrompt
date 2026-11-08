@@ -106,7 +106,9 @@ export function SpotlightSearch() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
         className={cn(
-          "top-[12%] translate-y-0 overflow-hidden rounded-xl p-0 gap-0 border border-border bg-popover shadow-lg",
+          "top-[10%] translate-y-0 overflow-hidden rounded-2xl p-0 gap-0 border border-border/70",
+          "bg-popover/85 ring-1 ring-foreground/10 backdrop-blur-2xl",
+          "shadow-[0_32px_80px_-24px_rgb(0_0_0/0.65),0_2px_10px_-4px_rgb(0_0_0/0.5)]",
           "w-[calc(100%-1.5rem)]",
           isMini ? "max-w-[calc(100%-1.5rem)]" : "max-w-2xl"
         )}
@@ -116,15 +118,16 @@ export function SpotlightSearch() {
         <DialogDescription className="sr-only">
           Quickly search prompts, copy to clipboard, and minimize the window.
         </DialogDescription>
-        <Command className="rounded-xl border-0 bg-transparent p-0">
+        <Command className="rounded-2xl border-0 bg-transparent p-0">
           <CommandInput
             placeholder="Search prompts by title, content, tags, or model..."
-            className="text-sm focus-visible:ring-0"
+            className="h-12 text-[15px] focus-visible:ring-0"
           />
           <CommandList className="my-1 max-h-[460px] scrollbar-none">
             <CommandEmpty className="py-12 text-center">
-              <p className="text-sm font-medium text-muted-foreground">No matching prompts found.</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Try refining your search terms.</p>
+              <IconFileText className="mx-auto mb-2 size-6 text-muted-foreground/40" />
+              <p className="text-sm font-medium text-muted-foreground">No matching prompts found</p>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Try refining your search terms</p>
             </CommandEmpty>
 
             <CommandGroup heading="All Prompts" className="text-xs text-muted-foreground py-1">
@@ -137,9 +140,9 @@ export function SpotlightSearch() {
                     key={prompt.id}
                     value={`${title} ${prompt.content} ${prompt.tags}`}
                     onSelect={() => handleSelectPrompt(prompt)}
-                    className="flex items-center gap-3 px-3 my-1.5 py-2.5 rounded-lg"
+                    className="flex items-center gap-3 px-2.5 py-2.5 mx-1 my-1 rounded-lg hover:bg-muted/50 data-[selected=true]:bg-accent"
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/70 text-muted-foreground transition-colors group-data-[selected=true]/command-item:bg-primary/15 group-data-[selected=true]/command-item:text-primary">
                       <IconFileText className="size-4" />
                     </div>
 
@@ -173,7 +176,7 @@ export function SpotlightSearch() {
 
                     <div
                       className={cn(
-                        "hidden shrink-0 group-data-selected/command-item:flex items-center gap-1 self-center",
+                        "hidden shrink-0 group-data-[selected=true]/command-item:flex items-center gap-1 self-center",
                         "text-[10px] text-muted-foreground font-medium px-1.5 py-0.5 rounded",
                         "bg-muted border border-border"
                       )}
@@ -188,7 +191,7 @@ export function SpotlightSearch() {
             </CommandGroup>
           </CommandList>
 
-          <div className="flex items-center justify-between gap-2 border-t border-border/60 px-3 py-2 text-[10px] text-muted-foreground/60 select-none">
+          <div className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/20 px-3 py-2 text-[10px] text-muted-foreground/80 select-none">
             <div className="flex items-center gap-1.5">
               <span className="flex items-center gap-0.5 rounded border border-border bg-muted px-1 py-0.5 text-[9px] font-semibold">
                 <IconCommand className="size-2.5" />
