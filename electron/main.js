@@ -344,6 +344,7 @@ function showAndFocus(route) {
   if (!mainWindow.isVisible()) {
     positionWindowNearTray()
   }
+  if (mainWindow.isMinimized()) mainWindow.restore()
   mainWindow.show()
   mainWindow.focus()
   if (route) {
@@ -401,7 +402,9 @@ function createWindow() {
       nodeIntegration: false,
     },
     show: false,
-    skipTaskbar: true,
+    // The window stays in the taskbar so minimising it never makes the app
+    // look like it vanished. Closing it is what hides it to the tray.
+    skipTaskbar: false,
   })
 
   const alwaysOnTop = getSetting("alwaysOnTop", false)
@@ -448,6 +451,14 @@ function createWindow() {
 
   mainWindow.on("focus", () => {
     refreshTrayMenu()
+  })
+
+  // Optional tray behaviour for the minimise button. Off by default: the
+  // window just minimises to the taskbar.
+  mainWindow.on("minimize", () => {
+    if (!getSetting("minimizeToTray", false)) return
+    mainWindow.restore()
+    mainWindow.hide()
   })
 
   if (VITE_DEV_SERVER_URL) {

@@ -50,6 +50,7 @@ import {
   IconFolder,
   IconMaximize,
   IconMinimize,
+  IconWindowMinimize,
   IconRuler,
   IconPalette,
   IconFolders,
@@ -212,6 +213,7 @@ export default function Settings() {
   const [searchInTagsOnly, setSearchInTagsOnly] = useState(false)
   const [defaultWindowSize, setDefaultWindowSize] = useState("medium")
   const [startMinimized, setStartMinimized] = useState(false)
+  const [minimizeToTray, setMinimizeToTray] = useState(false)
   const [autoBackup, setAutoBackup] = useState(false)
   const [backupLocation, setBackupLocation] = useState("")
   const [backupSchedule, setBackupSchedule] = useState("off")
@@ -240,6 +242,7 @@ export default function Settings() {
     window.settingsAPI?.get("searchInTagsOnly", false).then((v) => setSearchInTagsOnly(Boolean(v)))
     window.settingsAPI?.get("defaultWindowSize", "medium").then((v) => setDefaultWindowSize(v))
     window.settingsAPI?.get("startMinimized", false).then((v) => setStartMinimized(Boolean(v)))
+    window.settingsAPI?.get("minimizeToTray", false).then((v) => setMinimizeToTray(Boolean(v)))
     window.settingsAPI?.get("autoBackup", false).then((v) => setAutoBackup(Boolean(v)))
     window.settingsAPI?.get("backupLocation", "").then((v) => setBackupLocation(v || ""))
     window.settingsAPI?.get("backupSchedule", "off").then((v) => setBackupSchedule(v || "off"))
@@ -380,6 +383,11 @@ export default function Settings() {
   function handleStartMinimized(checked) {
     setStartMinimized(checked)
     window.settingsAPI?.set("startMinimized", checked)
+  }
+
+  function handleMinimizeToTrayToggle(checked) {
+    setMinimizeToTray(checked)
+    window.settingsAPI?.set("minimizeToTray", checked)
   }
 
   function handleAutoBackup(checked) {
@@ -664,6 +672,14 @@ export default function Settings() {
                       description="App launches in the background without showing the window"
                     >
                       <Switch checked={startMinimized} onCheckedChange={handleStartMinimized} className="cursor-pointer" />
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconWindowMinimize}
+                      label="Minimize to tray"
+                      description="Hide to the system tray instead of the taskbar when minimising"
+                    >
+                      <Switch checked={minimizeToTray} onCheckedChange={handleMinimizeToTrayToggle} className="cursor-pointer" />
                     </SettingRow>
                   </SettingGroup>
 
