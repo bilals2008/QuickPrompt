@@ -6,6 +6,7 @@ import {
   IconDownload,
   IconFolderCog,
   IconFolderOpen,
+  IconFolderPlus,
   IconHistory,
   IconLayoutGrid,
   IconPalette,
@@ -25,6 +26,34 @@ export const SECTION_META = {
 }
 
 export const CHANGELOG = [
+  {
+    version: "2.6.0",
+    date: "2026-11-13",
+    title: "Folder icons on your terms",
+    sections: [
+      {
+        type: "added",
+        items: [
+          { icon: IconFolderPlus, title: "New prompt in a folder", desc: "Create or attach prompts from the same + menu" },
+          { icon: IconPalette, title: "Your own folder image", desc: "Upload any picture as the folder icon" },
+          { icon: IconSparkles, title: "Centre icon pack", desc: "80+ icons with colour, size and position controls" },
+        ],
+      },
+      {
+        type: "improved",
+        items: [
+          { icon: IconLayoutGrid, title: "Collapsible sections", desc: "Icon, centre icon, colour and size fold away" },
+          { icon: IconDeviceDesktop, title: "Stays in the taskbar", desc: "Minimising no longer makes the app disappear" },
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          { icon: IconBug, title: "Clean shutdown", desc: "The database closes before the app quits" },
+        ],
+      },
+    ],
+  },
   {
     version: "2.5.0",
     date: "2026-09-20",

@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.0] - November 13, 2026
+
+### Added
+
+#### Folders
+
+- **New prompt** and **Add prompts to folder** now live in one dropdown on the `+` button inside a folder
+- Folders can use **your own image** as the icon — uploaded once, stored on disk and cached
+- **Centre icon** pack: 80+ extra icons that sit inside the folder badge, with colour, size, position and background controls
+
+#### Appearance
+
+- Folder icon, centre icon, colour and size are now **collapsible sections** — no more scrolling
+
+### Fixed
+
+#### Window
+
+- The window now stays in the **taskbar**, so minimising it no longer makes it look like it vanished
+- New **Minimize to tray** setting for when you do want it hidden
+- Quitting now waits for the database to close, so the app no longer crashes on exit
+
+#### Appearance
+
+- Removed the blurry glow around focused fields
+
+---
+
 ## [2.5.0] - September 20, 2026
 
 ### Added
