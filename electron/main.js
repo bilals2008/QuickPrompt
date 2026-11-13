@@ -38,6 +38,7 @@ import {
   renameFolder,
   updateFolder,
   deleteFolder,
+  getFolderById,
   getFolderBreadcrumb,
   addPromptToFolder,
   removePromptFromFolder,
@@ -62,6 +63,7 @@ import {
   searchVaultFolders,
 } from "./database/vault-folders.js"
 import updater from "electron-updater"
+import { registerIconProtocol, saveIcon, deleteIcon } from "./folder-icons.js"
 import {
   createBackup,
   restoreBackup,
@@ -111,6 +113,22 @@ function setSetting(key, value) {
   const settings = readSettings()
   settings[key] = value
   writeSettings(settings)
+}
+
+/**
+ * Uploaded folder icons arrive from the renderer as data URLs. They are stored
+ * as real files and the database only keeps the resulting `qpicon://` URL.
+ */
+async function resolveIconValue(icon) {
+  if (typeof icon === "string" && icon.startsWith("data:image/")) {
+    try {
+      return await saveIcon(icon)
+    } catch (err) {
+      console.error("[Icons] Failed to store custom icon:", err)
+      return icon
+    }
+  }
+  return icon
 }
 
 let updateStatus = "idle"
@@ -258,9 +276,7 @@ function buildTrayMenu() {
       label: "Quit QuickPrompt",
       accelerator: platform === "darwin" ? "Cmd+Q" : "Ctrl+Q",
       click: () => {
-        app.isQuitting = true
-        closeDatabase()
-        app.quit()
+        quitApp()
       },
     },
   ])
@@ -423,9 +439,7 @@ function createWindow() {
       event.preventDefault()
       const closeBehavior = getSetting("closeBehavior", "tray")
       if (closeBehavior === "quit") {
-        app.isQuitting = true
-        closeDatabase()
-        app.quit()
+        quitApp()
       } else {
         mainWindow.hide()
       }
@@ -441,6 +455,23 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(process.env.DIST, "index.html"))
   }
+}
+
+/**
+ * Quitting has to wait for the database handle to close, otherwise sqlite3 is
+ * torn down while statements are still in flight and Node aborts natively.
+ */
+let quitting = false
+async function quitApp() {
+  if (quitting) return
+  quitting = true
+  app.isQuitting = true
+  try {
+    await closeDatabase()
+  } catch (err) {
+    console.error("[Main] Database close failed:", err)
+  }
+  app.quit()
 }
 
 let dbReady = false
@@ -460,10 +491,10 @@ app.whenReady().then(async () => {
     console.error("[Main] Database init failed:", err)
   }
 
+  registerIconProtocol()
   createWindow()
   createTray()
   registerGlobalShortcut()
-
   if (getSetting("startMinimized", false)) {
     mainWindow?.hide()
   }
@@ -487,9 +518,12 @@ app.on("window-all-closed", () => {
   if (!isMac) app.quit()
 })
 
-app.on("before-quit", () => {
+app.on("before-quit", (event) => {
   app.isQuitting = true
-  closeDatabase()
+  if (!quitting) {
+    event.preventDefault()
+    quitApp()
+  }
 })
 
 let backupTimerId = null
@@ -735,7 +769,8 @@ ipcMain.handle("vault:attachments:download", async (_event, id) => {
 })
 
 ipcMain.handle("folders:create", async (_event, data) => {
-  return createFolder(data || {})
+  const payload = data || {}
+  return createFolder({ ...payload, icon: await resolveIconValue(payload.icon) })
 })
 
 ipcMain.handle("folders:list", async () => {
@@ -763,11 +798,21 @@ ipcMain.handle("folders:rename", async (_event, id, name) => {
 })
 
 ipcMain.handle("folders:update", async (_event, id, data) => {
-  return updateFolder(id, data)
+  const previous = await getFolderById(id)
+  const payload = data || {}
+  const updated = await updateFolder(id, { ...payload, icon: await resolveIconValue(payload.icon) })
+  // The folder no longer points at its old image, so the file can go.
+  if (previous?.icon && previous.icon !== updated?.icon) {
+    deleteIcon(previous.icon).catch(() => {})
+  }
+  return updated
 })
 
 ipcMain.handle("folders:delete", async (_event, id) => {
-  return deleteFolder(id)
+  const folder = await getFolderById(id)
+  const result = await deleteFolder(id)
+  if (folder?.icon) deleteIcon(folder.icon).catch(() => {})
+  return result
 })
 
 ipcMain.handle("folders:search", async (_event, query) => {
@@ -937,18 +982,14 @@ ipcMain.handle("window:hide", () => {
 })
 
 ipcMain.handle("window:quit", () => {
-  app.isQuitting = true
-  closeDatabase()
-  app.quit()
+  quitApp()
 })
 
 ipcMain.handle("window:close-to-tray", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     const closeBehavior = getSetting("closeBehavior", "tray")
     if (closeBehavior === "quit") {
-      app.isQuitting = true
-      closeDatabase()
-      app.quit()
+      quitApp()
     } else {
       mainWindow.hide()
     }

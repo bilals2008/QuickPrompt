@@ -5,6 +5,7 @@ import {
   IconArrowLeft,
   IconCheckbox,
   IconFiles,
+  IconFilePlus,
   IconFolderFilled,
   IconFolderPlus,
   IconPlus,
@@ -16,6 +17,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -24,6 +31,7 @@ import {
 
 import { FolderTile } from "@/components/folders/FolderTile"
 import { PromptRow } from "@/components/collections/PromptRow"
+import { AddPromptDialog } from "@/components/add-prompt-dialog"
 import { AddPromptsDialog } from "@/components/collections/AddPromptsDialog"
 import { FolderDetailsDialog } from "@/components/collections/FolderDetailsDialog"
 import { FolderBreadcrumb } from "@/components/folders/FolderBreadcrumb"
@@ -66,7 +74,9 @@ export default function CollectionsPage() {
 
   const [allPrompts, setAllPrompts] = useState([])
   const [addPromptsOpen, setAddPromptsOpen] = useState(false)
+  const [newPromptOpen, setNewPromptOpen] = useState(false)
   const [addSearch, setAddSearch] = useState("")
+  const [statsTick, setStatsTick] = useState(0)
 
   const [detailsFolder, setDetailsFolder] = useState(null)
   const [detailsPrompts, setDetailsPrompts] = useState([])
@@ -139,7 +149,7 @@ export default function CollectionsPage() {
     return () => {
       cancelled = true
     }
-  }, [folders, folderDisplay.showItemCounts])
+  }, [folders, folderDisplay.showItemCounts, statsTick])
 
   /* ---------------- navigation ---------------- */
 
@@ -299,12 +309,18 @@ export default function CollectionsPage() {
     try {
       for (const pid of promptIds) await window.folderAPI.addPrompt(pid, activeFolder.id)
       await loadFolderPrompts(activeFolder.id)
+      setStatsTick((t) => t + 1)
       setAddPromptsOpen(false)
       setAddSearch("")
       toast.success(`${promptIds.length} prompt${promptIds.length > 1 ? "s" : ""} added`)
     } catch {
       toast.error("Failed to add prompts")
     }
+  }
+
+  const handleNewPromptSaved = async () => {
+    if (activeFolder) await loadFolderPrompts(activeFolder.id)
+    setStatsTick((t) => t + 1)
   }
 
   const copyPrompt = (text) => {
@@ -388,6 +404,35 @@ export default function CollectionsPage() {
     </div>
   )
 
+  /* ---------------- add menu ---------------- */
+
+  // Same menu for every "add" affordance: create a brand-new prompt in this
+  // folder, or pull existing prompts from the library into it.
+  const addMenu = (trigger) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem
+          onSelect={() => setNewPromptOpen(true)}
+          className="cursor-pointer gap-2 text-xs"
+        >
+          <IconFilePlus size={14} />
+          New prompt
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => {
+            loadAllPrompts()
+            setAddPromptsOpen(true)
+          }}
+          className="cursor-pointer gap-2 text-xs"
+        >
+          <IconFolderPlus size={14} />
+          Add prompts to folder
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
   return (
     <div className="flex h-full select-none flex-col">
       {/* Header */}
@@ -425,24 +470,12 @@ export default function CollectionsPage() {
           )}
         </div>
 
-        {view === "prompts" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 shrink-0"
-                onClick={() => {
-                  loadAllPrompts()
-                  setAddPromptsOpen(true)
-                }}
-              >
-                <IconPlus size={14} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Add prompts</TooltipContent>
-          </Tooltip>
-        )}
+        {view === "prompts" &&
+          addMenu(
+            <Button variant="ghost" size="icon" className="size-7 shrink-0 cursor-pointer">
+              <IconPlus size={14} />
+            </Button>
+          )}
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -575,15 +608,13 @@ export default function CollectionsPage() {
               label="Prompts"
               count={filteredPrompts.length}
               action={
-                <button
-                  onClick={() => {
-                    loadAllPrompts()
-                    setAddPromptsOpen(true)
-                  }}
-                  className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <IconPlus size={11} /> Add
-                </button>
+                addMenu(
+                  <button
+                    className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <IconPlus size={11} /> Add
+                  </button>
+                )
               }
             />
             {filteredPrompts.length === 0 ? (
@@ -651,6 +682,15 @@ export default function CollectionsPage() {
         search={addSearch}
         onSearchChange={setAddSearch}
         onAdd={addPromptsToFolder}
+      />
+
+      <AddPromptDialog
+        open={newPromptOpen}
+        onOpenChange={setNewPromptOpen}
+        defaultFolderId={activeFolder?.id ?? null}
+        hideTrigger
+        mini
+        onSaved={handleNewPromptSaved}
       />
 
       <FolderDetailsDialog

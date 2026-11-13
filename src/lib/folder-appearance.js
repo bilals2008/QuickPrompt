@@ -105,6 +105,27 @@ export const FOLDER_SIZE_OPTIONS = [
 
 export const DEFAULT_FOLDER_APPEARANCE = { icon: "folder", color: "", size: "normal" }
 
+/** Longest edge of an uploaded custom icon, in CSS pixels. */
+export const CUSTOM_ICON_MAX_SIZE = 128
+
+/** Protocol the main process serves uploaded folder icons from. */
+export const CUSTOM_ICON_SCHEME = "qpicon"
+
+/**
+ * Custom icons are stored as a `qpicon://` URL (the image itself lives in
+ * userData/folder-icons); older rows may still hold a raw data URL.
+ */
+export function isCustomFolderIcon(icon) {
+  return (
+    typeof icon === "string" &&
+    (icon.startsWith("data:image/") || icon.startsWith(`${CUSTOM_ICON_SCHEME}://`))
+  )
+}
+
+export function isTablerFolderIcon(icon) {
+  return typeof icon === "string" && icon.startsWith("tabler:")
+}
+
 export function parseAppearance(appearance) {
   if (!appearance || typeof appearance !== "string") return {}
   try { return JSON.parse(appearance) } catch { return {} }
@@ -117,6 +138,33 @@ export function serializeAppearance(patch) {
 export function getFolderSize(folder) {
   const raw = parseAppearance(folder?.appearance)
   return raw.size || "normal"
+}
+
+/** Settings for the emblem that sits in the middle of the folder badge. */
+export const DEFAULT_FOLDER_EMBLEM = { color: "", scale: 1.25, dx: 0, dy: 0, badge: "white" }
+
+export const FOLDER_EMBLEM_SIZE_OPTIONS = [
+  { id: "small", label: "S", scale: 0.9 },
+  { id: "medium", label: "M", scale: 1.25 },
+  { id: "large", label: "L", scale: 1.55 },
+]
+
+export const FOLDER_EMBLEM_BADGE_OPTIONS = [
+  { id: "white", label: "White" },
+  { id: "none", label: "None" },
+]
+
+export function getFolderEmblem(folder) {
+  const raw = parseAppearance(folder?.appearance)?.emblem
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_FOLDER_EMBLEM }
+  return {
+    ...DEFAULT_FOLDER_EMBLEM,
+    color: typeof raw.color === "string" ? raw.color : "",
+    scale: Number.isFinite(raw.scale) ? raw.scale : DEFAULT_FOLDER_EMBLEM.scale,
+    dx: Number.isFinite(raw.dx) ? raw.dx : 0,
+    dy: Number.isFinite(raw.dy) ? raw.dy : 0,
+    badge: raw.badge === "none" ? "none" : "white",
+  }
 }
 
 export function getFolderPixelSize(folder) {

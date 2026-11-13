@@ -42,7 +42,7 @@ export function ImportDropzone({ onFile, busy, currentFormat, currentFilename, e
         className={cn(
           "group/dropzone relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/60 bg-muted/30 px-4 py-6 text-center transition-colors",
           "hover:border-primary/50 hover:bg-muted/50",
-          "focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/50",
+          "focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/70",
           isOver && "border-primary bg-primary/10 ring-2 ring-primary/20",
           busy && "pointer-events-none opacity-60"
         )}

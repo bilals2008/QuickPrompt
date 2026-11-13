@@ -306,6 +306,70 @@ function Badge({ children }) {
   )
 }
 
+/**
+ * Folder shape with a custom emblem inside the white badge. The emblem is
+ * authored in the badge's 12x12 space, so any icon can be dropped in the
+ * middle of the folder exactly like the built-in emblems.
+ *
+ * `badgeScale` grows the badge (and the emblem with it); `showBadge = false`
+ * drops the white disc so the emblem sits straight on the folder.
+ */
+export function FolderEmblemIcon({
+  size = 16,
+  style,
+  className,
+  emblem,
+  emblemColor,
+  emblemScale = 1,
+  badgeScale = 1,
+  showBadge = true,
+  emblemOffset = { dx: 0, dy: 0 },
+}) {
+  const { dx = 0, dy = 0 } = emblemOffset || {}
+  return (
+    <FolderSvg size={size} style={style} className={className}>
+      <FolderShape />
+      <g transform="translate(18 22)">
+        {showBadge && (
+          <g transform={`translate(6 6) scale(${badgeScale}) translate(-6 -6)`}>
+            <circle cx="6" cy="6.6" r="8" fill="#000000" fillOpacity="0.16" />
+            <circle cx="6" cy="6" r="8" fill="#ffffff" />
+          </g>
+        )}
+        <g
+          color={emblemColor}
+          transform={`translate(${dx} ${dy}) translate(6 6) scale(${badgeScale * emblemScale}) translate(-6 -6)`}
+        >
+          {emblem}
+        </g>
+      </g>
+    </FolderSvg>
+  )
+}
+
+/** Scales a 24x24 Tabler glyph down into the badge space. */
+export function TablerEmblem({ Icon }) {
+  return (
+    <g transform="translate(0.5 0.5) scale(0.458)">
+      <Icon size={24} strokeWidth={2.4} />
+    </g>
+  )
+}
+
+/** Paints an image (uploaded icon) into the badge space. */
+export function ImageEmblem({ href }) {
+  return (
+    <image
+      href={href}
+      x={0.8}
+      y={0.8}
+      width={10.4}
+      height={10.4}
+      preserveAspectRatio="xMidYMid meet"
+    />
+  )
+}
+
 function makeFolderIcon(emblem) {
   function EmblemedFolderIcon({ size = 16, style, className }) {
     return (

@@ -518,7 +518,7 @@ export default function HomePage() {
           <div
             className={cn(
               "group/search relative flex h-9 w-full items-center rounded-lg border border-border bg-background/60",
-              "transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40"
+              "transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/60"
             )}
           >
             <IconSearch

@@ -6,6 +6,7 @@ import { IconSearch } from "@tabler/icons-react"
 import {
   IconFolder, IconFolderPlus, IconFolderStar, IconFolderHeart,
   IconFolderCheck, IconFolderCode, IconFolderOpen,
+  IconFolderX, IconFolderCog, IconFolderMinus, IconFolderSymlink,
   IconStar, IconStarFilled, IconHeart, IconHeartFilled,
   IconBookmark, IconLock, IconKey,
   IconShield, IconRocket, IconBolt,
@@ -17,6 +18,14 @@ import {
   IconUser, IconUsers, IconCheck, IconX,
   IconEye, IconClock, IconBell, IconPin,
   IconBookmarkFilled,
+  IconHome, IconBriefcase, IconBuilding, IconShoppingBag,
+  IconAtom, IconPlant, IconBasket, IconTool,
+  IconApi, IconWebhook, IconTopologyStar, IconSparkles,
+  IconConfetti, IconTrophy, IconTarget, IconBulb,
+  IconMessage, IconVideo, IconPalette, IconBrush,
+  IconWand, IconCpu, IconServer, IconGitBranch,
+  IconBug, IconTestPipe, IconSchool, IconBook,
+  IconNotebook, IconSticker, IconPackage, IconVersions,
 } from "@tabler/icons-react"
 
 export const TABLER_ICONS = [
@@ -61,6 +70,42 @@ export const TABLER_ICONS = [
   { id: "tabler:clock", name: "Clock", Component: IconClock },
   { id: "tabler:bell", name: "Bell", Component: IconBell },
   { id: "tabler:pin", name: "Pin", Component: IconPin },
+  { id: "tabler:folder-x", name: "Folder delete", Component: IconFolderX },
+  { id: "tabler:folder-cog", name: "Folder settings", Component: IconFolderCog },
+  { id: "tabler:folder-minus", name: "Folder remove", Component: IconFolderMinus },
+  { id: "tabler:folder-symlink", name: "Folder link", Component: IconFolderSymlink },
+  { id: "tabler:home", name: "Home", Component: IconHome },
+  { id: "tabler:briefcase", name: "Work", Component: IconBriefcase },
+  { id: "tabler:building", name: "Company", Component: IconBuilding },
+  { id: "tabler:shopping-bag", name: "Shopping", Component: IconShoppingBag },
+  { id: "tabler:atom", name: "Science", Component: IconAtom },
+  { id: "tabler:plant", name: "Nature", Component: IconPlant },
+  { id: "tabler:basket", name: "Basket", Component: IconBasket },
+  { id: "tabler:tool", name: "Tools", Component: IconTool },
+  { id: "tabler:api", name: "API", Component: IconApi },
+  { id: "tabler:webhook", name: "Webhook", Component: IconWebhook },
+  { id: "tabler:topology-star", name: "Network", Component: IconTopologyStar },
+  { id: "tabler:sparkles", name: "AI", Component: IconSparkles },
+  { id: "tabler:confetti", name: "Fun", Component: IconConfetti },
+  { id: "tabler:trophy", name: "Wins", Component: IconTrophy },
+  { id: "tabler:target", name: "Goals", Component: IconTarget },
+  { id: "tabler:bulb", name: "Ideas", Component: IconBulb },
+  { id: "tabler:message", name: "Chat", Component: IconMessage },
+  { id: "tabler:video", name: "Video", Component: IconVideo },
+  { id: "tabler:palette", name: "Design", Component: IconPalette },
+  { id: "tabler:brush", name: "Creative", Component: IconBrush },
+  { id: "tabler:wand", name: "Magic", Component: IconWand },
+  { id: "tabler:cpu", name: "Compute", Component: IconCpu },
+  { id: "tabler:server", name: "Servers", Component: IconServer },
+  { id: "tabler:git-branch", name: "Git", Component: IconGitBranch },
+  { id: "tabler:bug", name: "Bugs", Component: IconBug },
+  { id: "tabler:test-pipe", name: "Tests", Component: IconTestPipe },
+  { id: "tabler:school", name: "Learning", Component: IconSchool },
+  { id: "tabler:book", name: "Library", Component: IconBook },
+  { id: "tabler:notebook", name: "Notes", Component: IconNotebook },
+  { id: "tabler:sticker", name: "Sticker", Component: IconSticker },
+  { id: "tabler:package", name: "Package", Component: IconPackage },
+  { id: "tabler:versions", name: "Versions", Component: IconVersions },
 ]
 
 export function getTablerIcon(id) {
@@ -69,11 +114,14 @@ export function getTablerIcon(id) {
   return entry?.Component ?? null
 }
 
-export function TablerIconPicker({ selected, onSelect, className }) {
+export function TablerIconPicker({ selected, onSelect, className, hideNone = false, maxVisible = 0 }) {
   const [search, setSearch] = useState("")
-  const filtered = TABLER_ICONS.filter((i) =>
+  const matches = TABLER_ICONS.filter((i) =>
     i.name.toLowerCase().includes(search.toLowerCase())
   )
+  // Without a search term only a couple of rows show up; the rest is one
+  // keystroke away.
+  const filtered = maxVisible > 0 && !search.trim() ? matches.slice(0, maxVisible) : matches
 
   return (
     <div className={className}>
@@ -87,26 +135,28 @@ export function TablerIconPicker({ selected, onSelect, className }) {
         />
       </div>
       <div className="flex flex-wrap gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              aria-label="No icon"
-              onClick={() => onSelect(null)}
-              className={cn(
-                "flex size-9 items-center justify-center rounded-md border text-[10px] transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                selected === null
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-            >
-              none
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-[11px]">
-            No icon
-          </TooltipContent>
-        </Tooltip>
+        {!hideNone && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="No icon"
+                onClick={() => onSelect(null)}
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-md border text-[10px] transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                  selected === null
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+              >
+                none
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[11px]">
+              No icon
+            </TooltipContent>
+          </Tooltip>
+        )}
         {filtered.map(({ id, name, Component }) => (
           <Tooltip key={id}>
             <TooltipTrigger asChild>
@@ -115,7 +165,7 @@ export function TablerIconPicker({ selected, onSelect, className }) {
                 aria-label={name}
                 onClick={() => onSelect(id)}
                 className={cn(
-                  "flex size-9 items-center justify-center rounded-md border transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "flex size-9 items-center justify-center rounded-md border transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-ring",
                   selected === id
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -130,6 +180,11 @@ export function TablerIconPicker({ selected, onSelect, className }) {
           </Tooltip>
         ))}
       </div>
+      {maxVisible > 0 && matches.length > maxVisible && !search.trim() && (
+        <p className="mt-2 text-[10px] text-muted-foreground/80">
+          Search to see all {matches.length} icons.
+        </p>
+      )}
     </div>
   )
 }

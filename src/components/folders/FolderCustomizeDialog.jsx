@@ -9,7 +9,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import { FolderAppearancePicker } from "@/components/folders/FolderAppearancePicker"
-import { DEFAULT_FOLDER_APPEARANCE, getFolderSize, getFolderPixelSize, serializeAppearance } from "@/lib/folder-appearance"
+import {
+  DEFAULT_FOLDER_APPEARANCE,
+  DEFAULT_FOLDER_EMBLEM,
+  getFolderSize,
+  getFolderEmblem,
+  getFolderPixelSize,
+  serializeAppearance,
+} from "@/lib/folder-appearance"
 
 export function FolderCustomizeDialog({
   folder,
@@ -22,6 +29,7 @@ export function FolderCustomizeDialog({
   const [icon, setIcon] = useState(DEFAULT_FOLDER_APPEARANCE.icon)
   const [color, setColor] = useState(DEFAULT_FOLDER_APPEARANCE.color)
   const [size, setSize] = useState(DEFAULT_FOLDER_APPEARANCE.size)
+  const [emblem, setEmblem] = useState({ ...DEFAULT_FOLDER_EMBLEM })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -30,6 +38,7 @@ export function FolderCustomizeDialog({
     setIcon(folder.icon || DEFAULT_FOLDER_APPEARANCE.icon)
     setColor(folder.color || "")
     setSize(getFolderSize(folder))
+    setEmblem(getFolderEmblem(folder))
   }, [folder])
 
   const handleSave = async () => {
@@ -37,7 +46,7 @@ export function FolderCustomizeDialog({
     if (!trimmed || !folder) return
     setSaving(true)
     try {
-      const appearance = serializeAppearance({ size })
+      const appearance = serializeAppearance({ size, emblem })
       await onSave(folder.id, { name: trimmed, icon, color, appearance })
       onOpenChange(false)
     } finally {
@@ -53,7 +62,10 @@ export function FolderCustomizeDialog({
         </DialogHeader>
 
         <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-          <FolderGlyph folder={{ icon, color }} size={getFolderPixelSize({ appearance: serializeAppearance({ size }) })} />
+          <FolderGlyph
+            folder={{ icon, color, appearance: serializeAppearance({ size, emblem }) }}
+            size={getFolderPixelSize({ appearance: serializeAppearance({ size }) })}
+          />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
               {name.trim() || "Untitled folder"}
@@ -83,9 +95,11 @@ export function FolderCustomizeDialog({
           icon={icon}
           color={color}
           size={size}
+          emblem={emblem}
           onIconChange={setIcon}
           onColorChange={setColor}
           onSizeChange={setSize}
+          onEmblemChange={setEmblem}
         />
 
         <div className="flex justify-end gap-2">

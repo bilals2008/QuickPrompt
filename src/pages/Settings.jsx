@@ -532,7 +532,7 @@ export default function Settings() {
         {showSidebar && (
           <aside className="flex w-56 shrink-0 flex-col border-r border-border/40 bg-card/30">
             <div className="p-3">
-              <div className="group/search relative flex h-8 items-center rounded-md border border-border/70 bg-background/80 px-2 transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40">
+              <div className="group/search relative flex h-8 items-center rounded-md border border-border/70 bg-background/80 px-2 transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/60">
                 <IconSearch size={14} className="shrink-0 text-muted-foreground" />
                 <Input
                   ref={searchRef}

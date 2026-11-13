@@ -38,8 +38,21 @@ function getTagColor(tag) {
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
 }
 
-export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
-  const [open, setOpen] = useState(false)
+export function AddPromptDialog({
+  onSaved,
+  allTags: externalTags,
+  mini,
+  defaultFolderId = null,
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
+}) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = openProp ?? internalOpen
+  const setOpen = (value) => {
+    setInternalOpen(value)
+    onOpenChange?.(value)
+  }
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [tagInput, setTagInput] = useState("")
@@ -55,7 +68,7 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
   useEffect(() => {
     if (open) {
       setAllTags(externalTags || [])
-      setSelectedFolderId(NO_FOLDER)
+      setSelectedFolderId(defaultFolderId || NO_FOLDER)
       window.folderAPI?.list().then((f) => {
         setFolders(Array.isArray(f) ? f : [])
       }).catch(() => setFolders([]))
@@ -187,15 +200,16 @@ export function AddPromptDialog({ onSaved, allTags: externalTags, mini }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all"
-          size="icon"
-        >
-          <IconPlus size={20} />
-        </Button>
-      </DialogTrigger>
-
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button
+            className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all"
+            size="icon"
+          >
+            <IconPlus size={20} />
+          </Button>
+        </DialogTrigger>
+      )}
       {mini ? (
         <DialogContent className="sm:max-w-sm gap-3 sticky-dialog">
           <DialogHeader>
