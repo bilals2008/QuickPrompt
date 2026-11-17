@@ -1,0 +1,1196 @@
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, globalShortcut, Notification, screen, shell, dialog } from "electron"
+import path from "node:path"
+import fs from "node:fs"
+import { fileURLToPath } from "node:url"
+import { initDatabase, closeDatabase } from "./database/db.js"
+import {
+  createPrompt,
+  getAllPrompts,
+  getPromptsPaginated,
+  updatePrompt,
+  deletePrompt,
+  getAllTags,
+  createTag,
+  searchPrompts,
+  toggleFavorite,
+  updatePromptOrder,
+} from "./database/prompts.js"
+import {
+  createVaultItem,
+  getAllVaultItems,
+  revealVaultValue,
+  updateVaultItem,
+  toggleVaultFavorite,
+  toggleVaultPin,
+  updateVaultOrder,
+  deleteVaultItem,
+  isEncryptionAvailable,
+  listAttachments,
+  createAttachment,
+  deleteAttachment,
+  getAttachmentData,
+} from "./database/vault.js"
+import {
+  createFolder,
+  getAllFolders,
+  getRootFolders,
+  getChildFolders,
+  renameFolder,
+  updateFolder,
+  deleteFolder,
+  getFolderById,
+  getFolderBreadcrumb,
+  addPromptToFolder,
+  removePromptFromFolder,
+  movePromptBetweenFolders,
+  getPromptsInFolder,
+  getPromptFolders,
+  searchFolders,
+} from "./database/folders.js"
+import {
+  createVaultFolder,
+  getAllVaultFolders,
+  getRootVaultFolders,
+  getChildVaultFolders,
+  renameVaultFolder,
+  updateVaultFolder,
+  deleteVaultFolder,
+  getVaultFolderBreadcrumb,
+  addVaultItemToFolder,
+  removeVaultItemFromFolder,
+  getVaultItemsInFolder,
+  getVaultItemFolders,
+  searchVaultFolders,
+} from "./database/vault-folders.js"
+import updater from "electron-updater"
+import { registerIconProtocol, saveIcon, deleteIcon } from "./folder-icons.js"
+import {
+  createBackup,
+  restoreBackup,
+  cleanupOldBackups,
+  encryptPassphrase,
+  decryptPassphrase,
+  isBackupDue,
+} from "./backup.js"
+const { autoUpdater } = updater
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+process.env.DIST = path.join(__dirname, "../dist")
+process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(__dirname, "../public")
+
+let mainWindow
+let tray
+const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"]
+const platform = process.platform
+const isMac = platform === "darwin"
+const isWin = platform === "win32"
+const isLinux = platform === "linux"
+
+const settingsPath = path.join(app.getPath("userData"), "QuickPrompt", "settings.json")
+
+function readSettings() {
+  try {
+    if (fs.existsSync(settingsPath)) {
+      return JSON.parse(fs.readFileSync(settingsPath, "utf-8"))
+    }
+  } catch { /* ignore */ }
+  return {}
+}
+
+function writeSettings(data) {
+  const dir = path.dirname(settingsPath)
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(settingsPath, JSON.stringify(data, null, 2))
+}
+
+function getSetting(key, fallback) {
+  const settings = readSettings()
+  return settings[key] ?? fallback
+}
+
+function setSetting(key, value) {
+  const settings = readSettings()
+  settings[key] = value
+  writeSettings(settings)
+}
+
+/**
+ * Uploaded folder icons arrive from the renderer as data URLs. They are stored
+ * as real files and the database only keeps the resulting `qpicon://` URL.
+ */
+async function resolveIconValue(icon) {
+  if (typeof icon === "string" && icon.startsWith("data:image/")) {
+    try {
+      return await saveIcon(icon)
+    } catch (err) {
+      console.error("[Icons] Failed to store custom icon:", err)
+      return icon
+    }
+  }
+  return icon
+}
+
+let updateStatus = "idle"
+let updateInfo = null
+
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = true
+
+function notifyRenderer(event) {
+  mainWindow?.webContents.send("update:event", event)
+}
+
+autoUpdater.on("checking-for-update", () => {
+  updateStatus = "checking"
+  notifyRenderer({ status: "checking" })
+})
+
+autoUpdater.on("update-available", (info) => {
+  updateStatus = "available"
+  updateInfo = { version: info.version, releaseNotes: info.releaseNotes }
+  notifyRenderer({ status: "available", ...updateInfo })
+  showNativeNotification("Update available", `QuickPrompt v${info.version} is available.`)
+  if (getSetting("autoDownloadUpdates", false)) {
+    autoUpdater.downloadUpdate().catch(() => {})
+  }
+})
+
+autoUpdater.on("download-progress", (progress) => {
+  updateStatus = "downloading"
+  notifyRenderer({
+    status: "downloading",
+    percent: progress.percent,
+    bytesPerSecond: progress.bytesPerSecond,
+    total: progress.total,
+    transferred: progress.transferred,
+  })
+})
+
+autoUpdater.on("update-not-available", () => {
+  updateStatus = "idle"
+  notifyRenderer({ status: "idle" })
+})
+
+autoUpdater.on("update-downloaded", (info) => {
+  updateStatus = "downloaded"
+  updateInfo = { version: info.version, releaseNotes: info.releaseNotes }
+  notifyRenderer({ status: "downloaded", ...updateInfo })
+  showNativeNotification("Update ready", `v${info.version} downloaded. Restart to install.`)
+})
+
+autoUpdater.on("error", (err) => {
+  updateStatus = "error"
+  notifyRenderer({ status: "error", error: err.message })
+})
+
+function showNativeNotification(title, body, onClick) {
+  if (!Notification.isSupported()) return
+  if (getSetting("notifications", false) === false) return
+  const n = new Notification({
+    title,
+    body,
+    silent: false,
+  })
+  if (onClick) n.on("click", onClick)
+  n.show()
+}
+
+function buildTrayMenu() {
+  const alwaysOnTop = getSetting("alwaysOnTop", false)
+  return Menu.buildFromTemplate([
+    {
+      label: mainWindow?.isVisible() ? "Hide QuickPrompt" : "Open QuickPrompt",
+      click: toggleWindow,
+    },
+    {
+      label: "Quick Search",
+      accelerator: platform === "darwin" ? "Cmd+Alt+P" : "Ctrl+Alt+P",
+      click: () => {
+        showAndFocus()
+        mainWindow?.webContents.send("app:global-search")
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Always on Top",
+      type: "checkbox",
+      checked: alwaysOnTop,
+      click: (menuItem) => {
+        const next = menuItem.checked
+        setSetting("alwaysOnTop", next)
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.setAlwaysOnTop(next)
+        }
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Mini Vault",
+      accelerator: platform === "darwin" ? "Cmd+Alt+L" : "Ctrl+Alt+L",
+      click: () => {
+        showAndFocus("/vault")
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          const size = clampToScreen(
+            mainWindow,
+            WINDOW_PRESETS.medium.width,
+            WINDOW_PRESETS.medium.height
+          )
+          mainWindow.setSize(size.width, size.height)
+        }
+      },
+    },
+    {
+      label: "Import / Export…",
+      click: () => {
+        showAndFocus("/import-export")
+      },
+    },
+    {
+      label: "Settings",
+      click: () => {
+        showAndFocus("/settings")
+      },
+    },
+    {
+      label: "Check for Updates…",
+      click: async () => {
+        showAndFocus("/settings")
+        setTimeout(() => {
+          autoUpdater.checkForUpdates().catch(() => {})
+        }, 400)
+      },
+    },
+    { type: "separator" },
+    {
+      label: "About QuickPrompt",
+      click: () => {
+        showAndFocus("/settings")
+        setTimeout(() => {
+          mainWindow?.webContents.send("app:navigate", "/settings?section=about")
+        }, 200)
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Quit QuickPrompt",
+      accelerator: platform === "darwin" ? "Cmd+Q" : "Ctrl+Q",
+      click: () => {
+        quitApp()
+      },
+    },
+  ])
+}
+
+function refreshTrayMenu() {
+  if (tray && !tray.isDestroyed()) {
+    tray.setContextMenu(buildTrayMenu())
+  }
+}
+
+function createTray() {
+  const iconPath = path.join(process.env.VITE_PUBLIC, "icon.png")
+  const icon = nativeImage.createFromPath(iconPath)
+  const trayIcon = isMac ? icon.resize({ width: 18, height: 18 }) : icon.resize({ width: 24, height: 24 })
+
+  tray = new Tray(trayIcon)
+  tray.setToolTip("QuickPrompt")
+  tray.setContextMenu(buildTrayMenu())
+
+  tray.on("click", () => {
+    if (isMac) {
+      toggleWindow()
+    } else {
+      positionWindowNearTray()
+      toggleWindow()
+    }
+  })
+
+  tray.on("right-click", () => {
+    refreshTrayMenu()
+  })
+}
+
+function positionWindowNearTray() {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  try {
+    const trayBounds = tray?.getBounds?.()
+    if (!trayBounds || (trayBounds.width === 0 && trayBounds.height === 0)) return
+    const winBounds = mainWindow.getBounds()
+    const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y })
+    const workArea = display.workArea
+    const margin = 8
+    const offset = 4
+
+    let x = Math.round(trayBounds.x + trayBounds.width / 2 - winBounds.width / 2)
+    let y
+    const trayCenterY = trayBounds.y + trayBounds.height / 2
+    const isTopHalf = trayCenterY < workArea.y + workArea.height / 2
+    y = isTopHalf
+      ? Math.round(trayBounds.y + trayBounds.height + offset)
+      : Math.round(trayBounds.y - winBounds.height - offset)
+
+    x = Math.max(workArea.x + margin, Math.min(x, workArea.x + workArea.width - winBounds.width - margin))
+    y = Math.max(workArea.y + margin, Math.min(y, workArea.y + workArea.height - winBounds.height - margin))
+
+    mainWindow.setPosition(x, y, false)
+  } catch (err) {
+    console.warn("[Main] popover positioning failed:", err.message)
+  }
+}
+
+function showAndFocus(route) {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (!mainWindow.isVisible()) {
+    positionWindowNearTray()
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+  if (route) {
+    mainWindow.webContents.send("app:navigate", route)
+  }
+}
+
+function toggleWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (mainWindow.isVisible() && mainWindow.isFocused()) {
+    mainWindow.hide()
+  } else {
+    showAndFocus()
+  }
+}
+
+// QuickPrompt is built as a compact companion window. Width is capped so the
+// app can never be expanded into a full-screen / full-width layout.
+const MIN_WINDOW_WIDTH = 360
+const MAX_WINDOW_WIDTH = 500
+const WINDOW_PRESETS = {
+  mini: { width: 360, height: 520 },
+  medium: { width: 500, height: 700 },
+  full: { width: 500, height: 900 },
+}
+const DEFAULT_WINDOW_SIZE = WINDOW_PRESETS.medium
+
+function clampToScreen(win, width, height) {
+  try {
+    const { workArea } = screen.getDisplayMatching(win.getBounds())
+    return {
+      width: Math.min(Math.max(width, MIN_WINDOW_WIDTH), MAX_WINDOW_WIDTH),
+      height: Math.max(320, Math.min(height, workArea.height)),
+    }
+  } catch {
+    return { width, height }
+  }
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: DEFAULT_WINDOW_SIZE.width,
+    height: DEFAULT_WINDOW_SIZE.height,
+    minWidth: MIN_WINDOW_WIDTH,
+    maxWidth: MAX_WINDOW_WIDTH,
+    minHeight: 400,
+    maximizable: false,
+    fullscreenable: false,
+    icon: path.join(process.env.VITE_PUBLIC, "icon.png"),
+    autoHideMenuBar: true,
+    roundedCorners: true,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.mjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+    show: false,
+    // The window stays in the taskbar so minimising it never makes the app
+    // look like it vanished. Closing it is what hides it to the tray.
+    skipTaskbar: false,
+  })
+
+  const alwaysOnTop = getSetting("alwaysOnTop", false)
+  mainWindow.setAlwaysOnTop(alwaysOnTop)
+
+  mainWindow.on("ready-to-show", () => {
+    mainWindow.show()
+    refreshTrayMenu()
+  })
+
+  mainWindow.on("show", refreshTrayMenu)
+  mainWindow.on("hide", refreshTrayMenu)
+
+  mainWindow.on("maximize", () => {
+    mainWindow.webContents.send("window:maximize-changed", true)
+  })
+  mainWindow.on("unmaximize", () => {
+    mainWindow.webContents.send("window:maximize-changed", false)
+  })
+
+  // Some window managers ignore `maxWidth`, so re-clamp on every resize.
+  mainWindow.on("resize", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    const [width, height] = mainWindow.getSize()
+    if (width > MAX_WINDOW_WIDTH) mainWindow.setSize(MAX_WINDOW_WIDTH, height)
+  })
+
+  // Block full-screen shortcuts (e.g. the default menu's F11 on Windows).
+  mainWindow.on("enter-full-screen", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setFullScreen(false)
+  })
+
+  mainWindow.on("close", (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault()
+      const closeBehavior = getSetting("closeBehavior", "tray")
+      if (closeBehavior === "quit") {
+        quitApp()
+      } else {
+        mainWindow.hide()
+      }
+    }
+  })
+
+  mainWindow.on("focus", () => {
+    refreshTrayMenu()
+  })
+
+  // Optional tray behaviour for the minimise button. Off by default: the
+  // window just minimises to the taskbar.
+  mainWindow.on("minimize", () => {
+    if (!getSetting("minimizeToTray", false)) return
+    mainWindow.restore()
+    mainWindow.hide()
+  })
+
+  if (VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(VITE_DEV_SERVER_URL)
+  } else {
+    mainWindow.loadFile(path.join(process.env.DIST, "index.html"))
+  }
+}
+
+/**
+ * Quitting has to wait for the database handle to close, otherwise sqlite3 is
+ * torn down while statements are still in flight and Node aborts natively.
+ */
+let quitting = false
+async function quitApp() {
+  if (quitting) return
+  quitting = true
+  app.isQuitting = true
+  try {
+    await closeDatabase()
+  } catch (err) {
+    console.error("[Main] Database close failed:", err)
+  }
+  app.quit()
+}
+
+let dbReady = false
+let dbError = null
+
+app.whenReady().then(async () => {
+  if (isMac) {
+    app.dock.hide()
+  }
+
+  try {
+    await initDatabase()
+    dbReady = true
+    console.log("[Main] Database ready")
+  } catch (err) {
+    dbError = err.message || String(err)
+    console.error("[Main] Database init failed:", err)
+  }
+
+  registerIconProtocol()
+  createWindow()
+  createTray()
+  registerGlobalShortcut()
+  if (getSetting("startMinimized", false)) {
+    mainWindow?.hide()
+  }
+
+  if (getSetting("autoCheckUpdates", true)) {
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        autoUpdater.checkForUpdates().catch(() => {})
+      }
+    }, 3000)
+  }
+
+  startBackupSchedule()
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+})
+
+app.on("window-all-closed", () => {
+  if (!isMac) app.quit()
+})
+
+app.on("before-quit", (event) => {
+  app.isQuitting = true
+  if (!quitting) {
+    event.preventDefault()
+    quitApp()
+  }
+})
+
+let backupTimerId = null
+
+async function runScheduledBackup() {
+  const passphrase = decryptPassphrase(getSetting("backupPassphraseEncrypted", ""))
+  const backupDir = getSetting("backupLocation", "")
+  if (!passphrase || !backupDir) return
+
+  try {
+    const result = await createBackup({ backupDir, passphrase })
+    if (result.success) {
+      setSetting("lastBackupTime", new Date().toISOString())
+      cleanupOldBackups(backupDir, getSetting("backupRetention", 10))
+    }
+  } catch (err) {
+    console.error("[Backup] Scheduled backup failed:", err.message)
+  }
+}
+
+function startBackupSchedule() {
+  const schedule = getSetting("backupSchedule", "off")
+  const lastBackupTime = getSetting("lastBackupTime", null)
+  if (isBackupDue(schedule, lastBackupTime)) {
+    setTimeout(() => runScheduledBackup(), 5000)
+  }
+
+  backupTimerId = setInterval(() => {
+    const autoBackup = getSetting("autoBackup", false)
+    const sched = getSetting("backupSchedule", "off")
+    if (!autoBackup || sched === "off") return
+    const last = getSetting("lastBackupTime", null)
+    if (isBackupDue(sched, last)) {
+      runScheduledBackup()
+    }
+  }, 30 * 60 * 1000)
+}
+
+app.on("will-quit", () => {
+  if (backupTimerId) clearInterval(backupTimerId)
+  globalShortcut.unregisterAll()
+  if (tray) tray.destroy()
+})
+
+function registerGlobalShortcut() {
+  const accelerator = isMac ? "Cmd+Alt+P" : "Ctrl+Alt+P"
+  const ok = globalShortcut.register(accelerator, () => {
+    showAndFocus()
+    mainWindow?.webContents.send("app:global-search")
+  })
+  if (!ok) {
+    console.warn(`[Main] Failed to register global shortcut: ${accelerator}`)
+  } else {
+    console.log(`[Main] Global shortcut registered: ${accelerator}`)
+  }
+}
+
+ipcMain.handle("get-app-version", () => {
+  return app.getVersion()
+})
+
+ipcMain.handle("get-platform", () => {
+  return {
+    platform,
+    isMac,
+    isWin,
+    isLinux,
+    notificationsSupported: Notification.isSupported(),
+  }
+})
+
+ipcMain.handle("db:health", () => {
+  return { ready: dbReady, error: dbError }
+})
+
+ipcMain.handle("db:createPrompt", async (_event, data) => {
+  return createPrompt(data)
+})
+
+ipcMain.handle("db:getAllPrompts", async () => {
+  return getAllPrompts()
+})
+
+ipcMain.handle("db:getPromptsPaginated", async (_event, options) => {
+  return getPromptsPaginated(options || {})
+})
+
+ipcMain.handle("backup:create", async () => {
+  const backupDir = getSetting("backupLocation", "")
+  if (!backupDir || !fs.existsSync(backupDir)) {
+    return { success: false, reason: "backup-location-not-set" }
+  }
+  const passphrase = decryptPassphrase(getSetting("backupPassphraseEncrypted", ""))
+  if (!passphrase) {
+    return { success: false, reason: "passphrase-not-set" }
+  }
+  try {
+    const result = await createBackup({ backupDir, passphrase })
+    if (result.success) {
+      setSetting("lastBackupTime", new Date().toISOString())
+      cleanupOldBackups(backupDir, getSetting("backupRetention", 10))
+    }
+    return result
+  } catch (err) {
+    return { success: false, reason: err.message }
+  }
+})
+
+ipcMain.handle("backup:restore", async (_event, { filePath, passphrase }) => {
+  try {
+    const dbDir = path.join(app.getPath("userData"), "QuickPrompt")
+    const dbPath = path.join(dbDir, "quickprompt.db")
+    await closeDatabase()
+    restoreBackup({ backupFilePath: filePath, passphrase, dbPath })
+    app.relaunch({ args: process.argv.slice(1) })
+    app.exit(0)
+    return { success: true }
+  } catch (err) {
+    return { success: false, reason: err.message }
+  }
+})
+
+ipcMain.handle("backup:pick-file", async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ["openFile"],
+    title: "Select backup file",
+    filters: [
+      { name: "QuickPrompt Backup", extensions: ["qpbak"] },
+      { name: "All files", extensions: ["*"] },
+    ],
+  })
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false }
+  }
+  return { success: true, path: result.filePaths[0] }
+})
+
+ipcMain.handle("backup:set-passphrase", (_event, passphrase) => {
+  if (!passphrase || typeof passphrase !== "string") {
+    return { success: false, reason: "invalid-passphrase" }
+  }
+  const encrypted = encryptPassphrase(passphrase)
+  if (!encrypted) {
+    return { success: false, reason: "encryption-unavailable" }
+  }
+  setSetting("backupPassphraseEncrypted", encrypted)
+  return { success: true }
+})
+
+ipcMain.handle("backup:has-passphrase", () => {
+  return Boolean(getSetting("backupPassphraseEncrypted", ""))
+})
+
+ipcMain.handle("app:relaunch", () => {
+  app.relaunch({ args: process.argv.slice(1) })
+  app.exit(0)
+})
+
+ipcMain.handle("db:updatePrompt", async (_event, id, data) => {
+  return updatePrompt(id, data)
+})
+
+ipcMain.handle("db:deletePrompt", async (_event, id) => {
+  return deletePrompt(id)
+})
+
+ipcMain.handle("db:getAllTags", async () => {
+  return getAllTags()
+})
+
+ipcMain.handle("db:createTag", async (_event, name) => {
+  return createTag(name)
+})
+
+ipcMain.handle("db:searchPrompts", async (_event, query) => {
+  return searchPrompts(query)
+})
+
+ipcMain.handle("db:toggleFavorite", async (_event, id) => {
+  return toggleFavorite(id)
+})
+
+ipcMain.handle("db:updatePromptOrder", async (_event, updates) => {
+  return updatePromptOrder(updates)
+})
+
+ipcMain.handle("vault:health", () => {
+  return { ready: true, encryptionAvailable: isEncryptionAvailable() }
+})
+
+ipcMain.handle("vault:create", async (_event, data) => {
+  return createVaultItem(data || {})
+})
+
+ipcMain.handle("vault:list", async (_event, options) => {
+  return getAllVaultItems(options || {})
+})
+
+ipcMain.handle("vault:get", async (_event, id) => {
+  return revealVaultValue(id)
+})
+
+ipcMain.handle("vault:update", async (_event, id, data) => {
+  return updateVaultItem(id, data || {})
+})
+
+ipcMain.handle("vault:toggleFavorite", async (_event, id) => {
+  return toggleVaultFavorite(id)
+})
+
+ipcMain.handle("vault:togglePin", async (_event, id) => {
+  return toggleVaultPin(id)
+})
+
+ipcMain.handle("vault:updateOrder", async (_event, updates) => {
+  return updateVaultOrder(updates)
+})
+
+ipcMain.handle("vault:delete", async (_event, id) => {
+  return deleteVaultItem(id)
+})
+
+ipcMain.handle("vault:copy", async (_event, id) => {
+  const item = await revealVaultValue(id)
+  if (!item) return { success: false, reason: "not-found" }
+  return { success: true, value: item.value ?? "" }
+})
+
+ipcMain.handle("vault:attachments:list", async (_event, vaultItemId) => {
+  return listAttachments(vaultItemId)
+})
+
+ipcMain.handle("vault:attachments:create", async (_event, { vaultItemId, filename, mimeType, data }) => {
+  return createAttachment({ vaultItemId, filename, mimeType, data })
+})
+
+ipcMain.handle("vault:attachments:delete", async (_event, id) => {
+  return deleteAttachment(id)
+})
+
+ipcMain.handle("vault:attachments:download", async (_event, id) => {
+  return getAttachmentData(id)
+})
+
+ipcMain.handle("folders:create", async (_event, data) => {
+  const payload = data || {}
+  return createFolder({ ...payload, icon: await resolveIconValue(payload.icon) })
+})
+
+ipcMain.handle("folders:list", async () => {
+  return getAllFolders()
+})
+
+ipcMain.handle("folders:roots", async () => {
+  return getRootFolders()
+})
+
+ipcMain.handle("folders:children", async (_event, parentId) => {
+  return getChildFolders(parentId)
+})
+
+ipcMain.handle("folders:get", async (_event, id) => {
+  return (await getAllFolders()).find(f => f.id === id) || null
+})
+
+ipcMain.handle("folders:breadcrumb", async (_event, folderId) => {
+  return getFolderBreadcrumb(folderId)
+})
+
+ipcMain.handle("folders:rename", async (_event, id, name) => {
+  return renameFolder(id, name)
+})
+
+ipcMain.handle("folders:update", async (_event, id, data) => {
+  const previous = await getFolderById(id)
+  const payload = data || {}
+  const updated = await updateFolder(id, { ...payload, icon: await resolveIconValue(payload.icon) })
+  // The folder no longer points at its old image, so the file can go.
+  if (previous?.icon && previous.icon !== updated?.icon) {
+    deleteIcon(previous.icon).catch(() => {})
+  }
+  return updated
+})
+
+ipcMain.handle("folders:delete", async (_event, id) => {
+  const folder = await getFolderById(id)
+  const result = await deleteFolder(id)
+  if (folder?.icon) deleteIcon(folder.icon).catch(() => {})
+  return result
+})
+
+ipcMain.handle("folders:search", async (_event, query) => {
+  return searchFolders(query)
+})
+
+ipcMain.handle("folders:addPrompt", async (_event, promptId, folderId) => {
+  return addPromptToFolder(promptId, folderId)
+})
+
+ipcMain.handle("folders:removePrompt", async (_event, promptId, folderId) => {
+  return removePromptFromFolder(promptId, folderId)
+})
+
+ipcMain.handle("folders:movePrompt", async (_event, promptId, fromFolderId, toFolderId) => {
+  return movePromptBetweenFolders(promptId, fromFolderId, toFolderId)
+})
+
+ipcMain.handle("folders:getPrompts", async (_event, folderId, options) => {
+  return getPromptsInFolder(folderId, options || {})
+})
+
+ipcMain.handle("folders:getPromptFolders", async (_event, promptId) => {
+  return getPromptFolders(promptId)
+})
+
+ipcMain.handle("vault-folders:create", async (_event, data) => {
+  return createVaultFolder(data || {})
+})
+
+ipcMain.handle("vault-folders:list", async () => {
+  return getAllVaultFolders()
+})
+
+ipcMain.handle("vault-folders:roots", async () => {
+  return getRootVaultFolders()
+})
+
+ipcMain.handle("vault-folders:children", async (_event, parentId) => {
+  return getChildVaultFolders(parentId)
+})
+
+ipcMain.handle("vault-folders:breadcrumb", async (_event, folderId) => {
+  return getVaultFolderBreadcrumb(folderId)
+})
+
+ipcMain.handle("vault-folders:rename", async (_event, id, name) => {
+  return renameVaultFolder(id, name)
+})
+
+ipcMain.handle("vault-folders:update", async (_event, id, data) => {
+  return updateVaultFolder(id, data)
+})
+
+ipcMain.handle("vault-folders:delete", async (_event, id) => {
+  return deleteVaultFolder(id)
+})
+
+ipcMain.handle("vault-folders:addItem", async (_event, vaultItemId, folderId) => {
+  return addVaultItemToFolder(vaultItemId, folderId)
+})
+
+ipcMain.handle("vault-folders:removeItem", async (_event, vaultItemId, folderId) => {
+  return removeVaultItemFromFolder(vaultItemId, folderId)
+})
+
+ipcMain.handle("vault-folders:getItems", async (_event, folderId, options) => {
+  return getVaultItemsInFolder(folderId, options || {})
+})
+
+ipcMain.handle("vault-folders:getItemFolders", async (_event, vaultItemId) => {
+  return getVaultItemFolders(vaultItemId)
+})
+
+ipcMain.handle("vault-folders:search", async (_event, query) => {
+  return searchVaultFolders(query)
+})
+
+ipcMain.handle("update:check", async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return { success: true, updateInfo: result?.updateInfo }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle("update:install", () => {
+  autoUpdater.quitAndInstall()
+})
+
+ipcMain.handle("update:download", async () => {
+  try {
+    await autoUpdater.downloadUpdate()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle("update:get-status", () => {
+  return { status: updateStatus, ...updateInfo }
+})
+
+ipcMain.handle("update:set-auto-check", (_event, enabled) => {
+  setSetting("autoCheckUpdates", enabled)
+})
+
+ipcMain.handle("update:get-auto-check", () => {
+  return getSetting("autoCheckUpdates", true)
+})
+
+ipcMain.handle("update:set-auto-download", (_event, enabled) => {
+  setSetting("autoDownloadUpdates", enabled)
+})
+
+ipcMain.handle("update:get-auto-download", () => {
+  return getSetting("autoDownloadUpdates", false)
+})
+
+ipcMain.handle("settings:get", (_event, key, fallback) => {
+  return getSetting(key, fallback)
+})
+
+ipcMain.handle("settings:set", (_event, key, value) => {
+  setSetting(key, value)
+})
+
+ipcMain.handle("app:hideWindow", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide()
+  }
+  return { success: true }
+})
+
+ipcMain.handle("window:minimize", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.minimize()
+  }
+})
+
+ipcMain.handle("window:toggle-maximize", () => {
+  // Maximizing is disabled — the window is intentionally width-capped.
+  return { success: false, maximized: false, reason: "maximize-disabled" }
+})
+
+ipcMain.handle("window:is-maximized", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return false
+  return mainWindow.isMaximized()
+})
+
+ipcMain.handle("window:maximize", () => {
+  // Disabled: the app window is width-capped by design.
+  return { success: false, reason: "maximize-disabled" }
+})
+
+ipcMain.handle("window:unmaximize", () => {
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized()) {
+    mainWindow.unmaximize()
+  }
+})
+
+ipcMain.handle("window:hide", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide()
+  }
+})
+
+ipcMain.handle("window:quit", () => {
+  quitApp()
+})
+
+ipcMain.handle("window:close-to-tray", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const closeBehavior = getSetting("closeBehavior", "tray")
+    if (closeBehavior === "quit") {
+      quitApp()
+    } else {
+      mainWindow.hide()
+    }
+  }
+})
+
+ipcMain.handle("window:set-always-on-top", (_event, value) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setAlwaysOnTop(Boolean(value))
+    setSetting("alwaysOnTop", Boolean(value))
+    return { success: true, value: mainWindow.isAlwaysOnTop() }
+  }
+  return { success: false }
+})
+
+ipcMain.handle("window:get-always-on-top", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow.isAlwaysOnTop()
+  }
+  return false
+})
+
+ipcMain.handle("window:toggle-always-on-top", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const next = !mainWindow.isAlwaysOnTop()
+    mainWindow.setAlwaysOnTop(next)
+    setSetting("alwaysOnTop", next)
+    return { success: true, value: next }
+  }
+  return { success: false, value: false }
+})
+
+ipcMain.handle("window:get-bounds", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow.getBounds()
+  }
+  return null
+})
+
+ipcMain.handle("window:set-default-size", (_event, preset) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
+  const presetSize = WINDOW_PRESETS[preset] || DEFAULT_WINDOW_SIZE
+  const size = clampToScreen(mainWindow, presetSize.width, presetSize.height)
+  mainWindow.setSize(size.width, size.height)
+  mainWindow.center()
+  return { success: true }
+})
+
+ipcMain.handle("window:set-size", (_event, width, height) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const size = clampToScreen(mainWindow, Math.round(width), Math.round(height))
+    mainWindow.setSize(size.width, size.height)
+    return { success: true, ...size }
+  }
+  return { success: false }
+})
+
+ipcMain.handle("window:show-popover", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { success: false }
+  positionWindowNearTray()
+  mainWindow.show()
+  mainWindow.focus()
+  return { success: true }
+})
+
+ipcMain.handle("notification:show", (_event, { title, body, silent } = {}) => {
+  if (!Notification.isSupported()) return { success: false, reason: "unsupported" }
+  if (getSetting("notifications", false) === false) {
+    return { success: false, reason: "disabled" }
+  }
+  const n = new Notification({
+    title: String(title || ""),
+    body: String(body || ""),
+    silent: Boolean(silent),
+  })
+  n.show()
+  return { success: true }
+})
+
+ipcMain.handle("settings:pick-folder", async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ["openDirectory"],
+    title: "Select backup folder",
+  })
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false }
+  }
+  return { success: true, path: result.filePaths[0] }
+})
+
+ipcMain.handle("fs:read-dir", async (_event, dirPath) => {
+  try {
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true })
+    const items = await Promise.all(
+      entries.map(async (entry) => {
+        const fullPath = path.join(dirPath, entry.name)
+        let stat = null
+        try {
+          stat = await fs.promises.stat(fullPath)
+        } catch { /* ignore */ }
+        return {
+          name: entry.name,
+          isDirectory: entry.isDirectory(),
+          isFile: entry.isFile(),
+          size: stat?.size ?? 0,
+          modifiedAt: stat?.mtime?.toISOString() ?? null,
+        }
+      })
+    )
+    return { success: true, items }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle("fs:get-drives", async () => {
+  try {
+    if (isWin) {
+      const { execSync } = await import("node:child_process")
+      const output = execSync("wmic logicaldisk get name", { encoding: "utf-8" })
+      const drives = output.split("\r\n").filter((l) => /^[A-Z]:/.test(l.trim())).map((l) => l.trim())
+      return { success: true, drives }
+    } else {
+      return { success: true, drives: ["/"] }
+    }
+  } catch {
+    return { success: true, drives: isWin ? ["C:\\"] : ["/"] }
+  }
+})
+
+ipcMain.handle("shell:open-external", (_event, url) => {
+  if (typeof url === "string" && /^https?:\/\//.test(url)) {
+    shell.openExternal(url)
+    return { success: true }
+  }
+  return { success: false }
+})
+
+const IMPORT_EXPORT_FILTERS = {
+  json: { name: "JSON", extensions: ["json"] },
+  csv: { name: "CSV", extensions: ["csv"] },
+  markdown: { name: "Markdown", extensions: ["md", "markdown"] },
+}
+
+ipcMain.handle("import-export:save-file", async (_event, { content, format, suggestedName } = {}) => {
+  if (typeof content !== "string" || content.length === 0) {
+    return { success: false, reason: "empty-content" }
+  }
+  const filter = IMPORT_EXPORT_FILTERS[format]
+  if (!filter) return { success: false, reason: "unknown-format" }
+
+  const defaultName = (typeof suggestedName === "string" && suggestedName)
+    ? suggestedName
+    : `quickprompts-${new Date().toISOString().slice(0, 10)}`
+
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: "Export prompts",
+    defaultPath: defaultName,
+    filters: [filter, { name: "All files", extensions: ["*"] }],
+  })
+
+  if (result.canceled || !result.filePath) {
+    return { success: false, reason: "canceled" }
+  }
+
+  try {
+    fs.writeFileSync(result.filePath, content, "utf-8")
+    return { success: true, filePath: result.filePath }
+  } catch (err) {
+    return { success: false, reason: "write-failed", error: err.message }
+  }
+})
+
+ipcMain.handle("import-export:open-file", async (_event, { format } = {}) => {
+  const filters = Object.values(IMPORT_EXPORT_FILTERS)
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Import prompts",
+    properties: ["openFile"],
+    filters,
+  })
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false, reason: "canceled" }
+  }
+
+  const filePath = result.filePaths[0]
+  try {
+    const content = fs.readFileSync(filePath, "utf-8")
+    return { success: true, filePath, content, format: format || null }
+  } catch (err) {
+    return { success: false, reason: "read-failed", error: err.message }
+  }
+})

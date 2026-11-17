@@ -1,0 +1,1338 @@
+// File: src/pages/Settings.jsx
+import { useState, useEffect, useMemo, useRef } from "react"
+import { useNavigate, useOutletContext } from "react-router-dom"
+import faviconSvg from "/favicon.svg"
+import { useTheme } from "@/components/theme-provider"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  IconMoon,
+  IconInfoCircle,
+  IconPlayerPlay,
+  IconSettings,
+  IconArrowLeft,
+  IconRefresh,
+  IconDownload,
+  IconLoader2,
+  IconCircleCheck,
+  IconAlertCircle,
+  IconLayoutGrid,
+  IconBell,
+  IconMouse,
+  IconX,
+  IconPin,
+  IconSparkles,
+  IconTag,
+  IconStar,
+  IconCopy,
+  IconClock,
+  IconHeading,
+  IconTextCaption,
+  IconCategory,
+  IconSearch,
+  IconArrowsSort,
+  IconCloudUpload,
+  IconFolder,
+  IconMaximize,
+  IconMinimize,
+  IconWindowMinimize,
+  IconRuler,
+  IconPalette,
+  IconFolders,
+  IconBrandGithub,
+  IconBrandLinkedin,
+  IconMail,
+  IconExternalLink,
+  IconKey,
+  IconUpload,
+  IconDatabase,
+} from "@tabler/icons-react"
+import { cn } from "@/lib/utils"
+import { toast } from "sonner"
+import pkg from "../../package.json"
+import { useCardDisplaySettings, DEFAULT_CARD_DISPLAY } from "@/hooks/useCardDisplaySettings"
+import {
+  NavItem,
+  SettingRow,
+  SectionHeading,
+  SettingGroup,
+  ThemeCard,
+} from "@/components/settings/SettingsPrimitives"
+import FoldersSettings from "@/components/settings/FoldersSettings"
+
+const sections = [
+  { id: "general", icon: IconPlayerPlay, label: "General" },
+  { id: "customization", icon: IconCategory, label: "Customization" },
+  { id: "folders", icon: IconFolders, label: "Folders" },
+  { id: "backup", icon: IconCloudUpload, label: "Backup" },
+  { id: "appearance", icon: IconMoon, label: "Appearance" },
+  { id: "updates", icon: IconRefresh, label: "Updates" },
+  { id: "about", icon: IconInfoCircle, label: "About" },
+]
+
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return "0 B"
+  const units = ["B", "KB", "MB", "GB"]
+  let i = 0
+  let size = bytes
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024
+    i++
+  }
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
+}
+
+function formatSpeed(bytesPerSecond) {
+  if (!bytesPerSecond || bytesPerSecond === 0) return "—"
+  if (bytesPerSecond < 1024) return `${bytesPerSecond} B/s`
+  if (bytesPerSecond < 1024 * 1024) return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`
+  return `${(bytesPerSecond / (1024 * 1024)).toFixed(1)} MB/s`
+}
+
+function formatETA(bytesPerSecond, total, transferred) {
+  if (!bytesPerSecond || bytesPerSecond === 0 || !total) return "—"
+  const remaining = total - transferred
+  const seconds = Math.ceil(remaining / bytesPerSecond)
+  if (seconds < 60) return `${seconds}s`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+}
+
+const themeCategories = [
+  {
+    label: "Light",
+    themes: [
+      {
+        id: "light",
+        label: "Light",
+        desc: "Clean and bright",
+        bg: "#ffffff",
+        card: "#f1f5f9",
+        accent: "#6366f1",
+        text: "#0f1729",
+      },
+      {
+        id: "ayu-light",
+        label: "Ayu Light",
+        desc: "Clean day variant, orange accent",
+        bg: "#fcfcfc",
+        card: "#ffffff",
+        accent: "#ff9940",
+        text: "#5c6773",
+      },
+      {
+        id: "bloom",
+        label: "Bloom",
+        desc: "Warm paper, honey accent",
+        bg: "#fff8f3",
+        card: "#fbf2eb",
+        accent: "#8a5100",
+        text: "#1f1b16",
+      },
+    ],
+  },
+  {
+    label: "Dark",
+    themes: [
+      {
+        id: "cyberpunk",
+        label: "Cyberpunk",
+        desc: "Neon on dark",
+        bg: "#0a0a0f",
+        card: "#12121a",
+        accent: "#00ff9f",
+        text: "#e0e0e0",
+      },
+      {
+        id: "hive",
+        label: "Hive",
+        desc: "Honey on charcoal",
+        bg: "#121214",
+        card: "#1a1a1d",
+        accent: "#ffb95f",
+        text: "#ede6dd",
+      },
+      {
+        id: "volt",
+        label: "Volt",
+        desc: "Neon yellow-green on deep dark",
+        bg: "#03080a",
+        card: "#081216",
+        accent: "#c8ff00",
+        text: "#d4e4e8",
+      },
+      {
+        id: "ayu-dark",
+        label: "Ayu Dark",
+        desc: "Deep blue-black, gold accent",
+        bg: "#0b0e14",
+        card: "#0f131a",
+        accent: "#e6b450",
+        text: "#b3b1ad",
+      },
+    ],
+  },
+]
+
+export default function Settings() {
+  const navigate = useNavigate()
+  const { sidebarVisible } = useOutletContext()
+  const { theme, setTheme } = useTheme()
+  const [activeSection, setActiveSection] = useState("general")
+  const [sectionQuery, setSectionQuery] = useState("")
+  const [updateStatus, setUpdateStatus] = useState("idle")
+  const [updateInfo, setUpdateInfo] = useState(null)
+  const [autoCheck, setAutoCheck] = useState(true)
+  const [autoDownload, setAutoDownload] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [downloadProgress, setDownloadProgress] = useState({ percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 })
+  const smoothedSpeedRef = useRef(0)
+  const [closeBehavior, setCloseBehavior] = useState("tray")
+  const [autoCopy, setAutoCopy] = useState(true)
+  const [defaultView, setDefaultView] = useState("grid")
+  const [notifications, setNotifications] = useState(false)
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false)
+  const [cardDisplay, setCardDisplay] = useCardDisplaySettings()
+  const [caseSensitiveSearch, setCaseSensitiveSearch] = useState(false)
+  const [searchInTagsOnly, setSearchInTagsOnly] = useState(false)
+  const [defaultWindowSize, setDefaultWindowSize] = useState("medium")
+  const [startMinimized, setStartMinimized] = useState(false)
+  const [minimizeToTray, setMinimizeToTray] = useState(false)
+  const [autoBackup, setAutoBackup] = useState(false)
+  const [backupLocation, setBackupLocation] = useState("")
+  const [backupSchedule, setBackupSchedule] = useState("off")
+  const [backupRetention, setBackupRetention] = useState(10)
+  const [hasPassphrase, setHasPassphrase] = useState(false)
+  const [passphraseInput, setPassphraseInput] = useState("")
+  const [restoreFile, setRestoreFile] = useState(null)
+  const [restorePassphrase, setRestorePassphrase] = useState("")
+  const [restoring, setRestoring] = useState(false)
+  const [defaultSortOrder, setDefaultSortOrder] = useState("newest")
+  const searchRef = useRef(null)
+
+  useEffect(() => {
+    window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
+    window.updateAPI?.getAutoDownload()?.then((v) => setAutoDownload(v))
+    window.updateAPI?.getStatus()?.then((s) => {
+      if (s?.status) setUpdateStatus(s.status)
+      if (s?.version) setUpdateInfo({ version: s.version, releaseNotes: s.releaseNotes })
+    })
+
+    window.settingsAPI?.get("closeBehavior", "tray").then((v) => setCloseBehavior(v))
+    window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
+    window.settingsAPI?.get("defaultView", "grid").then((v) => setDefaultView(v))
+    window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
+    window.settingsAPI?.get("caseSensitive", false).then((v) => setCaseSensitiveSearch(Boolean(v)))
+    window.settingsAPI?.get("searchInTagsOnly", false).then((v) => setSearchInTagsOnly(Boolean(v)))
+    window.settingsAPI?.get("defaultWindowSize", "medium").then((v) => setDefaultWindowSize(v))
+    window.settingsAPI?.get("startMinimized", false).then((v) => setStartMinimized(Boolean(v)))
+    window.settingsAPI?.get("minimizeToTray", false).then((v) => setMinimizeToTray(Boolean(v)))
+    window.settingsAPI?.get("autoBackup", false).then((v) => setAutoBackup(Boolean(v)))
+    window.settingsAPI?.get("backupLocation", "").then((v) => setBackupLocation(v || ""))
+    window.settingsAPI?.get("backupSchedule", "off").then((v) => setBackupSchedule(v || "off"))
+    window.settingsAPI?.get("backupRetention", 10).then((v) => setBackupRetention(Number(v) || 10))
+    window.backupAPI?.hasPassphrase()?.then((v) => setHasPassphrase(Boolean(v)))
+    window.settingsAPI?.get("defaultSortOrder", "newest").then((v) => setDefaultSortOrder(v))
+    window.windowAPI?.getAlwaysOnTop?.().then((v) => setAlwaysOnTop(Boolean(v)))
+
+    const unsubscribe = window.updateAPI?.onEvent((event) => {
+      setUpdateStatus(event.status)
+      if (event.version) {
+        setUpdateInfo({ version: event.version, releaseNotes: event.releaseNotes })
+      }
+      if (event.status === "downloading") {
+        // Ease the raw sample so the readout doesn't flicker between ticks.
+        const rawSpeed = event.bytesPerSecond || 0
+        smoothedSpeedRef.current = smoothedSpeedRef.current
+          ? smoothedSpeedRef.current * 0.7 + rawSpeed * 0.3
+          : rawSpeed
+        setDownloadProgress({
+          percent: event.percent || 0,
+          bytesPerSecond: smoothedSpeedRef.current,
+          total: event.total || 0,
+          transferred: event.transferred || 0,
+        })
+      }
+      if (event.status === "downloaded" || event.status === "error") {
+        smoothedSpeedRef.current = 0
+      }
+      if (event.status === "available") {
+        toast.success(`Update available: v${event.version}`)
+      }
+      if (event.status === "error") {
+        toast.error("Update check failed")
+      }
+    })
+
+    return () => unsubscribe?.()
+  }, [])
+
+  useEffect(() => {
+    function onKey(e) {
+      const tag = (e.target?.tagName || "").toLowerCase()
+      const isEditable =
+        tag === "input" || tag === "textarea" || tag === "select" || e.target?.isContentEditable
+      if (isEditable) return
+
+      if (e.key === "/") {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+      if (e.key === "Escape") {
+        navigate("/")
+      }
+      const num = Number(e.key)
+      if (num >= 1 && num <= sections.length) {
+        setActiveSection(sections[num - 1].id)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [navigate])
+
+  async function handleCheckUpdate() {
+    setChecking(true)
+    try {
+      await window.updateAPI?.checkForUpdates()
+    } catch {
+      toast.error("Failed to check for updates")
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  async function handleDownloadUpdate() {
+    setDownloading(true)
+    smoothedSpeedRef.current = 0
+    setDownloadProgress({ percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 })
+    try {
+      await window.updateAPI?.downloadUpdate()
+    } catch {
+      toast.error("Failed to download update")
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  function handleAutoCheckToggle(checked) {
+    setAutoCheck(checked)
+    window.updateAPI?.setAutoCheck(checked)
+  }
+
+  function handleAutoDownloadToggle(checked) {
+    setAutoDownload(checked)
+    window.updateAPI?.setAutoDownload(checked)
+  }
+
+  function handleCloseBehaviorChange(value) {
+    setCloseBehavior(value)
+    window.settingsAPI?.set("closeBehavior", value)
+  }
+
+  function handleAutoCopyToggle(checked) {
+    setAutoCopy(checked)
+    window.settingsAPI?.set("autoCopy", checked)
+  }
+
+  function handleDefaultViewChange(value) {
+    setDefaultView(value)
+    window.settingsAPI?.set("defaultView", value)
+  }
+
+  function handleNotificationsToggle(checked) {
+    setNotifications(checked)
+    window.settingsAPI?.set("notifications", checked)
+  }
+
+  async function handleAlwaysOnTopToggle(checked) {
+    const res = await window.windowAPI?.setAlwaysOnTop?.(checked)
+    if (res?.success) setAlwaysOnTop(res.value)
+  }
+
+  function handleCaseSensitive(checked) {
+    setCaseSensitiveSearch(checked)
+    window.settingsAPI?.set("caseSensitive", checked)
+  }
+
+  function handleSearchInTagsOnly(checked) {
+    setSearchInTagsOnly(checked)
+    window.settingsAPI?.set("searchInTagsOnly", checked)
+  }
+
+  function handleDefaultWindowSize(value) {
+    setDefaultWindowSize(value)
+    window.settingsAPI?.set("defaultWindowSize", value)
+  }
+
+  function handleStartMinimized(checked) {
+    setStartMinimized(checked)
+    window.settingsAPI?.set("startMinimized", checked)
+  }
+
+  function handleMinimizeToTrayToggle(checked) {
+    setMinimizeToTray(checked)
+    window.settingsAPI?.set("minimizeToTray", checked)
+  }
+
+  function handleAutoBackup(checked) {
+    setAutoBackup(checked)
+    window.settingsAPI?.set("autoBackup", checked)
+  }
+
+  function handleBackupSchedule(value) {
+    setBackupSchedule(value)
+    window.settingsAPI?.set("backupSchedule", value)
+  }
+
+  function handleBackupRetention(value) {
+    setBackupRetention(value)
+    window.settingsAPI?.set("backupRetention", value)
+  }
+
+  async function handlePickBackupLocation() {
+    const res = await window.settingsAPI?.pickFolder()
+    if (res?.success) {
+      setBackupLocation(res.path)
+      window.settingsAPI?.set("backupLocation", res.path)
+    }
+  }
+
+  async function handleSetPassphrase() {
+    if (!passphraseInput || passphraseInput.length < 4) {
+      toast.error("Passphrase must be at least 4 characters")
+      return
+    }
+    const res = await window.backupAPI?.setPassphrase(passphraseInput)
+    if (res?.success) {
+      setHasPassphrase(true)
+      setPassphraseInput("")
+      toast.success("Backup passphrase set")
+    } else {
+      toast.error(res?.reason || "Failed to set passphrase")
+    }
+  }
+
+  async function handleRestore() {
+    if (!restoreFile) {
+      const res = await window.backupAPI?.pickFile()
+      if (!res?.success) return
+      setRestoreFile(res.path)
+      return
+    }
+    if (!restorePassphrase) {
+      toast.error("Enter your backup passphrase")
+      return
+    }
+    setRestoring(true)
+    try {
+      const res = await window.backupAPI?.restore(restoreFile, restorePassphrase)
+      if (res?.success) {
+        toast.success("Restore complete. App will restart.")
+      } else {
+        toast.error(res?.reason || "Restore failed")
+        setRestoring(false)
+      }
+    } catch {
+      toast.error("Restore failed")
+      setRestoring(false)
+    }
+  }
+
+  function handleDefaultSortOrder(value) {
+    setDefaultSortOrder(value)
+    window.settingsAPI?.set("defaultSortOrder", value)
+  }
+
+  const filteredSections = useMemo(() => {
+    const q = sectionQuery.trim().toLowerCase()
+    if (!q) return sections
+    return sections.filter(
+      (s) => s.label.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
+    )
+  }, [sectionQuery])
+
+  const showSidebar = sidebarVisible
+
+  const displayToggles = [
+    {
+      key: "showTitle",
+      icon: IconHeading,
+      label: "Show title",
+      description: "Display the title at the top of each prompt card",
+    },
+    {
+      key: "showBody",
+      icon: IconTextCaption,
+      label: "Show content",
+      description: "Display the prompt body/content on each card",
+    },
+    {
+      key: "showTags",
+      icon: IconTag,
+      label: "Show tags",
+      description: "Display tag badges on prompt cards",
+    },
+    {
+      key: "showStar",
+      icon: IconStar,
+      label: "Show favorite star",
+      description: "Show the star button to mark prompts as favorite",
+    },
+    {
+      key: "showCopyButton",
+      icon: IconCopy,
+      label: "Show copy button",
+      description: "Display the inline copy button on each card",
+    },
+    {
+      key: "showTimestamp",
+      icon: IconClock,
+      label: "Show timestamp",
+      description: "Show when each prompt was created (e.g. 5m ago)",
+    },
+  ]
+
+  async function handleCardDisplayToggle(key, checked) {
+    await setCardDisplay({ [key]: checked })
+  }
+
+  async function handleResetDisplay() {
+    await setCardDisplay({ ...DEFAULT_CARD_DISPLAY })
+    toast.success("Display settings reset to defaults")
+  }
+
+  return (
+    <div className="flex h-full flex-col bg-background">
+      <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-border/40 bg-card/50 px-4">
+        {!showSidebar && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 cursor-pointer"
+            onClick={() => navigate("/")}
+          >
+            <IconArrowLeft size={16} />
+          </Button>
+        )}
+        <div className="flex flex-1 items-center justify-center gap-2 sm:justify-start">
+          <IconSettings className="size-4 text-muted-foreground" />
+          <h1 className="text-sm font-semibold tracking-tight text-foreground">Settings</h1>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        {showSidebar && (
+          <aside className="flex w-56 shrink-0 flex-col border-r border-border/40 bg-card/30">
+            <div className="p-3">
+              <div className="group/search relative flex h-8 items-center rounded-md border border-border/70 bg-background/80 px-2 transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/60">
+                <IconSearch size={14} className="shrink-0 text-muted-foreground" />
+                <Input
+                  ref={searchRef}
+                  value={sectionQuery}
+                  onChange={(e) => setSectionQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault()
+                      setSectionQuery("")
+                      searchRef.current?.blur()
+                    }
+                  }}
+                  placeholder="Search settings"
+                  className="h-7 border-0 bg-transparent px-2 text-xs shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
+                />
+                {sectionQuery ? (
+                  <button
+                    onClick={() => setSectionQuery("")}
+                    className="flex size-5 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                  >
+                    <IconX size={12} />
+                  </button>
+                ) : (
+                  <kbd className="pointer-events-none hidden h-4 select-none items-center rounded border border-border/60 bg-muted/60 px-1 font-mono text-[9px] font-medium text-muted-foreground sm:inline-flex">
+                    /
+                  </kbd>
+                )}
+              </div>
+            </div>
+            <ScrollArea className="flex-1 px-3 pb-3">
+              <nav className="flex flex-col gap-0.5">
+                {filteredSections.map((section) => (
+                  <NavItem
+                    key={section.id}
+                    icon={section.icon}
+                    label={section.label}
+                    active={activeSection === section.id}
+                    onClick={() => setActiveSection(section.id)}
+                  />
+                ))}
+                {filteredSections.length === 0 && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">No results</p>
+                )}
+              </nav>
+            </ScrollArea>
+          </aside>
+        )}
+
+        <ScrollArea className="flex-1">
+          <div className="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
+
+            {!showSidebar && (
+              <div className="mb-5">
+                <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-none -mx-4 px-4">
+                  {sections.map((s) => (
+                    <Tooltip key={s.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setActiveSection(s.id)}
+                          className={cn(
+                            "flex items-center justify-center rounded-lg p-2.5 transition-all cursor-pointer shrink-0",
+                            "sm:w-auto sm:px-3 sm:py-2 sm:gap-1.5",
+                            activeSection === s.id
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                          )}
+                        >
+                          <s.icon size={18} className="sm:size-5" />
+                          <span className="hidden sm:inline text-xs font-medium">{s.label}</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        {s.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeSection === "general" && (
+              <section>
+                <SectionHeading icon={IconPlayerPlay} title="General" description="Application preferences" />
+                <div className="space-y-5">
+                  <SettingGroup title="Behavior">
+                    <SettingRow
+                      icon={IconX}
+                      label="Close behavior"
+                      description="Minimize to tray or quit the application"
+                    >
+                      <Select value={closeBehavior} onValueChange={handleCloseBehaviorChange}>
+                        <SelectTrigger className="w-[150px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tray">Minimize to tray</SelectItem>
+                          <SelectItem value="quit">Quit app</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconMouse}
+                      label="Auto-copy on click"
+                      description="Copy prompt when clicked"
+                    >
+                      <Switch checked={autoCopy} onCheckedChange={handleAutoCopyToggle} className="cursor-pointer" />
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconBell}
+                      label="Notifications"
+                      description="Show toast notifications"
+                    >
+                      <Switch checked={notifications} onCheckedChange={handleNotificationsToggle} className="cursor-pointer" />
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconPin}
+                      label="Always on top"
+                      description="Keep window above other apps"
+                    >
+                      <Switch checked={alwaysOnTop} onCheckedChange={handleAlwaysOnTopToggle} className="cursor-pointer" />
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconMinimize}
+                      label="Start minimized to tray"
+                      description="App launches in the background without showing the window"
+                    >
+                      <Switch checked={startMinimized} onCheckedChange={handleStartMinimized} className="cursor-pointer" />
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconWindowMinimize}
+                      label="Minimize to tray"
+                      description="Hide to the system tray instead of the taskbar when minimising"
+                    >
+                      <Switch checked={minimizeToTray} onCheckedChange={handleMinimizeToTrayToggle} className="cursor-pointer" />
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <SettingGroup title="Prompts">
+                    <SettingRow
+                      icon={IconLayoutGrid}
+                      label="Default view"
+                      description="Grid or list on startup"
+                    >
+                      <Select value={defaultView} onValueChange={handleDefaultViewChange}>
+                        <SelectTrigger className="w-[120px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="grid">Grid</SelectItem>
+                          <SelectItem value="list">List</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconArrowsSort}
+                      label="Default sort order"
+                      description="How prompts are sorted by default"
+                    >
+                      <Select value={defaultSortOrder} onValueChange={handleDefaultSortOrder}>
+                        <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="newest">Newest first</SelectItem>
+                          <SelectItem value="oldest">Oldest first</SelectItem>
+                          <SelectItem value="alpha">Alphabetical</SelectItem>
+                          <SelectItem value="custom">Drag & drop</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconSearch}
+                      label="Case-sensitive search"
+                      description="Match exact case when searching prompts"
+                    >
+                      <Switch checked={caseSensitiveSearch} onCheckedChange={handleCaseSensitive} className="cursor-pointer" />
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconTag}
+                      label="Search in tags only"
+                      description="Only search within tags, not title or content"
+                    >
+                      <Switch checked={searchInTagsOnly} onCheckedChange={handleSearchInTagsOnly} className="cursor-pointer" />
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <SettingGroup title="Window">
+                    <SettingRow
+                      icon={IconMaximize}
+                      label="Default window size"
+                      description="Window size on app startup — width is capped at 400px"
+                    >
+                      <Select value={defaultWindowSize} onValueChange={handleDefaultWindowSize}>
+                        <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mini">Mini — 360 × 520</SelectItem>
+                          <SelectItem value="medium">Medium — 400 × 700</SelectItem>
+                          <SelectItem value="full">Tall — 400 × 900</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <SettingGroup title="Onboarding">
+                    <SettingRow
+                      icon={IconSparkles}
+                      label="Reset onboarding"
+                      description="Show welcome screen again on next launch"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={async () => {
+                          await window.settingsAPI?.set("onboardingComplete", false)
+                          toast.success("Onboarding reset. Restart app to see welcome screen.")
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    </SettingRow>
+                  </SettingGroup>
+                </div>
+              </section>
+            )}
+
+            {activeSection === "customization" && (
+              <section>
+                <SectionHeading icon={IconCategory} title="App Customization" description="Control the look and behavior of prompt cards" />
+
+                <div className="space-y-5">
+                  <SettingGroup title="Visibility">
+                    {displayToggles.map((t, idx) => (
+                      <div key={t.key}>
+                        {idx > 0 && <Separator />}
+                        <SettingRow
+                          icon={t.icon}
+                          label={t.label}
+                          description={t.description}
+                        >
+                          <Switch
+                            checked={Boolean(cardDisplay[t.key])}
+                            onCheckedChange={(checked) => handleCardDisplayToggle(t.key, checked)}
+                            className="cursor-pointer"
+                          />
+                        </SettingRow>
+                      </div>
+                    ))}
+                  </SettingGroup>
+
+                  <SettingGroup title="Layout & Style">
+                    <SettingRow
+                      icon={IconRuler}
+                      label="Card density"
+                      description="How much spacing around card content"
+                    >
+                      <Select
+                        value={cardDisplay.cardDensity || "normal"}
+                        onValueChange={(v) => handleCardDisplayToggle("cardDensity", v)}
+                      >
+                        <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="compact">Compact</SelectItem>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="comfortable">Comfortable</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconTextCaption}
+                      label="Max lines in card"
+                      description="Limit the prompt body text shown on cards"
+                    >
+                      <Select
+                        value={String(cardDisplay.maxLines || 3)}
+                        onValueChange={(v) => handleCardDisplayToggle("maxLines", Number(v))}
+                      >
+                        <SelectTrigger className="w-[100px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2">2 lines</SelectItem>
+                          <SelectItem value="3">3 lines</SelectItem>
+                          <SelectItem value="5">5 lines</SelectItem>
+                          <SelectItem value="0">No limit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconPalette}
+                      label="Match card color to tag"
+                      description="Card tint matches its first tag color instead of random"
+                    >
+                      <Switch
+                        checked={Boolean(cardDisplay.colorByTag)}
+                        onCheckedChange={(checked) => handleCardDisplayToggle("colorByTag", checked)}
+                        className="cursor-pointer"
+                      />
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <SettingGroup title="Dialogs">
+                    <SettingRow
+                      icon={IconTag}
+                      label="Show tag input"
+                      description="Allow adding tags in the New/Edit prompt dialogs"
+                    >
+                      <Switch
+                        checked={Boolean(cardDisplay.showTagInput)}
+                        onCheckedChange={(checked) => handleCardDisplayToggle("showTagInput", checked)}
+                        className="cursor-pointer"
+                      />
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={handleResetDisplay}
+                    >
+                      Reset to defaults
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {activeSection === "folders" && <FoldersSettings />}
+
+            {activeSection === "backup" && (
+              <section>
+                <SectionHeading icon={IconCloudUpload} title="Backup" description="Back up your prompts database with encryption" />
+                <div className="space-y-5">
+                  <SettingGroup title="Schedule">
+                    <SettingRow
+                      icon={IconCloudUpload}
+                      label="Auto-backup"
+                      description="Periodically save a copy of your prompts database"
+                    >
+                      <Switch checked={autoBackup} onCheckedChange={handleAutoBackup} className="cursor-pointer" />
+                    </SettingRow>
+                    {autoBackup && (
+                      <>
+                        <Separator />
+                        <SettingRow
+                          icon={IconClock}
+                          label="Backup frequency"
+                          description="How often automatic backups are created"
+                        >
+                          <Select value={backupSchedule} onValueChange={handleBackupSchedule}>
+                            <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </SettingRow>
+                      </>
+                    )}
+                  </SettingGroup>
+
+                  <SettingGroup title="Storage">
+                    <SettingRow
+                      icon={IconFolder}
+                      label="Backup location"
+                      description={backupLocation ? backupLocation : "No folder selected"}
+                    >
+                      <Button
+                        size="sm"
+                        className="cursor-pointer text-xs h-8"
+                        onClick={handlePickBackupLocation}
+                      >
+                        {backupLocation ? "Change" : "Select folder"}
+                      </Button>
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
+                      icon={IconDatabase}
+                      label="Keep backups"
+                      description="Maximum number of backup files to keep"
+                    >
+                      <Select value={String(backupRetention)} onValueChange={(v) => handleBackupRetention(Number(v))}>
+                        <SelectTrigger className="w-[100px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <SettingGroup title="Encryption">
+                    <SettingRow
+                      icon={IconKey}
+                      label="Backup passphrase"
+                      description={hasPassphrase ? "Passphrase is set (encrypted with OS keychain)" : "Set a passphrase to encrypt backup files"}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="password"
+                          value={passphraseInput}
+                          onChange={(e) => setPassphraseInput(e.target.value)}
+                          placeholder={hasPassphrase ? "••••••••" : "Enter passphrase"}
+                          className="h-8 w-[160px] text-xs"
+                          onKeyDown={(e) => { if (e.key === "Enter") handleSetPassphrase() }}
+                        />
+                        <Button
+                          size="sm"
+                          className="cursor-pointer text-xs h-8 shrink-0"
+                          onClick={handleSetPassphrase}
+                        >
+                          {hasPassphrase ? "Change" : "Set"}
+                        </Button>
+                      </div>
+                    </SettingRow>
+                  </SettingGroup>
+
+                  <SettingGroup title="Actions">
+                    <div className="flex items-center justify-between py-3">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
+                          <IconDownload className="size-4" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-medium text-foreground">Backup now</p>
+                          <p className="text-xs text-muted-foreground">Create an encrypted backup immediately</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="cursor-pointer text-xs"
+                        disabled={!backupLocation || !hasPassphrase}
+                        onClick={async () => {
+                          const res = await window.backupAPI?.create()
+                          if (res?.success) {
+                            toast.success("Encrypted backup created!")
+                          } else {
+                            toast.error(res?.reason || "Backup failed")
+                          }
+                        }}
+                      >
+                        Backup now
+                      </Button>
+                    </div>
+                    <Separator />
+                    <div className="py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
+                            <IconUpload className="size-4" />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-medium text-foreground">Restore from backup</p>
+                            <p className="text-xs text-muted-foreground">
+                              {restoreFile ? restoreFile.split(/[\\/]/).pop() : "Select a .qpbak backup file"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="cursor-pointer text-xs"
+                          onClick={handleRestore}
+                          disabled={restoring}
+                        >
+                          {restoring ? (
+                            <IconLoader2 className="size-3.5 animate-spin mr-1.5" />
+                          ) : null}
+                          {restoreFile ? "Confirm Restore" : "Choose file"}
+                        </Button>
+                      </div>
+                      {restoreFile && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <Input
+                            type="password"
+                            value={restorePassphrase}
+                            onChange={(e) => setRestorePassphrase(e.target.value)}
+                            placeholder="Backup passphrase"
+                            className="h-8 flex-1 text-xs"
+                            onKeyDown={(e) => { if (e.key === "Enter") handleRestore() }}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="cursor-pointer text-xs h-8"
+                            onClick={() => { setRestoreFile(null); setRestorePassphrase("") }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </SettingGroup>
+                </div>
+              </section>
+            )}
+
+            {activeSection === "appearance" && (
+              <section>
+                <SectionHeading icon={IconMoon} title="Appearance" description="Choose your theme" />
+                <div className="space-y-6">
+                  {themeCategories.map((category) => (
+                    <div key={category.label}>
+                      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {category.label}
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {category.themes.map((t) => (
+                          <ThemeCard
+                            key={t.id}
+                            theme={t}
+                            selected={theme === t.id}
+                            onClick={() => {
+                              setTheme(t.id)
+                              toast.success(`${t.label} theme applied`)
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {activeSection === "updates" && (
+              <section>
+                <SectionHeading icon={IconRefresh} title="Updates" description="Manage application updates" />
+                <div className="space-y-5">
+                  <SettingGroup>
+                    <div className="flex items-center justify-between py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                          <IconRefresh className="size-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-medium text-foreground">Current version</p>
+                          <p className="text-xs text-muted-foreground">v{pkg.version}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {updateStatus === "checking" && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <IconLoader2 className="size-3 animate-spin" />
+                            Checking...
+                          </div>
+                        )}
+                        {updateStatus === "idle" && (
+                          <div className="flex items-center gap-1.5 text-xs text-green-500">
+                            <IconCircleCheck className="size-3" />
+                            Up to date
+                          </div>
+                        )}
+                        {updateStatus === "available" && (
+                          <div className="flex items-center gap-1.5 text-xs text-amber-500">
+                            <IconDownload className="size-3" />
+                            v{updateInfo?.version} available
+                          </div>
+                        )}
+                        {updateStatus === "downloading" && (
+                          <div className="flex items-center gap-1.5 text-xs text-primary">
+                            <IconLoader2 className="size-3 animate-spin" />
+                            Downloading...
+                          </div>
+                        )}
+                        {updateStatus === "downloaded" && (
+                          <div className="flex items-center gap-1.5 text-xs text-green-500">
+                            <IconCircleCheck className="size-3" />
+                            Ready to install
+                          </div>
+                        )}
+                        {updateStatus === "error" && (
+                          <div className="flex items-center gap-1.5 text-xs text-red-500">
+                            <IconAlertCircle className="size-3" />
+                            Error
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {updateStatus === "downloading" && (
+                      <>
+                        <div className="px-4 py-4">
+                          <div className="mb-2.5 flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                                <IconDownload className="size-3.5 text-primary" />
+                              </div>
+                              <span className="min-w-0 truncate text-[13px] font-medium text-foreground">
+                                {updateInfo?.version ? `Downloading v${updateInfo.version}` : "Downloading update"}
+                              </span>
+                            </div>
+                            <span className="shrink-0 text-xs font-semibold text-primary tabular-nums">
+                              {Math.floor(downloadProgress.percent)}%
+                            </span>
+                          </div>
+
+                          <div className="relative mb-3 h-2 w-full overflow-hidden rounded-full bg-foreground/10">
+                            <div
+                              className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-300 ease-out"
+                              style={{
+                                width: `${Math.min(100, Math.max(0, downloadProgress.percent))}%`,
+                              }}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between gap-3 text-[11px]">
+                            <span className="font-medium text-foreground tabular-nums">
+                              {formatBytes(downloadProgress.transferred)}
+                              <span className="font-normal text-muted-foreground">
+                                {" "}of {formatBytes(downloadProgress.total)}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-muted-foreground tabular-nums">
+                              {formatSpeed(downloadProgress.bytesPerSecond)}
+                              <span className="mx-1.5 opacity-40">·</span>
+                              {formatETA(
+                                downloadProgress.bytesPerSecond,
+                                downloadProgress.total,
+                                downloadProgress.transferred
+                              )}{" "}
+                              left
+                            </span>
+                          </div>
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+
+                    <SettingRow
+                      icon={IconRefresh}
+                      label="Check for updates on startup"
+                      description="Automatically check when app launches"
+                    >
+                      <Switch checked={autoCheck} onCheckedChange={handleAutoCheckToggle} className="cursor-pointer" />
+                    </SettingRow>
+
+                    <Separator />
+
+                    <SettingRow
+                      icon={IconDownload}
+                      label="Auto-download updates"
+                      description="Download updates automatically when available"
+                    >
+                      <Switch checked={autoDownload} onCheckedChange={handleAutoDownloadToggle} className="cursor-pointer" />
+                    </SettingRow>
+
+                    <Separator />
+
+                    <div className="flex flex-wrap gap-2 py-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={handleCheckUpdate}
+                        disabled={checking || updateStatus === "checking" || updateStatus === "downloading"}
+                      >
+                        {checking || updateStatus === "checking" ? (
+                          <IconLoader2 className="size-3.5 animate-spin mr-1.5" />
+                        ) : (
+                          <IconRefresh className="size-3.5 mr-1.5" />
+                        )}
+                        Check for Updates
+                      </Button>
+
+                      {updateStatus === "available" && (
+                        <Button
+                          size="sm"
+                          className="cursor-pointer"
+                          onClick={handleDownloadUpdate}
+                          disabled={downloading}
+                        >
+                          {downloading ? (
+                            <IconLoader2 className="size-3.5 animate-spin mr-1.5" />
+                          ) : (
+                            <IconDownload className="size-3.5 mr-1.5" />
+                          )}
+                          Download
+                        </Button>
+                      )}
+
+                      {updateStatus === "downloaded" && (
+                        <Button
+                          size="sm"
+                          className="cursor-pointer"
+                          onClick={() => window.updateAPI?.installUpdate()}
+                        >
+                          <IconRefresh className="size-3.5 mr-1.5" />
+                          Restart &amp; Install
+                        </Button>
+                      )}
+                    </div>
+                  </SettingGroup>
+                </div>
+              </section>
+            )}
+
+            {activeSection === "about" && (
+              <section>
+                <SectionHeading icon={IconInfoCircle} title={`About ${pkg.productName}`} description="Software information" />
+                <div className="space-y-5">
+                  <SettingGroup>
+                    <div className="flex flex-col items-center py-6 text-center">
+                      <img src={faviconSvg} alt="QuickPrompt" className="mb-4 size-20 rounded-2xl shadow-sm" />
+                      <h3 className="text-lg font-semibold text-foreground">{pkg.productName}</h3>
+                      <p className="text-xs text-muted-foreground">Version {pkg.version}</p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="py-3">
+                      <p className="px-1 text-xs text-muted-foreground leading-relaxed text-center">
+                        {pkg.description}
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2.5 py-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">Version</p>
+                        <p className="text-xs font-medium text-foreground">{pkg.version}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">Developer</p>
+                        <p className="text-xs font-medium text-foreground">{pkg.author.name}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">Website</p>
+                        <a href="https://mbilalhassan.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          mbilalhassan.vercel.app <IconExternalLink className="size-3" />
+                        </a>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">Webpage</p>
+                        <a href="https://quickprompt-web.netlify.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          quickprompt-web.netlify.app <IconExternalLink className="size-3" />
+                        </a>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="py-3 space-y-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Socials</p>
+                      <div className="flex items-center gap-3">
+                        <a href="https://github.com/bilals2008" target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="GitHub">
+                          <IconBrandGithub className="size-4" />
+                        </a>
+                        <a href="https://www.linkedin.com/in/muhammad-bilal-hassan-327209414/" target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="LinkedIn">
+                          <IconBrandLinkedin className="size-4" />
+                        </a>
+                        <a href="https://x.com/MBilal7555" target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="X / Twitter">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg>
+                        </a>
+                        <a href="mailto:bilaldev7575@gmail.com" className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="Email">
+                          <IconMail className="size-4" />
+                        </a>
+                      </div>
+                    </div>
+                  </SettingGroup>
+                </div>
+              </section>
+            )}
+
+          </div>
+        </ScrollArea>
+      </div>
+    </div>
+  )
+}

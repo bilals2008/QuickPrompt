@@ -1,0 +1,28 @@
+{
+  "tool": "QuickPrompt",
+  "schema": 1,
+  "exported_at": "2026-10-20T07:36:55.466Z",
+  "count": 2,
+  "prompts": [
+    {
+      "title": "Code review",
+      "content": "Review this diff for:\n\n1. correctness\n2. readability",
+      "tags": "work,dev",
+      "favorite": 1,
+      "model": "gpt-4o",
+      "folder": "Work",
+      "created_at": null,
+      "updated_at": null
+    },
+    {
+      "title": "Summarise notes",
+      "content": "Summarise the notes below in five bullets.",
+      "tags": "writing",
+      "favorite": 0,
+      "model": "",
+      "folder": "Personal",
+      "created_at": null,
+      "updated_at": null
+    }
+  ]
+}

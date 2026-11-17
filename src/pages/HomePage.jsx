@@ -1,0 +1,803 @@
+// File: src/pages/HomePage.jsx
+import { useState, useEffect, useCallback, useRef } from "react"
+import { toast } from "sonner"
+import { useNavigate, useOutletContext } from "react-router-dom"
+import { IconSearch, IconSettings, IconStar, IconStarFilled, IconLayoutGrid, IconLayoutList, IconX, IconArrowsTransferUpDown, IconLoader2, IconArrowDown, IconShieldLock, IconFolder, IconChecks, IconTrash } from "@tabler/icons-react"
+import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { SortableContext, arrayMove, rectSortingStrategy, verticalListSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { PromptCardItem } from "@/components/prompt-card"
+import { SortablePromptCard } from "@/components/sortable-prompt-card"
+import { AddPromptDialog } from "@/components/add-prompt-dialog"
+import { usePromptLoader } from "@/hooks/usePromptLoader"
+import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
+import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
+import { FolderGlyph } from "@/components/folders/FolderGlyph"
+import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+
+const PROMPT_PAGE_SIZE = 100
+
+export default function HomePage() {
+  const navigate = useNavigate()
+  const { sidebarVisible } = useOutletContext()
+  const [allTags, setAllTags] = useState([])
+  const [search, setSearch] = useState("")
+  const [searchInput, setSearchInput] = useState("")
+  const [viewMode, setViewMode] = useState("grid")
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [autoCopy, setAutoCopy] = useState(false)
+  const [notifications, setNotifications] = useState(false)
+  const [hasEverHadPrompts, setHasEverHadPrompts] = useState(false)
+  const [totalPromptsInDb, setTotalPromptsInDb] = useState(0)
+  const [cardDisplay] = useCardDisplaySettings()
+  const [caseSensitive, setCaseSensitive] = useState(false)
+  const [tagsOnly, setTagsOnly] = useState(false)
+  const [sortOrder, setSortOrder] = useState("newest")
+  const searchRef = useRef(null)
+  const isCustomSort = sortOrder === "custom"
+  const [showVaultBadge, setShowVaultBadge] = useState(false)
+  const [folderMap, setFolderMap] = useState({})
+  const [folderDisplay] = useFolderDisplaySettings()
+  const [movePromptId, setMovePromptId] = useState(null)
+  const [folders, setFolders] = useState([])
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const now = Date.now()
+    window.settingsAPI?.get("vaultSeenFirstAt", null).then((firstSeen) => {
+      if (cancelled) return
+      const first = firstSeen ?? now
+      if (!firstSeen) {
+        window.settingsAPI?.set("vaultSeenFirstAt", first)
+      }
+      setShowVaultBadge(now - first < 7 * 24 * 60 * 60 * 1000)
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  const vaultBadgeVisible = !sidebarVisible && showVaultBadge
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = prompts.findIndex((p) => p.id === active.id)
+    const newIndex = prompts.findIndex((p) => p.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(prompts, oldIndex, newIndex)
+    const updates = reordered.map((p, i) => ({ id: p.id, sort_order: i }))
+
+    window.db.updatePromptOrder(updates).catch((err) => {
+      console.error("Failed to save prompt order:", err)
+      if (notifications) toast.error("Failed to save order")
+    })
+  }
+
+  const {
+    items: prompts,
+    total,
+    loading,
+    initialLoading,
+    error,
+    hasMore,
+    loadMore,
+    refresh,
+  } = usePromptLoader({
+    search,
+    favoritesOnly: showFavoritesOnly,
+    pageSize: PROMPT_PAGE_SIZE,
+    caseSensitive,
+    tagsOnly,
+    sortOrder,
+  })
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && selectionMode) {
+        e.preventDefault()
+        setSelectionMode(false)
+        setSelectedIds(new Set())
+        return
+      }
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const tag = (e.target?.tagName || "").toLowerCase()
+        const isEditable =
+          tag === "input" ||
+          tag === "textarea" ||
+          tag === "select" ||
+          e.target?.isContentEditable
+        if (!isEditable) {
+          e.preventDefault()
+          searchRef.current?.focus()
+          searchRef.current?.select?.()
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [selectionMode])
+
+  const loadTags = useCallback(async () => {
+    try {
+      const data = await window.db.getAllTags()
+      setAllTags(data.map((t) => t.name) || [])
+    } catch (err) {
+      console.error("Failed to load tags:", err)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadTags()
+    window.db?.getAllPrompts?.().then((data) => {
+      setTotalPromptsInDb(Array.isArray(data) ? data.length : 0)
+    })
+    window.db?.health?.().then((h) => {
+      if (!h.ready) toast.error("Database error: " + (h.error || "unknown"))
+    })
+
+    window.settingsAPI?.get("defaultView", "grid").then((v) => setViewMode(v))
+    window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
+    window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
+    window.settingsAPI?.get("caseSensitive", false).then((v) => setCaseSensitive(Boolean(v)))
+    window.settingsAPI?.get("searchInTagsOnly", false).then((v) => setTagsOnly(Boolean(v)))
+    window.settingsAPI?.get("defaultSortOrder", "newest").then((v) => setSortOrder(v))
+  }, [loadTags])
+
+  const loadFolderMap = useCallback(async () => {
+    try {
+      const allFoldersList = await window.folderAPI.list()
+      const map = {}
+      for (const f of (allFoldersList || [])) {
+        const result = await window.folderAPI.getPrompts(f.id)
+        for (const p of (result?.prompts || [])) {
+          if (!map[p.id]) map[p.id] = []
+          map[p.id].push({ id: f.id, name: f.name, color: f.color, icon: f.icon })
+        }
+      }
+      setFolderMap(map)
+    } catch { /* ignored */ }
+  }, [])
+
+  useEffect(() => { loadFolderMap() }, [loadFolderMap])
+
+  const loadMoveFolders = useCallback(async () => {
+    const result = await window.folderAPI.list()
+    setFolders(result || [])
+  }, [])
+
+  const folderInfo = useCallback(
+    (id) => {
+      const f = folderMap[id]?.[0]
+      if (!f) return {}
+      const showCustom = folderDisplay.showFolderAppearance
+      return {
+        folderName: f.name,
+        folderColor: showCustom ? f.color : "",
+        folderIcon: showCustom ? f.icon : "",
+      }
+    },
+    [folderMap, folderDisplay.showFolderAppearance]
+  )
+
+  const handleMovePrompt = async (folderId) => {
+    if (!movePromptId || !folderId) return
+    try {
+      await window.folderAPI.addPrompt(movePromptId, folderId)
+      setMovePromptId(null)
+      await loadFolderMap()
+      toast.success("Prompt moved to folder")
+    } catch { toast.error("Failed to move") }
+  }
+
+  function copyPrompt(text) {
+    navigator.clipboard.writeText(text)
+    if (notifications) toast.success("Copied to clipboard!")
+  }
+
+  async function deletePrompt(id) {
+    try {
+      await window.db.deletePrompt(id)
+      await refresh()
+      if (notifications) toast.success("Prompt deleted")
+    } catch (err) {
+      if (notifications) toast.error("Failed to delete prompt")
+      console.error(err)
+    }
+  }
+
+  function toggleSelect(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function selectAllLoaded() {
+    setSelectedIds(new Set(prompts.map((p) => p.id)))
+  }
+
+  function exitSelection() {
+    setSelectionMode(false)
+    setSelectedIds(new Set())
+  }
+
+  async function deleteSelected() {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    setDeleting(true)
+    let failed = 0
+    for (const id of ids) {
+      try {
+        await window.db.deletePrompt(id)
+      } catch {
+        failed += 1
+      }
+    }
+    setDeleting(false)
+    setDeleteOpen(false)
+    exitSelection()
+    await refresh()
+    if (failed === 0) toast.success(`Deleted ${ids.length} prompt${ids.length === 1 ? "" : "s"}`)
+    else toast.error(`Deleted ${ids.length - failed} prompt(s); ${failed} failed`)
+  }
+
+  async function toggleFavoriteHandler(id) {
+    try {
+      await window.db.toggleFavorite(id)
+      await refresh()
+    } catch (err) {
+      if (notifications) toast.error("Failed to update favorite")
+      console.error(err)
+    }
+  }
+
+  useEffect(() => {
+    if (total > 0) setHasEverHadPrompts(true)
+  }, [total])
+
+  useEffect(() => {
+    const onShowFavorites = () => setShowFavoritesOnly(true)
+    const onSelectMode = () => setSelectionMode(true)
+    const onSetView = (e) => {
+      const next = e.detail
+      if (!next) return
+      setViewMode(next)
+      window.settingsAPI?.set("defaultView", next)
+    }
+    window.addEventListener("qp:show-favorites", onShowFavorites)
+    window.addEventListener("qp:select-mode", onSelectMode)
+    window.addEventListener("qp:set-view", onSetView)
+    return () => {
+      window.removeEventListener("qp:show-favorites", onShowFavorites)
+      window.removeEventListener("qp:select-mode", onSelectMode)
+      window.removeEventListener("qp:set-view", onSetView)
+    }
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 200)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  const hasActiveFilters = Boolean(search.trim()) || showFavoritesOnly
+  const showEmptyState = !initialLoading && prompts.length === 0
+  const showNoResults = showEmptyState && hasActiveFilters
+
+  return (
+    <div className="flex flex-col h-full">
+      <header className="border-b border-border/30 px-6 pt-4 pb-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            {sidebarVisible ? (
+              <>
+                <h1 className="truncate text-lg font-semibold text-foreground tracking-tight">
+                  QuickPrompt
+                </h1>
+                <p className="hidden truncate text-xs text-muted-foreground sm:block">
+                  Create, tag, and copy prompts instantly
+                </p>
+              </>
+            ) : (
+              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
+                Prompts{" "}
+                <span className="font-normal text-muted-foreground tabular-nums">
+                  ({total.toLocaleString()})
+                </span>
+              </h1>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {!sidebarVisible && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 cursor-pointer"
+                      onClick={() => navigate("/vault")}
+                      aria-label="Vault"
+                    >
+                      <IconShieldLock size={16} />
+                    </Button>
+                    {vaultBadgeVisible && (
+                      <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-3 min-w-3 items-center justify-center rounded bg-red-500/10 px-0.5 text-[6px] font-bold leading-none text-red-500 dark:bg-red-400/10 dark:text-red-400">
+                        NEW
+                      </span>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Vault</TooltipContent>
+              </Tooltip>
+            )}
+            {!sidebarVisible && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 cursor-pointer"
+                    onClick={() => navigate("/collections")}
+                    aria-label="Collections"
+                  >
+                    <IconFolder size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Collections</TooltipContent>
+              </Tooltip>
+            )}
+            {!sidebarVisible && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 cursor-pointer"
+                    onClick={() => navigate("/import-export")}
+                    aria-label="Import / Export"
+                  >
+                    <IconArrowsTransferUpDown size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Import / Export</TooltipContent>
+              </Tooltip>
+            )}
+            {!sidebarVisible && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 cursor-pointer"
+                onClick={() => navigate("/settings")}
+              >
+                <IconSettings size={16} />
+              </Button>
+            )}
+        {(total > 0 || hasActiveFilters || hasEverHadPrompts) && (
+              <>
+                {sidebarVisible && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 cursor-pointer"
+                        onClick={() => {
+                          const newMode = viewMode === "grid" ? "list" : "grid"
+                          setViewMode(newMode)
+                          window.settingsAPI?.set("defaultView", newMode)
+                        }}
+                      >
+                        {viewMode === "grid" ? (
+                          <IconLayoutList size={16} />
+                        ) : (
+                          <IconLayoutGrid size={16} />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {viewMode === "grid" ? "List view" : "Grid view"}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "h-9 w-9 cursor-pointer",
+                        showFavoritesOnly && "text-amber-400"
+                      )}
+                      onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                      aria-label={showFavoritesOnly ? "Show all prompts" : "Show favorites only"}
+                    >
+                      {showFavoritesOnly ? (
+                        <IconStarFilled size={16} />
+                      ) : (
+                        <IconStar size={16} />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {showFavoritesOnly ? "Showing favorites" : "Show favorites only"}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("h-9 w-9 cursor-pointer", selectionMode && "text-primary")}
+                      onClick={() => (selectionMode ? exitSelection() : setSelectionMode(true))}
+                      aria-label={selectionMode ? "Exit selection" : "Select prompts"}
+                    >
+                      <IconChecks size={16} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {selectionMode ? "Exit selection" : "Select prompts"}
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            )}
+          </div>
+        </div>
+
+        {selectionMode && (
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+            <div className="flex items-center gap-2 text-xs">
+              <IconChecks size={14} className="text-muted-foreground" />
+              <span className="font-medium tabular-nums text-foreground">{selectedIds.size}</span>
+              <span className="text-muted-foreground">
+                selected{selectedIds.size === 1 ? "" : "s"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={selectAllLoaded}
+                disabled={prompts.length === 0}
+                className="h-7 cursor-pointer text-xs"
+              >
+                Select all
+              </Button>
+              {selectedIds.size > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="h-7 cursor-pointer text-xs"
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setDeleteOpen(true)}
+                disabled={selectedIds.size === 0}
+                className="h-7 cursor-pointer text-xs"
+              >
+                <IconTrash size={13} />
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={exitSelection}
+                aria-label="Exit selection"
+                className="cursor-pointer"
+              >
+                <IconX size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {(totalPromptsInDb > 0 || searchInput) && (
+          <div
+            className={cn(
+              "group/search relative flex h-9 w-full items-center rounded-lg border border-border bg-background/60",
+              "transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/60"
+            )}
+          >
+            <IconSearch
+              size={14}
+              stroke={2.2}
+              className="ml-3 shrink-0 text-muted-foreground"
+            />
+            <Input
+              ref={searchRef}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault()
+                  setSearchInput("")
+                  setSearch("")
+                  searchRef.current?.blur()
+                }
+              }}
+              placeholder="Search prompts…"
+              className="h-8 w-full min-w-0 border-0 bg-transparent pl-2 pr-1 text-sm shadow-none focus-visible:ring-0 focus-visible:border-transparent"
+            />
+            {searchInput ? (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => {
+                  setSearchInput("")
+                  setSearch("")
+                  searchRef.current?.focus()
+                }}
+                className="mr-1.5 size-6 cursor-pointer rounded-md text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <IconX size={12} stroke={2.4} />
+              </Button>
+            ) : (
+              <kbd className="mr-2.5 hidden h-5 select-none items-center rounded border border-border/60 bg-muted/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
+                /
+              </kbd>
+            )}
+          </div>
+        )}
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-4">
+        {error && prompts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <div className="sticky-note sticky-tint-yellow p-6 text-center">
+              <p className="text-lg font-semibold text-foreground/80">Failed to load prompts</p>
+              <p className="text-sm mt-2 text-foreground/60">{error.message || "Unknown error"}</p>
+              <Button variant="outline" size="sm" className="mt-4 cursor-pointer" onClick={refresh}>
+                Try again
+              </Button>
+            </div>
+          </div>
+        ) : showEmptyState ? (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <div className="sticky-note sticky-tint-yellow p-6 text-center">
+              <p className="text-lg font-semibold text-foreground/80">
+                {showNoResults ? "No prompts match your search" : "No prompts yet"}
+              </p>
+              <p className="text-sm mt-2 text-foreground/60">
+                {showNoResults
+                  ? "Try a different keyword or clear your filters"
+                  : "Click the + button to add your first prompt"}
+              </p>
+            </div>
+          </div>
+        ) : viewMode === "grid" ? (
+          isCustomSort ? (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={prompts.map((p) => p.id)} strategy={rectSortingStrategy}>
+                <div className={cn(
+                  "grid gap-3",
+                  !sidebarVisible
+                    ? "grid-cols-1"
+                    : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
+                )}>
+                  {prompts.map((prompt) => (
+                    <SortablePromptCard
+                      key={prompt.id}
+                      id={prompt.id}
+                      prompt={prompt}
+                      viewMode="grid"
+                      onCopy={copyPrompt}
+                      onDelete={deletePrompt}
+                      onToggleFavorite={toggleFavoriteHandler}
+                      allTags={allTags}
+                      mini={!sidebarVisible}
+                      onSaved={refresh}
+                      autoCopy={autoCopy}
+                      display={cardDisplay}
+                      {...folderInfo(prompt.id)}
+                      onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
+                      selectable={selectionMode}
+                      selected={selectedIds.has(prompt.id)}
+                      onToggleSelect={toggleSelect}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <div className={cn(
+              "grid gap-3",
+              !sidebarVisible
+                ? "grid-cols-1"
+                : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
+            )}>
+              {prompts.map((prompt) => (
+                <PromptCardItem
+                  key={prompt.id}
+                  prompt={prompt}
+                  viewMode="grid"
+                  onCopy={copyPrompt}
+                  onDelete={deletePrompt}
+                  onToggleFavorite={toggleFavoriteHandler}
+                  allTags={allTags}
+                  mini={!sidebarVisible}
+                  onSaved={refresh}
+                  autoCopy={autoCopy}
+                  display={cardDisplay}
+                  {...folderInfo(prompt.id)}
+                  onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
+                  selectable={selectionMode}
+                  selected={selectedIds.has(prompt.id)}
+                  onToggleSelect={toggleSelect}
+                />
+              ))}
+            </div>
+          )
+        ) : isCustomSort ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={prompts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-2 w-full">
+                {prompts.map((prompt) => (
+                  <SortablePromptCard
+                    key={prompt.id}
+                    id={prompt.id}
+                    prompt={prompt}
+                    viewMode="list"
+                    onCopy={copyPrompt}
+                    onDelete={deletePrompt}
+                    onToggleFavorite={toggleFavoriteHandler}
+                    allTags={allTags}
+                    mini={!sidebarVisible}
+                    onSaved={refresh}
+                    autoCopy={autoCopy}
+                    display={cardDisplay}
+                    {...folderInfo(prompt.id)}
+                    onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
+                    selectable={selectionMode}
+                    selected={selectedIds.has(prompt.id)}
+                    onToggleSelect={toggleSelect}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="flex flex-col gap-2 w-full">
+            {prompts.map((prompt) => (
+              <PromptCardItem
+                key={prompt.id}
+                prompt={prompt}
+                viewMode="list"
+                onCopy={copyPrompt}
+                onDelete={deletePrompt}
+                onToggleFavorite={toggleFavoriteHandler}
+                allTags={allTags}
+                mini={!sidebarVisible}
+                onSaved={refresh}
+                autoCopy={autoCopy}
+                display={cardDisplay}
+                {...folderInfo(prompt.id)}
+                onMoveToFolder={(id) => { setMovePromptId(id); loadMoveFolders() }}
+                selectable={selectionMode}
+                selected={selectedIds.has(prompt.id)}
+                onToggleSelect={toggleSelect}
+              />
+            ))}
+          </div>
+        )}
+
+        {!showEmptyState && !error && (
+          <div className={cn("mt-6 flex flex-col items-center gap-2", !sidebarVisible && "px-1")}>
+            {hasMore ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 cursor-pointer gap-1.5 px-4 text-xs"
+                  onClick={loadMore}
+                  disabled={loading}
+                  aria-label="Load more prompts"
+                >
+                  {loading ? (
+                    <IconLoader2 size={14} className="animate-spin" />
+                  ) : (
+                    <IconArrowDown size={14} />
+                  )}
+                  {loading ? "Loading…" : "Load More"}
+                </Button>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  Showing {prompts.length.toLocaleString()} of {total.toLocaleString()} prompts
+                </p>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="h-px w-12 bg-border/60" />
+                <p className="text-xs text-muted-foreground">
+                  All {total.toLocaleString()} {total === 1 ? "prompt" : "prompts"} loaded
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <AddPromptDialog onSaved={refresh} allTags={allTags} mini={!sidebarVisible} />
+
+      <Dialog open={deleteOpen} onOpenChange={(v) => { if (!v && !deleting) setDeleteOpen(false) }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">
+              Delete {selectedIds.size} prompt{selectedIds.size === 1 ? "" : "s"}?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              The selected prompts are removed from your library and from every folder. This
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleting}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={deleteSelected}
+              disabled={deleting}
+              className="cursor-pointer"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!movePromptId} onOpenChange={(v) => { if (!v) setMovePromptId(null) }}>
+        <DialogContent className="sm:max-w-xs p-0 gap-0">
+          <DialogHeader className="px-4 py-3 border-b border-border/30">
+            <DialogTitle className="text-sm">Move to folder</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-64 overflow-y-auto py-1">
+            {folders.length === 0 ? (
+              <p className="text-xs text-muted-foreground/60 text-center py-6">No folders yet. Create one in Collections first.</p>
+            ) : (
+              folders.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => handleMovePrompt(f.id)}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-left hover:bg-accent/50 transition-colors cursor-pointer"
+                >
+                  <FolderGlyph folder={f} size={14} />
+                  <span className="text-xs truncate">{f.name}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

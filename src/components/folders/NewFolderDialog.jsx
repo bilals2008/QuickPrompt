@@ -1,0 +1,153 @@
+import { useEffect, useMemo, useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { FolderGlyph } from "@/components/folders/FolderGlyph"
+import { FolderAppearancePicker } from "@/components/folders/FolderAppearancePicker"
+import {
+  DEFAULT_FOLDER_APPEARANCE,
+  DEFAULT_FOLDER_EMBLEM,
+  serializeAppearance,
+  getFolderPixelSize,
+} from "@/lib/folder-appearance"
+
+function generateUniqueName(baseName, existingNames) {
+  const existingSet = new Set(existingNames.map((n) => n.toLowerCase()))
+  if (!existingSet.has(baseName.toLowerCase())) return baseName
+  let i = 1
+  while (existingSet.has(`${baseName} (${i})`.toLowerCase())) i++
+  return `${baseName} (${i})`
+}
+
+export function NewFolderDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  parentId = null,
+  existingFolders = [],
+  defaultIcon = DEFAULT_FOLDER_APPEARANCE.icon,
+  defaultColor = DEFAULT_FOLDER_APPEARANCE.color,
+  defaultSize = DEFAULT_FOLDER_APPEARANCE.size,
+  isSubfolder = false,
+}) {
+  const siblingNames = useMemo(() => {
+    return existingFolders
+      .filter((f) => (parentId ? f.parent_id === parentId : !f.parent_id))
+      .map((f) => f.name)
+  }, [existingFolders, parentId])
+
+  const autoName = useMemo(
+    () => generateUniqueName(isSubfolder ? "New Subfolder" : "New Folder", siblingNames),
+    [siblingNames, isSubfolder]
+  )
+
+  const [name, setName] = useState(autoName)
+  const [icon, setIcon] = useState(defaultIcon)
+  const [color, setColor] = useState(defaultColor)
+  const [size, setSize] = useState(defaultSize)
+  const [emblem, setEmblem] = useState({ ...DEFAULT_FOLDER_EMBLEM })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setName(generateUniqueName(isSubfolder ? "New Subfolder" : "New Folder", siblingNames))
+      setIcon(defaultIcon)
+      setColor(defaultColor)
+      setSize(defaultSize)
+      setEmblem({ ...DEFAULT_FOLDER_EMBLEM })
+    }
+  }, [open, siblingNames, defaultIcon, defaultColor, defaultSize, isSubfolder])
+
+  const handleSave = async () => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setSaving(true)
+    try {
+      const appearance = serializeAppearance({ size, emblem })
+      await onSubmit({ name: trimmed, icon, color, appearance })
+      onOpenChange(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="gap-4 sm:max-w-sm max-h-[calc(100vh-2rem)] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-sm">
+            {isSubfolder ? "New subfolder" : "New folder"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+          <FolderGlyph
+            folder={{ icon, color, appearance: serializeAppearance({ size, emblem }) }}
+            size={getFolderPixelSize({ appearance: serializeAppearance({ size }) })}
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">
+              {name.trim() || "Untitled folder"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">Preview</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Name
+          </p>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSave()
+              if (e.key === "Escape") onOpenChange(false)
+            }}
+            placeholder="Folder name"
+            className="h-8 text-xs"
+            autoFocus
+            selectOnFocus
+          />
+        </div>
+
+        <FolderAppearancePicker
+          icon={icon}
+          color={color}
+          size={size}
+          emblem={emblem}
+          onIconChange={setIcon}
+          onColorChange={setColor}
+          onSizeChange={setSize}
+          onEmblemChange={setEmblem}
+        />
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            className="cursor-pointer"
+            disabled={!name.trim() || saving}
+            onClick={handleSave}
+          >
+            {saving ? "Creating..." : "Create"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export default NewFolderDialog
