@@ -1,3 +1,4 @@
+pub mod app;
 pub mod backup;
 pub mod db;
 pub mod folders;
@@ -7,3 +8,4 @@ pub mod prompts;
 pub mod settings;
 pub mod vault;
 pub mod vault_folders;
+pub mod window;

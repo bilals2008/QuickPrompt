@@ -2,9 +2,8 @@
 // `invoke` works without the @tauri-apps/api package (still deliberately absent).
 const invoke = (command, args) => window.__TAURI_INTERNALS__.invoke(command, args)
 
-// Commands that exist in Rust today. Groups still missing (update, window, app,
-// shell, notifications) keep rejecting with a readable error until phases 6-7
-// fill them in.
+// Commands that exist in Rust today. Groups still missing (update) keep
+// rejecting with a readable error until phase 7 fills them in.
 const IMPLEMENTED = {
   prompts: {
     health: () => invoke("db_health"),
@@ -91,13 +90,58 @@ const IMPLEMENTED = {
       invoke("import_export_save_file", { content, format, suggestedName }),
     openFile: ({ format } = {}) => invoke("import_export_open_file", { format }),
   },
+  window: {
+    minimize: () => invoke("window_minimize"),
+    maximize: () => invoke("window_maximize"),
+    unmaximize: () => invoke("window_unmaximize"),
+    toggleMaximize: () => invoke("window_toggle_maximize"),
+    isMaximized: () => invoke("window_is_maximized"),
+    hide: () => invoke("window_hide"),
+    closeToTray: () => invoke("window_close_to_tray"),
+    quit: () => invoke("window_quit"),
+    setAlwaysOnTop: (value) => invoke("window_set_always_on_top", { value }),
+    getAlwaysOnTop: () => invoke("window_get_always_on_top"),
+    toggleAlwaysOnTop: () => invoke("window_toggle_always_on_top"),
+    getBounds: () => invoke("window_get_bounds"),
+    setSize: (width, height) => invoke("window_set_size", { width, height }),
+    setDefaultSize: (preset) => invoke("window_set_default_size", { preset }),
+    showPopover: () => invoke("window_show_popover"),
+  },
+  app: {
+    getAppVersion: () => invoke("app_get_version"),
+    getPlatform: () => invoke("app_get_platform"),
+    hideWindow: () => invoke("app_hide_window"),
+    relaunch: () => invoke("app_relaunch"),
+  },
+  shell: {
+    openExternal: (url) => invoke("shell_open_external", { url }),
+  },
+  notifications: {
+    show: ({ title, body, silent } = {}) =>
+      invoke("notification_show", { title, body, silent }),
+  },
 }
 
 const pending = (path) => () => Promise.reject(new Error(`${path} is not implemented in Tauri yet`))
 
 // Event subscriptions must return an unsubscribe function, not a promise.
-const SUBSCRIPTIONS = new Set(["onNavigate", "onGlobalSearch", "onEvent", "onMaximizeChange"])
-const subscribe = () => () => {}
+// Rust reaches the webview by dispatching DOM events (see `window::emit` in
+// src-tauri/src), so the event plugin is not needed.
+const domEvent = (name) => (listener) => {
+  const handler = (event) => listener(event.detail)
+  window.addEventListener(name, handler)
+  return () => window.removeEventListener(name, handler)
+}
+
+const noop = () => () => {}
+
+const SUBSCRIPTIONS = {
+  onNavigate: domEvent("qp:navigate"),
+  onGlobalSearch: domEvent("qp:global-search"),
+  // Maximise is disabled and updates are not wired yet, so nothing fires.
+  onMaximizeChange: noop,
+  onEvent: noop,
+}
 
 export const api = new Proxy(
   {},
@@ -111,7 +155,9 @@ export const api = new Proxy(
             const key = String(method)
             const implemented = IMPLEMENTED[name]?.[key]
             if (implemented) return implemented
-            return SUBSCRIPTIONS.has(key) ? subscribe : pending(`${name}.${key}`)
+            const subscription = SUBSCRIPTIONS[key]
+            if (subscription) return subscription
+            return pending(`${name}.${key}`)
           },
         },
       ),
