@@ -17,11 +17,14 @@
 
 ## Done when
 
-- [ ] `npm run dev` still runs the Electron app.
-- [ ] `cargo tauri dev` shows the same React UI in a Tauri window.
-- [ ] Baseline commit tagged.
+- [x] `npm run dev` still runs the Electron app.
+- [x] `cargo tauri dev` shows the same React UI in a Tauri window.
+- [x] Baseline commit tagged (`baseline-electron`, commit `42e58f2`).
 
 ## Notes
 
 - Keep `vite-plugin-electron` until Phase 8; both shells share the Vite build for now.
 - Do not delete `electron/` — it is the live reference. It is removed only after the Phase 8 gate.
+- Step 4 was done by hand instead of `cargo tauri init` (which refuses a non-empty `src-tauri/`): same files, with the Electron window geometry (500×700, min 360×400, max width 500, not maximizable).
+- Tauri CLI 2.12.6 via `cargo install tauri-cli`; Rust toolchain 1.99.
+- Expected in this phase: the UI renders but data calls fail (`getPromptsPaginated` undefined) because `window.*` IPC is still Electron-only. That is Phase 1.

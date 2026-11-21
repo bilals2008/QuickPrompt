@@ -1,0 +1,16 @@
+[package]
+name = "quickprompt"
+version = "2.6.0"
+description = "A simple prompt manager - create, tag, and copy prompts instantly"
+authors = ["Muhammad Bilal Hassan"]
+edition = "2021"
+
+[lib]
+name = "quickprompt_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
