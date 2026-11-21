@@ -38,7 +38,7 @@ describe("api adapter", () => {
   it("Tauri stubs reject with a readable error and keep unsubscribe shape", async () => {
     const { api } = await import("./tauri.js")
 
-    await expect(api.prompts.getPromptsPaginated()).rejects.toThrow("not implemented in Tauri yet")
+    await expect(api.settings.get("defaultView")).rejects.toThrow("not implemented in Tauri yet")
     expect(typeof api.update.onEvent(() => {})).toBe("function")
   })
 })

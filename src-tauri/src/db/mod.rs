@@ -3,7 +3,9 @@
 // The connection lives in Tauri state behind a Mutex so later phases can borrow
 // it from commands. Opening never panics: a failed init is recorded in the state
 // and reported through `db:health`, matching the Electron app's dbReady/dbError.
+pub mod rows;
 pub mod schema;
+pub mod util;
 
 #[cfg(test)]
 mod tests;

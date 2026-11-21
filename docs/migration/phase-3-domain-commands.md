@@ -31,13 +31,43 @@
 
 ## Done when
 
-- [ ] Every namespace above has a working Tauri command.
-- [ ] Prompts CRUD, tags, favourites, reorder work in the Tauri window.
-- [ ] Folder create/rename/delete/breadcrumb/move works.
-- [ ] Vault CRUD + attachments work (ciphertext untouched).
-- [ ] Pagination and search results match Electron.
+- [x] Every namespace above has a working Tauri command.
+- [x] Prompts CRUD, tags, favourites, reorder work in the Tauri window.
+- [x] Folder create/rename/delete/breadcrumb/move works.
+- [x] Vault CRUD + attachments work (ciphertext untouched).
+- [x] Pagination and search results match Electron.
 
 ## Risks
 
 - Attachment blobs: confirm whether stored inline or on disk; match exactly to avoid data loss.
 - `updateOrder` batch calls must run in a single transaction.
+
+## Notes
+
+- Layout: `src-tauri/src/repo/{prompts,folders,vault_folders,vault}.rs` hold the SQL
+  (one module per Electron database file); `src-tauri/src/commands/` holds thin
+  `#[tauri::command]` wrappers in the same four groups. Shared row handling lives
+  in `src-tauri/src/db/rows.rs` (rows -> JSON with the database's snake_case
+  names) and `src-tauri/src/db/util.rs` (ISO timestamps, UUIDs, page clamps).
+- Rows go back to the frontend as `serde_json::Value` so keys stay byte-identical
+  to Electron's output; the vault items still use `mapRow`'s mixed shape
+  (`sort_order`, `hasValue`, `favorite` as a boolean). Inputs use
+  `#[serde(rename_all = "camelCase")]` where the UI sends camelCase
+  (`parentId`, `vaultItemId`, `sortOrder`, ...), and `type` is renamed in the
+  vault structs since it is a Rust keyword.
+- `prompts:updateOrder` and `vault:updateOrder` each run in one transaction, as
+  the risk note asks.
+- `src/lib/api/tauri.js` now maps all 52 commands; settings/backup/update/window/
+  app/shell/notifications/import-export/fs still reject until phases 5-7.
+  `api.test.js` checks the stub against `api.settings.get` now.
+- Phase 3 leaves two deliberate gaps: custom folder icons are stored exactly as
+  they arrive (the `data:image` -> `qpicon://` file step is Phase 5), and vault
+  crypto is a placeholder that matches Electron's "encryption unavailable"
+  branch. Electron-encrypted values therefore read as empty and
+  `vault:health` reports `encryptionAvailable: false` until Phase 4.
+- Verified with `cargo test` (9 tests, including the four new repo suites),
+  `cargo clippy --all-targets`, `npm test` (52 tests) and `npm run lint`, plus a
+  `cargo tauri dev` run against the copied real database: `[DB] Database
+  initialized`, no errors. Home/Vault/Collections were not clicked through — the
+  native webview is not inspectable from this environment, so page-level parity
+  is covered by the repo tests, not by a visual walkthrough.
