@@ -1,12 +1,33 @@
 // Prompt folder commands (see electron/preload.js `folderAPI`).
 use serde_json::Value;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::db::DbState;
+use crate::icons;
 use crate::repo::folders as repo;
 
+/// Uploaded icons arrive as data URLs; store the file and keep its short URL.
+/// On failure the original value is kept, matching Electron's `resolveIconValue`.
+fn resolve_icon(app: &AppHandle, icon: &str) -> String {
+    if !icon.starts_with("data:image/") {
+        return icon.to_string();
+    }
+    match icons::save(app, icon) {
+        Ok(url) => url,
+        Err(err) => {
+            eprintln!("[Icons] Failed to store custom icon: {err}");
+            icon.to_string()
+        }
+    }
+}
+
 #[tauri::command]
-pub fn folders_create(state: State<'_, DbState>, data: repo::NewFolder) -> Result<Value, String> {
+pub async fn folders_create(
+    app: AppHandle,
+    state: State<'_, DbState>,
+    mut data: repo::NewFolder,
+) -> Result<Value, String> {
+    data.icon = resolve_icon(&app, &data.icon);
     state.with_conn(|conn| repo::create(conn, data))
 }
 
@@ -51,18 +72,44 @@ pub fn folders_rename(
 }
 
 #[tauri::command]
-pub fn folders_update(
+pub async fn folders_update(
+    app: AppHandle,
     state: State<'_, DbState>,
     id: String,
     data: Option<repo::UpdateFolder>,
 ) -> Result<Option<Value>, String> {
-    let data = data.unwrap_or_default();
-    state.with_conn(|conn| repo::update(conn, &id, data))
+    let mut data = data.unwrap_or_default();
+    let previous = state.with_conn(|conn| repo::stored_icon(conn, &id))?;
+
+    if let Some(icon) = data.icon.as_deref() {
+        data.icon = Some(resolve_icon(&app, icon));
+    }
+    let updated = state.with_conn(|conn| repo::update(conn, &id, data))?;
+
+    // The folder no longer points at its old image, so the file can go.
+    if let Some(previous) = previous {
+        let stored = state
+            .with_conn(|conn| repo::stored_icon(conn, &id))?
+            .unwrap_or_default();
+        if previous != stored {
+            icons::delete(&app, &previous);
+        }
+    }
+    Ok(updated)
 }
 
 #[tauri::command]
-pub fn folders_delete(state: State<'_, DbState>, id: String) -> Result<Value, String> {
-    state.with_conn(|conn| repo::delete(conn, &id))
+pub async fn folders_delete(
+    app: AppHandle,
+    state: State<'_, DbState>,
+    id: String,
+) -> Result<Value, String> {
+    let icon = state.with_conn(|conn| repo::stored_icon(conn, &id))?;
+    let result = state.with_conn(|conn| repo::delete(conn, &id))?;
+    if let Some(icon) = icon {
+        icons::delete(&app, &icon);
+    }
+    Ok(result)
 }
 
 #[tauri::command]

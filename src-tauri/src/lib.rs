@@ -1,17 +1,27 @@
+pub mod backup;
 pub mod commands;
 pub mod crypto;
 pub mod db;
+pub mod icons;
 pub mod repo;
+pub mod settings;
 
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        // Custom folder icons, served at `qpicon://icon/<name>` (macOS/Linux)
+        // and `http://qpicon.localhost/icon/<name>` (Windows/Android).
+        .register_uri_scheme_protocol(icons::SCHEME, |context, request| {
+            icons::serve(context.app_handle(), request)
+        })
         .setup(|app| {
             let state = db::initialize(app.handle());
             app.manage(state);
             app.manage(crypto::VaultCipher::load());
+            app.manage(settings::SettingsStore::load(app.handle()));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -68,6 +78,18 @@ pub fn run() {
             commands::vault::vault_attachments_create,
             commands::vault::vault_attachments_delete,
             commands::vault::vault_attachments_download,
+            commands::settings::settings_get,
+            commands::settings::settings_set,
+            commands::settings::settings_pick_folder,
+            commands::fs::fs_read_dir,
+            commands::fs::fs_get_drives,
+            commands::import_export::import_export_save_file,
+            commands::import_export::import_export_open_file,
+            commands::backup::backup_create,
+            commands::backup::backup_restore,
+            commands::backup::backup_pick_file,
+            commands::backup::backup_set_passphrase,
+            commands::backup::backup_has_passphrase,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

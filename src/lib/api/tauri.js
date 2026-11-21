@@ -2,9 +2,9 @@
 // `invoke` works without the @tauri-apps/api package (still deliberately absent).
 const invoke = (command, args) => window.__TAURI_INTERNALS__.invoke(command, args)
 
-// Commands that exist in Rust today. Groups still missing (settings, backup,
-// update, window, app, shell, notifications, import/export, fs) keep rejecting
-// with a readable error until phases 5-7 fill them in.
+// Commands that exist in Rust today. Groups still missing (update, window, app,
+// shell, notifications) keep rejecting with a readable error until phases 6-7
+// fill them in.
 const IMPLEMENTED = {
   prompts: {
     health: () => invoke("db_health"),
@@ -69,6 +69,27 @@ const IMPLEMENTED = {
     createAttachment: (data) => invoke("vault_attachments_create", { data }),
     deleteAttachment: (id) => invoke("vault_attachments_delete", { id }),
     downloadAttachment: (id) => invoke("vault_attachments_download", { id }),
+  },
+  backup: {
+    create: () => invoke("backup_create"),
+    restore: (filePath, passphrase) => invoke("backup_restore", { filePath, passphrase }),
+    pickFile: () => invoke("backup_pick_file"),
+    setPassphrase: (passphrase) => invoke("backup_set_passphrase", { passphrase }),
+    hasPassphrase: () => invoke("backup_has_passphrase"),
+  },
+  settings: {
+    get: (key, fallback = null) => invoke("settings_get", { key, fallback }),
+    set: (key, value) => invoke("settings_set", { key, value }),
+    pickFolder: () => invoke("settings_pick_folder"),
+  },
+  fs: {
+    readDir: (dirPath) => invoke("fs_read_dir", { dirPath }),
+    getDrives: () => invoke("fs_get_drives"),
+  },
+  importExport: {
+    saveFile: ({ content, format, suggestedName } = {}) =>
+      invoke("import_export_save_file", { content, format, suggestedName }),
+    openFile: ({ format } = {}) => invoke("import_export_open_file", { format }),
   },
 }
 

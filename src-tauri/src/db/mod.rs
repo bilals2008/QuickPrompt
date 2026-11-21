@@ -91,15 +91,21 @@ pub fn initialize<R: Runtime>(app: &AppHandle<R>) -> DbState {
     }
 }
 
-/// `{app_data_dir}/QuickPrompt/quickprompt.db`, creating the directory if needed.
-pub fn database_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
+/// `{app_data_dir}/QuickPrompt`, created if needed. Shared by the database,
+/// settings, backups and folder icons.
+pub fn data_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
     let dir = app
         .path()
         .app_data_dir()
         .map_err(|err| err.to_string())?
         .join(DB_DIR);
     std::fs::create_dir_all(&dir).map_err(|err| err.to_string())?;
-    Ok(dir.join(DB_FILE))
+    Ok(dir)
+}
+
+/// `{app_data_dir}/QuickPrompt/quickprompt.db`, creating the directory if needed.
+pub fn database_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
+    Ok(data_dir(app)?.join(DB_FILE))
 }
 
 /// Open a database file: durability pragmas first, then the integrity gate,

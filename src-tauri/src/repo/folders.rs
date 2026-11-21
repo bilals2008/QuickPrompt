@@ -1,13 +1,14 @@
 //! Prompt folders, ported from electron/database/folders.js.
 //!
-//! Custom icon files (`data:image/...` -> `qpicon://`) are handled in Phase 5;
-//! here the icon value is stored exactly as it arrives.
+//! Custom icons are stored as `qpicon://icon/<name>` like Electron; rows are
+//! converted to the platform's served URL on the way out (see `crate::icons`).
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::db::rows::{self, int, opt_text, text, SqlValue};
 use crate::db::util::{count_of, new_id, now_iso};
+use crate::icons;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -79,32 +80,61 @@ pub fn create(conn: &Connection, data: NewFolder) -> Result<Value, String> {
     find(conn, &id)?.ok_or_else(|| "Folder not found after insert".to_string())
 }
 
+fn map_folder(mut folder: Value) -> Value {
+    if let Some(icon) = folder.get("icon").and_then(Value::as_str) {
+        let display = icons::display_url(icon);
+        if display != icon {
+            if let Value::Object(ref mut map) = folder {
+                map.insert("icon".to_string(), Value::from(display));
+            }
+        }
+    }
+    folder
+}
+
+fn map_folders(folders: Vec<Value>) -> Vec<Value> {
+    folders.into_iter().map(map_folder).collect()
+}
+
 pub fn find(conn: &Connection, id: &str) -> Result<Option<Value>, String> {
-    rows::one(conn, "SELECT * FROM folders WHERE id = ?", &[text(id)])
+    Ok(rows::one(conn, "SELECT * FROM folders WHERE id = ?", &[text(id)])?.map(map_folder))
+}
+
+/// The icon column exactly as stored, for comparing before and after an update.
+pub fn stored_icon(conn: &Connection, id: &str) -> Result<Option<String>, String> {
+    Ok(rows::one(
+        conn,
+        "SELECT icon FROM folders WHERE id = ?",
+        &[text(id)],
+    )?
+    .and_then(|row| row.get("icon").and_then(Value::as_str).map(str::to_owned)))
 }
 
 pub fn get_all(conn: &Connection) -> Result<Vec<Value>, String> {
-    rows::all(
+    let folders = rows::all(
         conn,
         "SELECT * FROM folders ORDER BY sort_order ASC, name ASC",
         &[],
-    )
+    )?;
+    Ok(map_folders(folders))
 }
 
 pub fn roots(conn: &Connection) -> Result<Vec<Value>, String> {
-    rows::all(
+    let folders = rows::all(
         conn,
         "SELECT * FROM folders WHERE parent_id IS NULL ORDER BY sort_order ASC, name ASC",
         &[],
-    )
+    )?;
+    Ok(map_folders(folders))
 }
 
 pub fn children(conn: &Connection, parent_id: &str) -> Result<Vec<Value>, String> {
-    rows::all(
+    let folders = rows::all(
         conn,
         "SELECT * FROM folders WHERE parent_id = ? ORDER BY sort_order ASC, name ASC",
         &[text(parent_id)],
-    )
+    )?;
+    Ok(map_folders(folders))
 }
 
 pub fn rename(conn: &Connection, id: &str, name: &str) -> Result<Option<Value>, String> {
@@ -288,20 +318,22 @@ pub fn get_prompts(
 }
 
 pub fn get_prompt_folders(conn: &Connection, prompt_id: &str) -> Result<Vec<Value>, String> {
-    rows::all(
+    let folders = rows::all(
         conn,
         "SELECT f.* FROM folders f \
          INNER JOIN prompt_folders pf ON f.id = pf.folder_id \
          WHERE pf.prompt_id = ? \
          ORDER BY f.name ASC",
         &[text(prompt_id)],
-    )
+    )?;
+    Ok(map_folders(folders))
 }
 
 pub fn search(conn: &Connection, query: &str) -> Result<Vec<Value>, String> {
-    rows::all(
+    let folders = rows::all(
         conn,
         "SELECT * FROM folders WHERE name LIKE ? ORDER BY name ASC",
         &[text(format!("%{query}%"))],
-    )
+    )?;
+    Ok(map_folders(folders))
 }
