@@ -1,8 +1,14 @@
 // Phase 3 checks: the ported domain commands against a real SQLite file.
 use serde_json::{json, Value};
 
+use crate::crypto::VaultCipher;
 use crate::db::open;
 use crate::repo::{folders, prompts, vault, vault_folders};
+
+/// Fixed test key — the OS credential store is never touched by unit tests.
+fn cipher() -> VaultCipher {
+    VaultCipher::from_key_bytes(&[7u8; 32]).expect("test key")
+}
 
 fn setup() -> (tempfile::TempDir, rusqlite::Connection) {
     let dir = tempfile::tempdir().expect("temp dir");
@@ -199,8 +205,10 @@ fn folders_tree_membership_and_move() {
 #[test]
 fn vault_items_round_trip_and_listing() {
     let (_dir, conn) = setup();
+    let cipher = cipher();
     let created = vault::create(
         &conn,
+        &cipher,
         parse(json!({
             "title": " Card ",
             "type": "login",
@@ -225,16 +233,32 @@ fn vault_items_round_trip_and_listing() {
     assert!(created.get("value").is_none(), "values never leave via mapRow");
 
     let id = created["id"].as_str().unwrap();
-    let revealed = vault::reveal(&conn, id).expect("reveal").expect("exists");
+    let revealed = vault::reveal(&conn, &cipher, id)
+        .expect("reveal")
+        .expect("exists");
     assert_eq!(revealed["value"], "secret-value");
+
+    // At rest the row holds ciphertext only, flagged as encrypted.
+    let stored = conn
+        .query_row(
+            "SELECT value, is_encrypted FROM vault_items WHERE id = ?",
+            rusqlite::params![id],
+            |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)),
+        )
+        .expect("stored row");
+    assert_eq!(stored.1, 1, "payload is marked encrypted");
+    assert!(!stored.0.contains("secret-value"), "no plaintext at rest");
 
     vault::update(
         &conn,
+        &cipher,
         id,
         parse(json!({ "title": "Renamed", "value": "new-value", "tags": [] })),
     )
     .expect("update");
-    let after = vault::reveal(&conn, id).expect("reveal").expect("exists");
+    let after = vault::reveal(&conn, &cipher, id)
+        .expect("reveal")
+        .expect("exists");
     assert_eq!(after["title"], "Renamed");
     assert_eq!(after["value"], "new-value");
     assert_eq!(after["tags"], json!([]));
@@ -261,8 +285,10 @@ fn vault_items_round_trip_and_listing() {
 #[test]
 fn vault_attachments_and_folders() {
     let (_dir, conn) = setup();
+    let cipher = cipher();
     let item = vault::create(
         &conn,
+        &cipher,
         parse(json!({ "title": "With file", "value": "v" })),
     )
     .expect("item");
@@ -270,6 +296,7 @@ fn vault_attachments_and_folders() {
 
     let attachment = vault::create_attachment(
         &conn,
+        &cipher,
         parse(json!({
             "vaultItemId": item_id,
             "filename": " note.txt ",
@@ -282,7 +309,11 @@ fn vault_attachments_and_folders() {
     assert_eq!(attachment["size"], 8);
     assert!(attachment.get("data").is_none());
 
-    let downloaded = vault::attachment_data(&conn, attachment["id"].as_str().unwrap())
+    let downloaded = vault::attachment_data(
+        &conn,
+        &cipher,
+        attachment["id"].as_str().unwrap(),
+    )
         .expect("download")
         .expect("row");
     assert_eq!(downloaded["data"], "aGVsbG8=");
@@ -291,9 +322,11 @@ fn vault_attachments_and_folders() {
         1
     );
     assert!(vault::delete_attachment(&conn, attachment["id"].as_str().unwrap()).expect("delete"));
-    assert!(vault::attachment_data(&conn, attachment["id"].as_str().unwrap())
-        .expect("download again")
-        .is_none());
+    assert!(
+        vault::attachment_data(&conn, &cipher, attachment["id"].as_str().unwrap())
+            .expect("download again")
+            .is_none()
+    );
 
     let folder = vault_folders::create(&conn, parse(json!({ "name": "Secrets" }))).expect("folder");
     let folder_id = folder["id"].as_str().unwrap();

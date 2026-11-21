@@ -1,15 +1,14 @@
 //! Vault items and attachments, ported from electron/database/vault.js.
 //!
-//! Phase 3 keeps stored values untouched: rows written by Electron are read as
-//! they are, and new values use the "encryption unavailable" branch (base64 of
-//! UTF-8, `is_encrypted = 0`). Phase 4 replaces `encrypt_value`/`decrypt_value`
-//! with keyring + AES-GCM.
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
+//! Payloads are sealed by `crate::crypto::VaultCipher` (Phase 4): AES-256-GCM
+//! with the key from the OS credential store. Rows written by Electron's
+//! `safeStorage` cannot be opened here; migration travels through the app's own
+//! encrypted backup (path A in the phase plan).
 use rusqlite::{Connection, OptionalExtension};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
+use crate::crypto::VaultCipher;
 use crate::db::rows::{self, int, text, SqlValue};
 use crate::db::util::{new_id, now_iso};
 
@@ -157,22 +156,16 @@ pub fn sanitize_tags(tags: Option<&Value>) -> Vec<String> {
     list.into_iter().filter(|tag| !tag.is_empty()).collect()
 }
 
-fn encrypt_value(plain: &str) -> (String, bool) {
-    (STANDARD.encode(plain.as_bytes()), false)
-}
-
-fn decrypt_value(encoded: &str, was_encrypted: bool) -> String {
-    if encoded.is_empty() {
-        return String::new();
+/// Open one stored payload. Unreadable ciphertext reads as empty, matching
+/// Electron's `decryptValue` catch, and is logged instead of panicking.
+fn reveal_value(cipher: &VaultCipher, encoded: &str, was_encrypted: bool) -> String {
+    match cipher.decrypt(encoded, was_encrypted) {
+        Ok(value) => value,
+        Err(err) => {
+            eprintln!("[Vault] Could not open stored secret: {err}");
+            String::new()
+        }
     }
-    if was_encrypted {
-        // safeStorage ciphertext: decrypted once Phase 4 lands.
-        return String::new();
-    }
-    STANDARD
-        .decode(encoded)
-        .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
-        .unwrap_or_default()
 }
 
 /// Same shape as Electron's `mapRow` — mixed snake_case keys plus `hasValue`.
@@ -205,7 +198,7 @@ pub fn map_row(row: &Value) -> Value {
     })
 }
 
-pub fn create(conn: &Connection, data: NewVaultItem) -> Result<Value, String> {
+pub fn create(conn: &Connection, cipher: &VaultCipher, data: NewVaultItem) -> Result<Value, String> {
     let id = new_id();
     let now = now_iso();
     let title = data.title.trim();
@@ -213,7 +206,7 @@ pub fn create(conn: &Connection, data: NewVaultItem) -> Result<Value, String> {
     let url = data.url.trim();
     let safe_meta = serialize_meta(data.meta.as_ref());
     let tags = sanitize_tags(data.tags.as_ref()).join(",");
-    let (encoded, encrypted) = encrypt_value(&data.value);
+    let (encoded, encrypted) = cipher.encrypt(&data.value)?;
 
     rows::execute(
         conn,
@@ -248,7 +241,7 @@ pub fn get(conn: &Connection, id: &str) -> Result<Option<Value>, String> {
     Ok(find_row(conn, id)?.as_ref().map(map_row))
 }
 
-pub fn reveal(conn: &Connection, id: &str) -> Result<Option<Value>, String> {
+pub fn reveal(conn: &Connection, cipher: &VaultCipher, id: &str) -> Result<Option<Value>, String> {
     let Some(row) = find_row(conn, id)? else {
         return Ok(None);
     };
@@ -256,7 +249,10 @@ pub fn reveal(conn: &Connection, id: &str) -> Result<Option<Value>, String> {
     let encrypted = row.get("is_encrypted").and_then(Value::as_i64).unwrap_or(0) == 1;
     let mut mapped = map_row(&row);
     if let Value::Object(ref mut map) = mapped {
-        map.insert("value".to_string(), Value::from(decrypt_value(encoded, encrypted)));
+        map.insert(
+            "value".to_string(),
+            Value::from(reveal_value(cipher, encoded, encrypted)),
+        );
     }
     Ok(Some(mapped))
 }
@@ -311,7 +307,12 @@ pub fn list(conn: &Connection, options: VaultListOptions) -> Result<Vec<Value>, 
     Ok(items.iter().map(map_row).collect())
 }
 
-pub fn update(conn: &Connection, id: &str, data: UpdateVaultItem) -> Result<Option<Value>, String> {
+pub fn update(
+    conn: &Connection,
+    cipher: &VaultCipher,
+    id: &str,
+    data: UpdateVaultItem,
+) -> Result<Option<Value>, String> {
     let mut sets: Vec<&str> = Vec::new();
     let mut params: Vec<SqlValue> = Vec::new();
 
@@ -348,7 +349,7 @@ pub fn update(conn: &Connection, id: &str, data: UpdateVaultItem) -> Result<Opti
         params.push(text(color_text));
     }
     if let Some(value) = data.value {
-        let (encoded, encrypted) = encrypt_value(&value);
+        let (encoded, encrypted) = cipher.encrypt(&value)?;
         sets.push("value = ?");
         params.push(text(encoded));
         sets.push("is_encrypted = ?");
@@ -440,7 +441,11 @@ pub fn find_attachment(conn: &Connection, id: &str) -> Result<Option<Value>, Str
     )
 }
 
-pub fn create_attachment(conn: &Connection, data: NewAttachment) -> Result<Value, String> {
+pub fn create_attachment(
+    conn: &Connection,
+    cipher: &VaultCipher,
+    data: NewAttachment,
+) -> Result<Value, String> {
     let id = new_id();
     let now = now_iso();
     let filename = if data.filename.trim().is_empty() {
@@ -449,7 +454,7 @@ pub fn create_attachment(conn: &Connection, data: NewAttachment) -> Result<Value
         data.filename.trim().to_string()
     };
     let size = data.data.len() as i64;
-    let (encoded, encrypted) = encrypt_value(&data.data);
+    let (encoded, encrypted) = cipher.encrypt(&data.data)?;
 
     conn.execute(
         "INSERT INTO vault_attachments (id, vault_item_id, filename, mime_type, size, data, is_encrypted, created_at) \
@@ -478,7 +483,11 @@ pub fn delete_attachment(conn: &Connection, id: &str) -> Result<bool, String> {
     Ok(true)
 }
 
-pub fn attachment_data(conn: &Connection, id: &str) -> Result<Option<Value>, String> {
+pub fn attachment_data(
+    conn: &Connection,
+    cipher: &VaultCipher,
+    id: &str,
+) -> Result<Option<Value>, String> {
     let row = conn
         .query_row(
             "SELECT id, vault_item_id, filename, mime_type, size, data, is_encrypted, created_at \
@@ -506,7 +515,7 @@ pub fn attachment_data(conn: &Connection, id: &str) -> Result<Option<Value>, Str
     };
 
     let encoded = String::from_utf8_lossy(&blob).into_owned();
-    let data = decrypt_value(&encoded, encrypted == 1);
+    let data = reveal_value(cipher, &encoded, encrypted == 1);
 
     Ok(Some(json!({
         "id": id,

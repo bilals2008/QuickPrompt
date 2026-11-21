@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod crypto;
 pub mod db;
 pub mod repo;
 
@@ -10,6 +11,7 @@ pub fn run() {
         .setup(|app| {
             let state = db::initialize(app.handle());
             app.manage(state);
+            app.manage(crypto::VaultCipher::load());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

@@ -37,10 +37,47 @@ Pick A unless there is a hard requirement for in-place upgrade.
 
 ## Done when
 
-- [ ] Vault create/get/update round-trips with encryption at rest.
-- [ ] DB inspection shows no plaintext secrets.
-- [ ] Tampered ciphertext fails cleanly, no panic.
-- [ ] Migration path A or B documented and tested once.
+- [x] Vault create/get/update round-trips with encryption at rest.
+- [x] DB inspection shows no plaintext secrets.
+- [x] Tampered ciphertext fails cleanly, no panic.
+- [x] Migration path A or B documented and tested once.
+
+## Implementation notes
+
+Landed as planned, with one deviation from the step list: no `rand` crate. The
+master key comes from `Key::<Aes256Gcm>::generate()` and each nonce from
+`Nonce::generate()`, both backed by `getrandom` through the `aead` feature, so
+only `keyring`, `aes-gcm` and `base64` were added.
+
+- `src-tauri/src/crypto.rs` owns the whole scheme as `VaultCipher`:
+  `Ready(Box<Aes256Gcm>)` or `Unavailable`, loaded once in `setup` and managed
+  as app state. The cipher is injected into `repo::vault` functions so unit
+  tests use a fixed key and never touch the real credential store.
+- Credential store: `keyring` 4.2 (default `v1` feature links the native store
+  per platform; Windows uses `windows-native-keyring-store`), service
+  `com.quickprompt.desktop`, account `vault-master-key`, value is the base64
+  of the 32-byte key. Created on first `NoEntry`.
+- Stored format is `base64(nonce ‖ ciphertext)` with the 12-byte nonce first;
+  the GCM tag stays inside the sealed ciphertext. `is_encrypted` is 1 for every
+  AES-GCM row and 0 for the fallback rows, matching the Electron column usage.
+- No drift on the fallback: when the credential store is unavailable (headless
+  Linux, missing Secret Service) `VaultCipher::Unavailable` keeps Electron's
+  base64-with-`is_encrypted = 0` behaviour and `vault_health` reports
+  `encryptionAvailable: false`, so the existing warning in `VaultPage.jsx` still
+  shows. The app never panics on a missing key.
+- Unreadable ciphertext (tampered, or a row encrypted under another key) is
+  logged to stderr and returned as an empty string, matching Electron's
+  `decryptValue` catch. `crypto::decrypt` itself still returns `Err`, which is
+  what the tamper test asserts.
+- Migration: **path A**. Electron `safeStorage` payloads are undecryptable from
+  Rust, so restore travels through the app's own encrypted backup. Path B is not
+  implemented.
+
+Verified: `cargo test` (12 tests, incl. crypto round-trip, tamper/foreign-key
+rejection and the fallback), `cargo clippy --all-targets` clean, `npm test`
+(52 tests) and `npm run lint` clean. The vault repo tests now also assert that a
+created item is stored with `is_encrypted = 1` and that the plaintext does not
+appear in the `value` column.
 
 ## Risks
 
