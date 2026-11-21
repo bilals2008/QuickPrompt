@@ -43,6 +43,7 @@ import { EmptyState } from "@/components/empty-state"
 
 import { useFolders } from "@/hooks/useFolders"
 import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
+import { api } from "@/lib/api"
 
 export default function CollectionsPage() {
   useOutletContext()
@@ -114,7 +115,7 @@ export default function CollectionsPage() {
 
   const loadAllPrompts = useCallback(async () => {
     try {
-      const result = await window.db.getAllPrompts()
+      const result = await api.prompts.getAllPrompts()
       setAllPrompts(result || [])
     } catch {
       setAllPrompts([])
@@ -132,7 +133,7 @@ export default function CollectionsPage() {
       const entries = await Promise.all(
         folders.map(async (f) => {
           try {
-            const r = await window.folderAPI.getPrompts(f.id)
+            const r = await api.folders.getPrompts(f.id)
             return [f.id, r?.total ?? 0]
           } catch {
             return [f.id, 0]
@@ -268,10 +269,10 @@ export default function CollectionsPage() {
     try {
       if (deleteContents) {
         for (const id of ids) {
-          const result = await window.folderAPI.getPrompts(id)
+          const result = await api.folders.getPrompts(id)
           const promptIds = (result?.prompts || []).map((p) => p.id)
           for (const pid of promptIds) {
-            await window.db.deletePrompt(pid)
+            await api.prompts.deletePrompt(pid)
           }
         }
       }
@@ -296,7 +297,7 @@ export default function CollectionsPage() {
   const removePromptFromFolder = async (promptId) => {
     if (!activeFolder) return
     try {
-      await window.folderAPI.removePrompt(promptId, activeFolder.id)
+      await api.folders.removePrompt(promptId, activeFolder.id)
       await loadFolderPrompts(activeFolder.id)
       toast.success("Removed")
     } catch {
@@ -307,7 +308,7 @@ export default function CollectionsPage() {
   const addPromptsToFolder = async (promptIds) => {
     if (!activeFolder || promptIds.length === 0) return
     try {
-      for (const pid of promptIds) await window.folderAPI.addPrompt(pid, activeFolder.id)
+      for (const pid of promptIds) await api.folders.addPrompt(pid, activeFolder.id)
       await loadFolderPrompts(activeFolder.id)
       setStatsTick((t) => t + 1)
       setAddPromptsOpen(false)
@@ -330,7 +331,7 @@ export default function CollectionsPage() {
 
   const toggleFavorite = async (id) => {
     try {
-      await window.db.toggleFavorite(id)
+      await api.prompts.toggleFavorite(id)
       if (activeFolder) await loadFolderPrompts(activeFolder.id)
     } catch {
       /* ignored */
@@ -343,8 +344,8 @@ export default function CollectionsPage() {
     setDetailsChildFolders([])
     try {
       const [promptsResult, children] = await Promise.all([
-        window.folderAPI.getPrompts(folder.id),
-        window.folderAPI.children(folder.id),
+        api.folders.getPrompts(folder.id),
+        api.folders.children(folder.id),
       ])
       setDetailsPrompts(promptsResult?.prompts || [])
       setDetailsChildFolders(children || [])

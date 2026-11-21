@@ -15,6 +15,7 @@ import { getPromptTitle } from "@/lib/prompt-utils"
 import { parseTagsString } from "@/lib/tag-utils"
 import { TAG_CLASS, getTagColor } from "@/lib/tag-colors"
 import { cn } from "@/lib/utils"
+import { api } from "@/lib/api"
 
 const markdownPlugins = [remarkGfm]
 
@@ -27,10 +28,10 @@ const markdownComponents = {
         target="_blank"
         rel="noopener noreferrer"
         onClick={async (event) => {
-          if (!window.shellAPI?.openExternal) return
+          if (!api.shell?.openExternal) return
           event.preventDefault()
           try {
-            const result = await window.shellAPI.openExternal(href)
+            const result = await api.shell.openExternal(href)
             if (!result?.success) toast.error("Could not open link")
           } catch {
             toast.error("Could not open link")

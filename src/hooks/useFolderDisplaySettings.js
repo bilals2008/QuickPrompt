@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { DEFAULT_FOLDER_APPEARANCE } from "@/lib/folder-appearance"
+import { api } from "@/lib/api"
 
 export const DEFAULT_FOLDER_DISPLAY = {
   ...DEFAULT_FOLDER_APPEARANCE,
@@ -19,7 +20,7 @@ export function useFolderDisplaySettings() {
 
   useEffect(() => {
     let mounted = true
-    window.settingsAPI?.get(STORAGE_KEY, DEFAULT_FOLDER_DISPLAY).then((stored) => {
+    api.settings?.get(STORAGE_KEY, DEFAULT_FOLDER_DISPLAY).then((stored) => {
       if (!mounted) return
       setSettings({ ...DEFAULT_FOLDER_DISPLAY, ...(stored || {}) })
     })
@@ -31,7 +32,7 @@ export function useFolderDisplaySettings() {
   const update = useCallback(async (patch) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch }
-      window.settingsAPI?.set(STORAGE_KEY, next)
+      api.settings?.set(STORAGE_KEY, next)
       return next
     })
   }, [])

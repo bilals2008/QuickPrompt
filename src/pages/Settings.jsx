@@ -74,6 +74,7 @@ import {
   ThemeCard,
 } from "@/components/settings/SettingsPrimitives"
 import FoldersSettings from "@/components/settings/FoldersSettings"
+import { api } from "@/lib/api"
 
 const sections = [
   { id: "general", icon: IconPlayerPlay, label: "General" },
@@ -227,31 +228,31 @@ export default function Settings() {
   const searchRef = useRef(null)
 
   useEffect(() => {
-    window.updateAPI?.getAutoCheck()?.then((v) => setAutoCheck(v))
-    window.updateAPI?.getAutoDownload()?.then((v) => setAutoDownload(v))
-    window.updateAPI?.getStatus()?.then((s) => {
+    api.update?.getAutoCheck()?.then((v) => setAutoCheck(v))
+    api.update?.getAutoDownload()?.then((v) => setAutoDownload(v))
+    api.update?.getStatus()?.then((s) => {
       if (s?.status) setUpdateStatus(s.status)
       if (s?.version) setUpdateInfo({ version: s.version, releaseNotes: s.releaseNotes })
     })
 
-    window.settingsAPI?.get("closeBehavior", "tray").then((v) => setCloseBehavior(v))
-    window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
-    window.settingsAPI?.get("defaultView", "grid").then((v) => setDefaultView(v))
-    window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
-    window.settingsAPI?.get("caseSensitive", false).then((v) => setCaseSensitiveSearch(Boolean(v)))
-    window.settingsAPI?.get("searchInTagsOnly", false).then((v) => setSearchInTagsOnly(Boolean(v)))
-    window.settingsAPI?.get("defaultWindowSize", "medium").then((v) => setDefaultWindowSize(v))
-    window.settingsAPI?.get("startMinimized", false).then((v) => setStartMinimized(Boolean(v)))
-    window.settingsAPI?.get("minimizeToTray", false).then((v) => setMinimizeToTray(Boolean(v)))
-    window.settingsAPI?.get("autoBackup", false).then((v) => setAutoBackup(Boolean(v)))
-    window.settingsAPI?.get("backupLocation", "").then((v) => setBackupLocation(v || ""))
-    window.settingsAPI?.get("backupSchedule", "off").then((v) => setBackupSchedule(v || "off"))
-    window.settingsAPI?.get("backupRetention", 10).then((v) => setBackupRetention(Number(v) || 10))
-    window.backupAPI?.hasPassphrase()?.then((v) => setHasPassphrase(Boolean(v)))
-    window.settingsAPI?.get("defaultSortOrder", "newest").then((v) => setDefaultSortOrder(v))
-    window.windowAPI?.getAlwaysOnTop?.().then((v) => setAlwaysOnTop(Boolean(v)))
+    api.settings?.get("closeBehavior", "tray").then((v) => setCloseBehavior(v))
+    api.settings?.get("autoCopy", true).then((v) => setAutoCopy(v))
+    api.settings?.get("defaultView", "grid").then((v) => setDefaultView(v))
+    api.settings?.get("notifications", false).then((v) => setNotifications(v))
+    api.settings?.get("caseSensitive", false).then((v) => setCaseSensitiveSearch(Boolean(v)))
+    api.settings?.get("searchInTagsOnly", false).then((v) => setSearchInTagsOnly(Boolean(v)))
+    api.settings?.get("defaultWindowSize", "medium").then((v) => setDefaultWindowSize(v))
+    api.settings?.get("startMinimized", false).then((v) => setStartMinimized(Boolean(v)))
+    api.settings?.get("minimizeToTray", false).then((v) => setMinimizeToTray(Boolean(v)))
+    api.settings?.get("autoBackup", false).then((v) => setAutoBackup(Boolean(v)))
+    api.settings?.get("backupLocation", "").then((v) => setBackupLocation(v || ""))
+    api.settings?.get("backupSchedule", "off").then((v) => setBackupSchedule(v || "off"))
+    api.settings?.get("backupRetention", 10).then((v) => setBackupRetention(Number(v) || 10))
+    api.backup?.hasPassphrase()?.then((v) => setHasPassphrase(Boolean(v)))
+    api.settings?.get("defaultSortOrder", "newest").then((v) => setDefaultSortOrder(v))
+    api.window?.getAlwaysOnTop?.().then((v) => setAlwaysOnTop(Boolean(v)))
 
-    const unsubscribe = window.updateAPI?.onEvent((event) => {
+    const unsubscribe = api.update?.onEvent((event) => {
       setUpdateStatus(event.status)
       if (event.version) {
         setUpdateInfo({ version: event.version, releaseNotes: event.releaseNotes })
@@ -309,7 +310,7 @@ export default function Settings() {
   async function handleCheckUpdate() {
     setChecking(true)
     try {
-      await window.updateAPI?.checkForUpdates()
+      await api.update?.checkForUpdates()
     } catch {
       toast.error("Failed to check for updates")
     } finally {
@@ -322,7 +323,7 @@ export default function Settings() {
     smoothedSpeedRef.current = 0
     setDownloadProgress({ percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 })
     try {
-      await window.updateAPI?.downloadUpdate()
+      await api.update?.downloadUpdate()
     } catch {
       toast.error("Failed to download update")
     } finally {
@@ -332,84 +333,84 @@ export default function Settings() {
 
   function handleAutoCheckToggle(checked) {
     setAutoCheck(checked)
-    window.updateAPI?.setAutoCheck(checked)
+    api.update?.setAutoCheck(checked)
   }
 
   function handleAutoDownloadToggle(checked) {
     setAutoDownload(checked)
-    window.updateAPI?.setAutoDownload(checked)
+    api.update?.setAutoDownload(checked)
   }
 
   function handleCloseBehaviorChange(value) {
     setCloseBehavior(value)
-    window.settingsAPI?.set("closeBehavior", value)
+    api.settings?.set("closeBehavior", value)
   }
 
   function handleAutoCopyToggle(checked) {
     setAutoCopy(checked)
-    window.settingsAPI?.set("autoCopy", checked)
+    api.settings?.set("autoCopy", checked)
   }
 
   function handleDefaultViewChange(value) {
     setDefaultView(value)
-    window.settingsAPI?.set("defaultView", value)
+    api.settings?.set("defaultView", value)
   }
 
   function handleNotificationsToggle(checked) {
     setNotifications(checked)
-    window.settingsAPI?.set("notifications", checked)
+    api.settings?.set("notifications", checked)
   }
 
   async function handleAlwaysOnTopToggle(checked) {
-    const res = await window.windowAPI?.setAlwaysOnTop?.(checked)
+    const res = await api.window?.setAlwaysOnTop?.(checked)
     if (res?.success) setAlwaysOnTop(res.value)
   }
 
   function handleCaseSensitive(checked) {
     setCaseSensitiveSearch(checked)
-    window.settingsAPI?.set("caseSensitive", checked)
+    api.settings?.set("caseSensitive", checked)
   }
 
   function handleSearchInTagsOnly(checked) {
     setSearchInTagsOnly(checked)
-    window.settingsAPI?.set("searchInTagsOnly", checked)
+    api.settings?.set("searchInTagsOnly", checked)
   }
 
   function handleDefaultWindowSize(value) {
     setDefaultWindowSize(value)
-    window.settingsAPI?.set("defaultWindowSize", value)
+    api.settings?.set("defaultWindowSize", value)
   }
 
   function handleStartMinimized(checked) {
     setStartMinimized(checked)
-    window.settingsAPI?.set("startMinimized", checked)
+    api.settings?.set("startMinimized", checked)
   }
 
   function handleMinimizeToTrayToggle(checked) {
     setMinimizeToTray(checked)
-    window.settingsAPI?.set("minimizeToTray", checked)
+    api.settings?.set("minimizeToTray", checked)
   }
 
   function handleAutoBackup(checked) {
     setAutoBackup(checked)
-    window.settingsAPI?.set("autoBackup", checked)
+    api.settings?.set("autoBackup", checked)
   }
 
   function handleBackupSchedule(value) {
     setBackupSchedule(value)
-    window.settingsAPI?.set("backupSchedule", value)
+    api.settings?.set("backupSchedule", value)
   }
 
   function handleBackupRetention(value) {
     setBackupRetention(value)
-    window.settingsAPI?.set("backupRetention", value)
+    api.settings?.set("backupRetention", value)
   }
 
   async function handlePickBackupLocation() {
-    const res = await window.settingsAPI?.pickFolder()
+    const res = await api.settings?.pickFolder()
     if (res?.success) {
       setBackupLocation(res.path)
-      window.settingsAPI?.set("backupLocation", res.path)
+      api.settings?.set("backupLocation", res.path)
     }
   }
 
@@ -418,7 +419,7 @@ export default function Settings() {
       toast.error("Passphrase must be at least 4 characters")
       return
     }
-    const res = await window.backupAPI?.setPassphrase(passphraseInput)
+    const res = await api.backup?.setPassphrase(passphraseInput)
     if (res?.success) {
       setHasPassphrase(true)
       setPassphraseInput("")
@@ -430,7 +431,7 @@ export default function Settings() {
 
   async function handleRestore() {
     if (!restoreFile) {
-      const res = await window.backupAPI?.pickFile()
+      const res = await api.backup?.pickFile()
       if (!res?.success) return
       setRestoreFile(res.path)
       return
@@ -441,7 +442,7 @@ export default function Settings() {
     }
     setRestoring(true)
     try {
-      const res = await window.backupAPI?.restore(restoreFile, restorePassphrase)
+      const res = await api.backup?.restore(restoreFile, restorePassphrase)
       if (res?.success) {
         toast.success("Restore complete. App will restart.")
       } else {
@@ -456,7 +457,7 @@ export default function Settings() {
 
   function handleDefaultSortOrder(value) {
     setDefaultSortOrder(value)
-    window.settingsAPI?.set("defaultSortOrder", value)
+    api.settings?.set("defaultSortOrder", value)
   }
 
   const filteredSections = useMemo(() => {
@@ -765,7 +766,7 @@ export default function Settings() {
                         size="sm"
                         className="cursor-pointer"
                         onClick={async () => {
-                          await window.settingsAPI?.set("onboardingComplete", false)
+                          await api.settings?.set("onboardingComplete", false)
                           toast.success("Onboarding reset. Restart app to see welcome screen.")
                         }}
                       >
@@ -997,7 +998,7 @@ export default function Settings() {
                         className="cursor-pointer text-xs"
                         disabled={!backupLocation || !hasPassphrase}
                         onClick={async () => {
-                          const res = await window.backupAPI?.create()
+                          const res = await api.backup?.create()
                           if (res?.success) {
                             toast.success("Encrypted backup created!")
                           } else {
@@ -1250,7 +1251,7 @@ export default function Settings() {
                         <Button
                           size="sm"
                           className="cursor-pointer"
-                          onClick={() => window.updateAPI?.installUpdate()}
+                          onClick={() => api.update?.installUpdate()}
                         >
                           <IconRefresh className="size-3.5 mr-1.5" />
                           Restart &amp; Install

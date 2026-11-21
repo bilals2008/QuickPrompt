@@ -6,6 +6,7 @@ import { GITHUB_RELEASES_URL, SECTION_META } from "@/lib/changelog"
 import { cn } from "@/lib/utils"
 import { IconArrowUpRight, IconCheck } from "@tabler/icons-react"
 import { toast } from "sonner"
+import { api } from "@/lib/api"
 
 function formatReleaseDate(date) {
   if (!date) return ""
@@ -15,9 +16,9 @@ function formatReleaseDate(date) {
 }
 
 function openReleaseNotes(event) {
-  if (!window.shellAPI?.openExternal) return
+  if (!api.shell?.openExternal) return
   event.preventDefault()
-  window.shellAPI.openExternal(GITHUB_RELEASES_URL).then(
+  api.shell.openExternal(GITHUB_RELEASES_URL).then(
     (result) => {
       if (!result?.success) toast.error("Could not open link")
     },

@@ -27,6 +27,7 @@ import {
   IconStarFilled,
   IconTrash,
 } from "@tabler/icons-react"
+import { api } from "@/lib/api"
 
 /* ───── Shared helpers ───── */
 
@@ -235,7 +236,7 @@ function UrlLink({ url }) {
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
-        window.shellAPI?.openExternal(url)
+        api.shell?.openExternal(url)
       }}
       className="flex min-w-0 items-center gap-1 text-[11px] text-primary/80 transition-colors hover:text-primary"
       title={url}

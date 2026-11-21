@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { exportPrompts, getExtension } from "../lib"
+import { api } from "@/lib/api"
 
 function defaultFileName(formatId) {
   const date = new Date().toISOString().slice(0, 10)
@@ -12,15 +13,15 @@ export function useExport() {
 
   const exportToFile = useCallback(async (formatId) => {
     if (!formatId) return { success: false, reason: "no-format" }
-    if (!window.importExportAPI?.saveFile) {
+    if (!api.importExport?.saveFile) {
       toast.error("File save API is not available")
       return { success: false, reason: "no-api" }
     }
     setBusy(true)
     try {
-      const prompts = await window.db.getAllPrompts()
+      const prompts = await api.prompts.getAllPrompts()
       const content = exportPrompts(formatId, prompts)
-      const res = await window.importExportAPI.saveFile({
+      const res = await api.importExport.saveFile({
         content,
         format: formatId,
         suggestedName: defaultFileName(formatId),

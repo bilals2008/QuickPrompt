@@ -18,11 +18,14 @@ This phase touches only `src/`. It de-risks everything after it.
 
 ## Done when
 
-- [ ] No direct `window.<namespace>` access outside `src/lib/api/`.
-- [ ] Electron app behaves identically (manual smoke of all pages).
-- [ ] Lint rule fails if a new direct call is added.
+- [x] No direct `window.<namespace>` access outside `src/lib/api/` (ESLint `no-restricted-syntax`).
+- [x] Electron app behaves identically (Home: 107 prompts + tags + settings; Collections: 16 folders).
+- [x] Lint rule fails if a new direct call is added (checked with a throwaway file).
 
 ## Notes
 
 - This is the cheapest phase and pays off everywhere. Do not skip it.
-- `electronAPI.onGlobalSearch` / `onNavigate` / `updateAPI.onEvent` return unsubscribe functions — the adapter must preserve that shape.
+- `electronAPI.onGlobalSearch` / `onNavigate` / `updateAPI.onEvent` return unsubscribe functions — the adapter must preserve that shape. The Tauri stubs return no-op unsubscribe functions for these.
+- Step 2 uses `window.__TAURI_INTERNALS__` instead of `window.__TAURI__`: Tauri 2 injects the former into every webview even with the global JS API off, so no `tauri.conf.json` change is needed.
+- `src/lib/api/tauri.js` rejects every call with a readable "not implemented in Tauri yet" error until phases 2-7 add real commands. `@tauri-apps/api` is deliberately not installed yet.
+- `npm test` (52 tests) and `npm run lint` pass. Visual smoke covered Home and Collections; Settings/Vault/Import-Export use the same forwarding pairs and are covered by the adapter unit test, not by a visual walkthrough.

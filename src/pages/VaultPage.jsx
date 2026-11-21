@@ -44,6 +44,7 @@ import { SectionHeader } from "@/components/section-header"
 import { EmptyState } from "@/components/empty-state"
 import { useVaultFolders } from "@/hooks/useVaultFolders"
 import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
+import { api } from "@/lib/api"
 
 function EncryptionNotice() {
   return (
@@ -118,7 +119,7 @@ export default function VaultPage() {
     await Promise.all(
       (list || []).map(async (item) => {
         try {
-          const atts = await window.vaultAPI.listAttachments(item.id)
+          const atts = await api.vault.listAttachments(item.id)
           counts[item.id] = Array.isArray(atts) ? atts.length : 0
         } catch {
           counts[item.id] = 0
@@ -131,7 +132,7 @@ export default function VaultPage() {
   const loadGlobalItems = useCallback(async () => {
     setLoading(true)
     try {
-      const list = await window.vaultAPI.list({ sortOrder, search })
+      const list = await api.vault.list({ sortOrder, search })
       const arr = Array.isArray(list) ? list : []
       setItems(arr)
       await loadAttachmentCounts(arr)
@@ -148,7 +149,7 @@ export default function VaultPage() {
       if (!folder) return
       setLoading(true)
       try {
-        const itemsResult = await window.vaultFolderAPI.getItems(folder.id, { sortOrder })
+        const itemsResult = await api.vaultFolders.getItems(folder.id, { sortOrder })
         const arr = itemsResult?.items || []
         setItems(arr)
         await loadAttachmentCounts(arr)
@@ -173,29 +174,29 @@ export default function VaultPage() {
   }, [activeVaultFolder, loadGlobalItems])
 
   useEffect(() => {
-    window.vaultAPI
+    api.vault
       ?.health?.()
       .then((h) => setEncryptionAvailable(Boolean(h?.encryptionAvailable)))
       .catch(() => {})
   }, [])
 
   useEffect(() => {
-    window.settingsAPI?.get("vaultViewMode", "grid").then((v) => {
+    api.settings?.get("vaultViewMode", "grid").then((v) => {
       if (VAULT_VIEW_MODES.includes(v)) setItemViewMode(v)
     })
-    window.settingsAPI?.get("vaultSortOrder", "newest").then((v) => {
+    api.settings?.get("vaultSortOrder", "newest").then((v) => {
       if (VAULT_SORT_ORDERS.includes(v)) setSortOrder(v)
     })
   }, [])
 
   const changeViewMode = useCallback((mode) => {
     setItemViewMode(mode)
-    window.settingsAPI?.set("vaultViewMode", mode)
+    api.settings?.set("vaultViewMode", mode)
   }, [])
 
   const changeSortOrder = useCallback((order) => {
     setSortOrder(order)
-    window.settingsAPI?.set("vaultSortOrder", order)
+    api.settings?.set("vaultSortOrder", order)
   }, [])
 
   // Per-folder item counts for the tile badges.
@@ -209,7 +210,7 @@ export default function VaultPage() {
       const entries = await Promise.all(
         vaultFolders.map(async (f) => {
           try {
-            const r = await window.vaultFolderAPI.getItems(f.id)
+            const r = await api.vaultFolders.getItems(f.id)
             return [f.id, r?.total ?? 0]
           } catch {
             return [f.id, 0]
@@ -357,10 +358,10 @@ export default function VaultPage() {
     try {
       if (deleteContents) {
         for (const id of ids) {
-          const result = await window.vaultFolderAPI.getItems(id)
+          const result = await api.vaultFolders.getItems(id)
           const items = result?.items || []
           for (const item of items) {
-            await window.vaultAPI.delete(item.id)
+            await api.vault.delete(item.id)
           }
         }
       }
@@ -383,7 +384,7 @@ export default function VaultPage() {
   const moveVaultItemToFolder = async (folderId) => {
     if (!moveItemId || !folderId) return
     try {
-      await window.vaultFolderAPI.addItem(moveItemId, folderId)
+      await api.vaultFolders.addItem(moveItemId, folderId)
       setMoveItemId(null)
       await reloadCurrent()
       toast.success("Moved to folder")
@@ -395,7 +396,7 @@ export default function VaultPage() {
   const removeVaultItemFromFolder = async (itemId) => {
     if (!activeVaultFolder) return
     try {
-      await window.vaultFolderAPI.removeItem(itemId, activeVaultFolder.id)
+      await api.vaultFolders.removeItem(itemId, activeVaultFolder.id)
       await reloadCurrent()
       toast.success("Removed from folder")
     } catch {
@@ -405,7 +406,7 @@ export default function VaultPage() {
 
   const openAddItems = useCallback(async () => {
     try {
-      const list = await window.vaultAPI.list({ sortOrder: "newest", search: "" })
+      const list = await api.vault.list({ sortOrder: "newest", search: "" })
       setAllVaultItems(Array.isArray(list) ? list : [])
     } catch {
       setAllVaultItems([])
@@ -417,7 +418,7 @@ export default function VaultPage() {
   const addItemsToVaultFolder = async (itemIds) => {
     if (!activeVaultFolder || itemIds.length === 0) return
     try {
-      for (const id of itemIds) await window.vaultFolderAPI.addItem(id, activeVaultFolder.id)
+      for (const id of itemIds) await api.vaultFolders.addItem(id, activeVaultFolder.id)
       await reloadCurrent()
       setAddItemsOpen(false)
       setAddItemsSearch("")
@@ -433,8 +434,8 @@ export default function VaultPage() {
     setDetailsChildren([])
     try {
       const [itemsResult, children] = await Promise.all([
-        window.vaultFolderAPI.getItems(folder.id),
-        window.vaultFolderAPI.children(folder.id),
+        api.vaultFolders.getItems(folder.id),
+        api.vaultFolders.children(folder.id),
       ])
       setDetailsItems(itemsResult?.items || [])
       setDetailsChildren(children || [])
@@ -459,7 +460,7 @@ export default function VaultPage() {
 
   async function copySecret(id) {
     try {
-      const res = await window.vaultAPI.copy(id)
+      const res = await api.vault.copy(id)
       if (res?.success) {
         navigator.clipboard.writeText(res.value)
         markCopied(id)
@@ -475,7 +476,7 @@ export default function VaultPage() {
 
   async function handleToggleFavorite(id) {
     try {
-      await window.vaultAPI.toggleFavorite(id)
+      await api.vault.toggleFavorite(id)
       await reloadCurrent()
     } catch (err) {
       toast.error("Failed to update favorite")
@@ -485,7 +486,7 @@ export default function VaultPage() {
 
   async function handleTogglePin(id) {
     try {
-      await window.vaultAPI.togglePin(id)
+      await api.vault.togglePin(id)
       await reloadCurrent()
     } catch (err) {
       toast.error("Failed to update pin")
@@ -495,7 +496,7 @@ export default function VaultPage() {
 
   async function handleDelete(id) {
     try {
-      await window.vaultAPI.delete(id)
+      await api.vault.delete(id)
       await reloadCurrent()
       toast.success("Credential deleted")
     } catch (err) {
@@ -511,7 +512,7 @@ export default function VaultPage() {
     }
     try {
       if (values[item.id] === undefined) {
-        const full = await window.vaultAPI.get(item.id)
+        const full = await api.vault.get(item.id)
         setValues((v) => ({ ...v, [item.id]: full?.value ?? "" }))
       }
       setRevealed((r) => ({ ...r, [item.id]: true }))
