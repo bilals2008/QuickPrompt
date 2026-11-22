@@ -2,6 +2,32 @@
 
 **Goal:** prove the Tauri build matches Electron feature-for-feature, migrate real data safely, then decide the release path.
 
+## Status (2026-11-22)
+
+Not started — Phase 8 is a parity gate, not a coding phase. All checklist
+boxes below are unchecked until a person runs both shells side by side on the
+same data and a clean Windows machine, plus macOS if shipping.
+
+The code-side prerequisites are complete (Phases 0–7 all committed), so nothing
+new needs to be written: prompts, tags, search, folders, vault, backup,
+import/export, themes, window/tray, global shortcut, notifications, updater,
+version + platform display, and onboarding are all ported. Data migration uses
+the existing encrypted backup → restore flow.
+
+What remains (human + real machines):
+
+- Run Electron and Tauri side by side on a copy of real data; tick every
+  parity row (prompts, tags, search, folders, vault, vault folders, backup,
+  import/export, themes, window, global search shortcut, notifications,
+  updater flow, onboarding, version + platform).
+- Restore a real user's encrypted backup in Tauri; verify row counts and vault
+  decryption; keep the Electron DB untouched as rollback.
+- Test the installer on a clean Windows machine (and macOS if shipping it).
+- Record the release decision (upgrade in place as 3.0.0 vs new product) in
+  this folder; tag the Electron repo final release and keep it read-only.
+
+Only when every box above is green does Phase 8 — and the migration — complete.
+
 ## Parity checklist
 
 Run both builds side by side on the same data (or a copy). Tick every row:
