@@ -2,6 +2,7 @@ import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { importFromUnknownFormat, getFormat } from "../lib"
 import { resolveFolderPath } from "../lib/folder-resolver"
+import { api } from "@/lib/api"
 
 const INITIAL_RESULT = {
   status: "idle",
@@ -94,7 +95,7 @@ export function useImport() {
     try {
       for (const prompt of result.prompts) {
         try {
-          const created = await window.db.createPrompt({
+          const created = await api.prompts.createPrompt({
             title: prompt.title,
             content: prompt.content,
             tags: prompt.tags,
@@ -107,12 +108,12 @@ export function useImport() {
           // created when it does not. Prompts without one go to the chosen folder.
           let targetFolderId = folderId
           if (prompt.folder) {
-            const resolved = await resolveFolderPath(prompt.folder, window.folderAPI)
+            const resolved = await resolveFolderPath(prompt.folder, api.folders)
             targetFolderId = resolved.id ?? folderId
             foldersCreated.push(...resolved.created)
           }
           if (targetFolderId && created?.id) {
-            await window.folderAPI?.addPrompt(created.id, targetFolderId).catch(() => {})
+            await api.folders?.addPrompt(created.id, targetFolderId).catch(() => {})
           }
           inserted += 1
         } catch {

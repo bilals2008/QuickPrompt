@@ -20,6 +20,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getPromptTitle } from "@/lib/prompt-utils"
 import { parseTagsString } from "@/lib/tag-utils"
+import { api } from "@/lib/api"
 
 function parseTags(tags) {
   return parseTagsString(tags).map((t) => t.split(":")[0]).filter(Boolean)
@@ -43,8 +44,8 @@ export function SpotlightSearch() {
   const isMini = useIsMini()
 
   useEffect(() => {
-    if (!window.electronAPI?.onGlobalSearch) return
-    const unsubscribe = window.electronAPI.onGlobalSearch(() => {
+    if (!api.app?.onGlobalSearch) return
+    const unsubscribe = api.app.onGlobalSearch(() => {
       setOpen((prev) => !prev)
     })
     return unsubscribe
@@ -70,7 +71,7 @@ export function SpotlightSearch() {
   useEffect(() => {
     if (!open) return
     let cancelled = false
-    window.db
+    api.prompts
       .getAllPrompts()
       .then((data) => {
         if (!cancelled) setPrompts(Array.isArray(data) ? data : [])
@@ -86,8 +87,8 @@ export function SpotlightSearch() {
       await navigator.clipboard.writeText(prompt.content)
       toast.success(`Copied "${getPromptTitle(prompt)}" to clipboard!`)
       setOpen(false)
-      if (window.electronAPI?.hideWindow) {
-        await window.electronAPI.hideWindow()
+      if (api.app?.hideWindow) {
+        await api.app.hideWindow()
       }
     } catch (error) {
       console.error("Failed to copy prompt:", error)

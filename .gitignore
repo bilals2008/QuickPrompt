@@ -2,6 +2,8 @@ node_modules
 dist
 dist-electron
 release
+src-tauri/target
+src-tauri/gen/schemas
 *.local
 app-update.yml
 .env
@@ -11,3 +13,9 @@ app-update.yml
 .DS_Store
 Thumbs.db
 .commandcode
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.mobileprovision

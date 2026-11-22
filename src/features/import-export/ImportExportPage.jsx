@@ -12,6 +12,7 @@ import { ImportSummary } from "./components/ImportSummary"
 import { ExportPanel } from "./components/ExportPanel"
 import { FormatExample } from "./components/FormatExample"
 import { NO_FOLDER } from "@/components/folders/FolderSelect"
+import { api } from "@/lib/api"
 
 function Section({ icon: Icon, title, description, children }) {
   return (
@@ -43,7 +44,7 @@ export default function ImportExportPage() {
 
   useEffect(() => {
     let cancelled = false
-    window.db.getAllPrompts().then((prompts) => {
+    api.prompts.getAllPrompts().then((prompts) => {
       if (!cancelled) setPromptCount(prompts.length)
     })
     return () => {
@@ -52,14 +53,14 @@ export default function ImportExportPage() {
   }, [import_.result.status])
 
   useEffect(() => {
-    window.folderAPI?.list().then((f) => {
+    api.folders?.list().then((f) => {
       setFolders(Array.isArray(f) ? f : [])
     }).catch(() => setFolders([]))
   }, [])
 
   async function createFolderInline(name) {
-    const created = await window.folderAPI?.create({ name, parentId: null })
-    const list = await window.folderAPI?.list()
+    const created = await api.folders?.create({ name, parentId: null })
+    const list = await api.folders?.list()
     setFolders(Array.isArray(list) ? list : [])
     return created
   }
@@ -69,7 +70,7 @@ export default function ImportExportPage() {
     await import_.commit(folderId)
     // The import may have created folders named in the file; refresh the picker.
     try {
-      const list = await window.folderAPI?.list()
+      const list = await api.folders?.list()
       if (Array.isArray(list)) setFolders(list)
     } catch {
       // keep the current list

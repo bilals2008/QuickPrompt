@@ -18,6 +18,7 @@ import { FolderSelect, NO_FOLDER } from "@/components/folders/FolderSelect"
 import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
 import { cn } from "@/lib/utils"
 import { splitTagInput, parseTagsString } from "@/lib/tag-utils"
+import { api } from "@/lib/api"
 
 const TAG_COLORS = [
   "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -69,7 +70,7 @@ export function AddPromptDialog({
     if (open) {
       setAllTags(externalTags || [])
       setSelectedFolderId(defaultFolderId || NO_FOLDER)
-      window.folderAPI?.list().then((f) => {
+      api.folders?.list().then((f) => {
         setFolders(Array.isArray(f) ? f : [])
       }).catch(() => setFolders([]))
     }
@@ -99,7 +100,7 @@ export function AddPromptDialog({
     }
     setSelectedTags([...selectedTags, t])
     if (!allTags.includes(t)) {
-      window.db.createTag(t).then(() => {
+      api.prompts.createTag(t).then(() => {
         setAllTags((prev) => [...prev, t])
       }).catch((err) => {
         console.error("Failed to create tag:", err)
@@ -121,7 +122,7 @@ export function AddPromptDialog({
     })
     for (const t of fresh) {
       if (!allTags.includes(t)) {
-        window.db.createTag(t).catch((err) => {
+        api.prompts.createTag(t).catch((err) => {
           console.error("Failed to create tag:", err)
         })
       }
@@ -146,8 +147,8 @@ export function AddPromptDialog({
   }
 
   async function createFolderInline(name) {
-    const created = await window.folderAPI?.create({ name, parentId: null })
-    const list = await window.folderAPI?.list()
+    const created = await api.folders?.create({ name, parentId: null })
+    const list = await api.folders?.list()
     setFolders(Array.isArray(list) ? list : [])
     return created
   }
@@ -162,17 +163,17 @@ export function AddPromptDialog({
     const fresh = pendingTags.filter((t) => !selectedTags.includes(t))
     const tagsToSave = [...selectedTags, ...fresh]
     try {
-      const created = await window.db.createPrompt({
+      const created = await api.prompts.createPrompt({
         title: title.trim(),
         content: content.trim(),
         tags: tagsToSave.join(","),
       })
       if (selectedFolderId !== NO_FOLDER && created?.id) {
-        await window.folderAPI?.addPrompt(created.id, selectedFolderId).catch(() => {})
+        await api.folders?.addPrompt(created.id, selectedFolderId).catch(() => {})
       }
       for (const newTag of fresh) {
         if (!allTags.includes(newTag)) {
-          window.db.createTag(newTag).catch((err) => {
+          api.prompts.createTag(newTag).catch((err) => {
             console.error("Failed to create tag:", err)
           })
         }

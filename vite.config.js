@@ -29,4 +29,6 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
+  // src-tauri/target is cargo output; watching it only produces EBUSY noise.
+  server: { watch: { ignored: ["**/src-tauri/**"] } },
 });

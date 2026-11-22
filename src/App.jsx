@@ -8,6 +8,7 @@ import { SpotlightSearch } from "@/features/spotlight-search/SpotlightSearch"
 import { CommandPalette } from "@/features/command-palette/CommandPalette"
 import { WhatsNewProvider } from "@/features/whats-new/WhatsNewProvider"
 import { toast } from "sonner"
+import { api } from "@/lib/api"
 
 function App() {
   const location = useLocation()
@@ -17,11 +18,11 @@ function App() {
   const [appVersion, setAppVersion] = useState(null)
 
   useEffect(() => {
-    window.electronAPI?.getAppVersion?.().then(setAppVersion)
+    api.app?.getAppVersion?.().then(setAppVersion)
   }, [])
 
   useEffect(() => {
-    window.settingsAPI?.get("onboardingComplete", false).then((complete) => {
+    api.settings?.get("onboardingComplete", false).then((complete) => {
       if (!complete) {
         navigate("/onboarding")
       }
@@ -39,8 +40,8 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!window.electronAPI?.onNavigate) return
-    const unsubscribe = window.electronAPI.onNavigate((route) => {
+    if (!api.app?.onNavigate) return
+    const unsubscribe = api.app.onNavigate((route) => {
       if (typeof route === "string" && route.startsWith("/")) {
         navigate(route)
       }
@@ -49,12 +50,12 @@ function App() {
   }, [navigate])
 
   useEffect(() => {
-    const unsubscribe = window.updateAPI?.onEvent((event) => {
+    const unsubscribe = api.update?.onEvent((event) => {
       if (event.status === "downloaded") {
         toast.success(`Update v${event.version} ready to install`, {
           action: {
             label: "Restart",
-            onClick: () => window.updateAPI?.installUpdate(),
+            onClick: () => api.update?.installUpdate(),
           },
         })
       }

@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { api } from "@/lib/api"
 
 export function TagManager({ selectedTags, onTagsChange, allTags: externalTags }) {
   const [open, setOpen] = useState(false)
@@ -54,7 +55,7 @@ export function TagManager({ selectedTags, onTagsChange, allTags: externalTags }
 
     if (!allTags.includes(q)) {
       try {
-        await window.db.createTag(q)
+        await api.prompts.createTag(q)
         setAllTags([...allTags, q])
       } catch (err) {
         console.error("Failed to create tag:", err)

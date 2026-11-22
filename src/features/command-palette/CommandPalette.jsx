@@ -31,6 +31,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { THEMES, useTheme } from "@/components/theme-provider.jsx"
 import { getPromptTitle } from "@/lib/prompt-utils"
 import { cn } from "@/lib/utils"
+import { api } from "@/lib/api"
 
 const MAX_PROMPT_RESULTS = 8
 
@@ -73,7 +74,7 @@ export function CommandPalette() {
       return
     }
     let cancelled = false
-    window.db
+    api.prompts
       ?.getAllPrompts?.()
       .then((data) => {
         if (!cancelled) setPrompts(Array.isArray(data) ? data : [])
@@ -105,9 +106,9 @@ export function CommandPalette() {
 
   const groups = useMemo(() => {
     const toggleView = async () => {
-      const current = (await window.settingsAPI?.get("defaultView", "grid")) || "grid"
+      const current = (await api.settings?.get("defaultView", "grid")) || "grid"
       const next = current === "grid" ? "list" : "grid"
-      await window.settingsAPI?.set("defaultView", next)
+      await api.settings?.set("defaultView", next)
       askHome("qp:set-view", next)
     }
 
