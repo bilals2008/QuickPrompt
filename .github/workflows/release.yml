@@ -17,7 +17,7 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             args: '--bundles nsis'
-          - os: macos-13
+          - os: macos-15-intel
             target: x86_64-apple-darwin
             args: '--bundles dmg'
           - os: macos-15
