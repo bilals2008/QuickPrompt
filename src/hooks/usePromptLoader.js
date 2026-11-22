@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { parseTagsString } from "@/lib/tag-utils"
+import { api } from "@/lib/api"
 
 const DEFAULT_PAGE_SIZE = 100
 
@@ -31,7 +32,7 @@ export function usePromptLoader({ search = "", favoritesOnly = false, pageSize =
       setLoading(true)
       setError(null)
       try {
-        const result = await window.db.getPromptsPaginated({
+        const result = await api.prompts.getPromptsPaginated({
           limit: pageSize,
           offset,
           search,

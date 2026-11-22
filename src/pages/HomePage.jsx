@@ -17,6 +17,7 @@ import { FolderGlyph } from "@/components/folders/FolderGlyph"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { api } from "@/lib/api"
 
 const PROMPT_PAGE_SIZE = 100
 
@@ -51,11 +52,11 @@ export default function HomePage() {
   useEffect(() => {
     let cancelled = false
     const now = Date.now()
-    window.settingsAPI?.get("vaultSeenFirstAt", null).then((firstSeen) => {
+    api.settings?.get("vaultSeenFirstAt", null).then((firstSeen) => {
       if (cancelled) return
       const first = firstSeen ?? now
       if (!firstSeen) {
-        window.settingsAPI?.set("vaultSeenFirstAt", first)
+        api.settings?.set("vaultSeenFirstAt", first)
       }
       setShowVaultBadge(now - first < 7 * 24 * 60 * 60 * 1000)
     })
@@ -84,7 +85,7 @@ export default function HomePage() {
     const reordered = arrayMove(prompts, oldIndex, newIndex)
     const updates = reordered.map((p, i) => ({ id: p.id, sort_order: i }))
 
-    window.db.updatePromptOrder(updates).catch((err) => {
+    api.prompts.updatePromptOrder(updates).catch((err) => {
       console.error("Failed to save prompt order:", err)
       if (notifications) toast.error("Failed to save order")
     })
@@ -136,7 +137,7 @@ export default function HomePage() {
 
   const loadTags = useCallback(async () => {
     try {
-      const data = await window.db.getAllTags()
+      const data = await api.prompts.getAllTags()
       setAllTags(data.map((t) => t.name) || [])
     } catch (err) {
       console.error("Failed to load tags:", err)
@@ -145,27 +146,27 @@ export default function HomePage() {
 
   useEffect(() => {
     loadTags()
-    window.db?.getAllPrompts?.().then((data) => {
+    api.prompts?.getAllPrompts?.().then((data) => {
       setTotalPromptsInDb(Array.isArray(data) ? data.length : 0)
     })
-    window.db?.health?.().then((h) => {
+    api.prompts?.health?.().then((h) => {
       if (!h.ready) toast.error("Database error: " + (h.error || "unknown"))
     })
 
-    window.settingsAPI?.get("defaultView", "grid").then((v) => setViewMode(v))
-    window.settingsAPI?.get("autoCopy", true).then((v) => setAutoCopy(v))
-    window.settingsAPI?.get("notifications", false).then((v) => setNotifications(v))
-    window.settingsAPI?.get("caseSensitive", false).then((v) => setCaseSensitive(Boolean(v)))
-    window.settingsAPI?.get("searchInTagsOnly", false).then((v) => setTagsOnly(Boolean(v)))
-    window.settingsAPI?.get("defaultSortOrder", "newest").then((v) => setSortOrder(v))
+    api.settings?.get("defaultView", "grid").then((v) => setViewMode(v))
+    api.settings?.get("autoCopy", true).then((v) => setAutoCopy(v))
+    api.settings?.get("notifications", false).then((v) => setNotifications(v))
+    api.settings?.get("caseSensitive", false).then((v) => setCaseSensitive(Boolean(v)))
+    api.settings?.get("searchInTagsOnly", false).then((v) => setTagsOnly(Boolean(v)))
+    api.settings?.get("defaultSortOrder", "newest").then((v) => setSortOrder(v))
   }, [loadTags])
 
   const loadFolderMap = useCallback(async () => {
     try {
-      const allFoldersList = await window.folderAPI.list()
+      const allFoldersList = await api.folders.list()
       const map = {}
       for (const f of (allFoldersList || [])) {
-        const result = await window.folderAPI.getPrompts(f.id)
+        const result = await api.folders.getPrompts(f.id)
         for (const p of (result?.prompts || [])) {
           if (!map[p.id]) map[p.id] = []
           map[p.id].push({ id: f.id, name: f.name, color: f.color, icon: f.icon })
@@ -178,7 +179,7 @@ export default function HomePage() {
   useEffect(() => { loadFolderMap() }, [loadFolderMap])
 
   const loadMoveFolders = useCallback(async () => {
-    const result = await window.folderAPI.list()
+    const result = await api.folders.list()
     setFolders(result || [])
   }, [])
 
@@ -199,7 +200,7 @@ export default function HomePage() {
   const handleMovePrompt = async (folderId) => {
     if (!movePromptId || !folderId) return
     try {
-      await window.folderAPI.addPrompt(movePromptId, folderId)
+      await api.folders.addPrompt(movePromptId, folderId)
       setMovePromptId(null)
       await loadFolderMap()
       toast.success("Prompt moved to folder")
@@ -213,7 +214,7 @@ export default function HomePage() {
 
   async function deletePrompt(id) {
     try {
-      await window.db.deletePrompt(id)
+      await api.prompts.deletePrompt(id)
       await refresh()
       if (notifications) toast.success("Prompt deleted")
     } catch (err) {
@@ -247,7 +248,7 @@ export default function HomePage() {
     let failed = 0
     for (const id of ids) {
       try {
-        await window.db.deletePrompt(id)
+        await api.prompts.deletePrompt(id)
       } catch {
         failed += 1
       }
@@ -262,7 +263,7 @@ export default function HomePage() {
 
   async function toggleFavoriteHandler(id) {
     try {
-      await window.db.toggleFavorite(id)
+      await api.prompts.toggleFavorite(id)
       await refresh()
     } catch (err) {
       if (notifications) toast.error("Failed to update favorite")
@@ -281,7 +282,7 @@ export default function HomePage() {
       const next = e.detail
       if (!next) return
       setViewMode(next)
-      window.settingsAPI?.set("defaultView", next)
+      api.settings?.set("defaultView", next)
     }
     window.addEventListener("qp:show-favorites", onShowFavorites)
     window.addEventListener("qp:select-mode", onSelectMode)
@@ -403,7 +404,7 @@ export default function HomePage() {
                         onClick={() => {
                           const newMode = viewMode === "grid" ? "list" : "grid"
                           setViewMode(newMode)
-                          window.settingsAPI?.set("defaultView", newMode)
+                          api.settings?.set("defaultView", newMode)
                         }}
                       >
                         {viewMode === "grid" ? (

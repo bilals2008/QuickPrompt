@@ -3,6 +3,7 @@ import { IconDownload, IconFileDescription } from "@tabler/icons-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { FORMATS, exportPrompts, getExtension } from "../lib"
+import { api } from "@/lib/api"
 
 // Rendered through the real serializers, so the example can never drift from the format.
 const SAMPLE_PROMPTS = [
@@ -36,7 +37,7 @@ export function FormatExample() {
   const sample = exportPrompts(formatId, SAMPLE_PROMPTS)
 
   async function handleSaveExample() {
-    const res = await window.importExportAPI?.saveFile({
+    const res = await api.importExport?.saveFile({
       content: sample,
       format: formatId,
       suggestedName: `quickprompt-example.${getExtension(formatId)}`,

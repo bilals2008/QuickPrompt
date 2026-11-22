@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { IconArrowRight, IconArrowLeft, IconRocket } from "@tabler/icons-react"
 import OnboardingStep, { steps } from "./OnboardingStep"
 import { cn } from "@/lib/utils"
+import { api } from "@/lib/api"
 
 export default function Onboarding() {
   const navigate = useNavigate()
@@ -12,7 +13,7 @@ export default function Onboarding() {
   const isFirstStep = currentStep === 0
 
   async function handleComplete() {
-    await window.settingsAPI?.set("onboardingComplete", true)
+    await api.settings?.set("onboardingComplete", true)
     navigate("/")
   }
 

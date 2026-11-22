@@ -23,6 +23,7 @@ import { parseTagsString, splitTagInput } from "@/lib/tag-utils"
 import { getTagColor } from "@/lib/tag-colors"
 import { getVaultTypeFields, readVaultField, cardLast4 } from "@/lib/vault-types"
 import { cn } from "@/lib/utils"
+import { api } from "@/lib/api"
 
 export const VAULT_TYPES = [
   { id: "api_key", label: "API Key", icon: IconKey, color: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400", activeColor: "bg-blue-500/20 text-blue-600 border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/25" },
@@ -105,16 +106,16 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
       setAttachments([])
       setSelectedFolderId(NO_FOLDER)
       if (item?.id) {
-        window.vaultAPI?.listAttachments(item.id).then(setAttachments).catch(() => {})
+        api.vault?.listAttachments(item.id).then(setAttachments).catch(() => {})
         // Pre-select the folder the item already lives in, if any.
-        window.vaultFolderAPI
+        api.vaultFolders
           ?.getItemFolders?.(item.id)
           .then((folders) => {
             if (Array.isArray(folders) && folders.length > 0) setSelectedFolderId(folders[0].id)
           })
           .catch(() => {})
       }
-      window.vaultFolderAPI?.list().then((f) => setVaultFolders(f || [])).catch(() => {})
+      api.vaultFolders?.list().then((f) => setVaultFolders(f || [])).catch(() => {})
       setTimeout(() => titleRef.current?.focus(), 100)
     }
   }, [isOpen, item])
@@ -182,15 +183,15 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
         color_text: colorText,
       }
       if (isEditing) {
-        await window.vaultAPI.update(item.id, { ...base, ...(value ? { value } : {}) })
+        await api.vault.update(item.id, { ...base, ...(value ? { value } : {}) })
         toast.success("Credential updated")
       } else {
-        const created = await window.vaultAPI.create({ ...base, value: value.trim() })
+        const created = await api.vault.create({ ...base, value: value.trim() })
         savedId = created?.id
         toast.success("Credential saved")
       }
       if (selectedFolderId !== NO_FOLDER && savedId) {
-        await window.vaultFolderAPI?.addItem(savedId, selectedFolderId).catch(() => {})
+        await api.vaultFolders?.addItem(savedId, selectedFolderId).catch(() => {})
       }
       onSaved?.()
       setOpen(false)
@@ -273,11 +274,11 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
                 onChange={setSelectedFolderId}
                 folders={vaultFolders}
                 onCreate={async (folderName) => {
-                  const created = await window.vaultFolderAPI.create({
+                  const created = await api.vaultFolders.create({
                     name: folderName,
                     parentId: null,
                   })
-                  const list = await window.vaultFolderAPI.list()
+                  const list = await api.vaultFolders.list()
                   setVaultFolders(list || [])
                   return created
                 }}
@@ -449,14 +450,14 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
                         reader.onerror = reject
                         reader.readAsDataURL(file)
                       })
-                      await window.vaultAPI?.createAttachment({
+                      await api.vault?.createAttachment({
                         vaultItemId: item.id,
                         filename: file.name,
                         mimeType: file.type,
                         data,
                       })
                     }
-                    const updated = await window.vaultAPI?.listAttachments(item.id)
+                    const updated = await api.vault?.listAttachments(item.id)
                     setAttachments(updated || [])
                     toast.success(`${files.length} file(s) attached`)
                   } catch {
@@ -481,7 +482,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
                       type="button"
                       onClick={async () => {
                         try {
-                          const att = await window.vaultAPI?.downloadAttachment(a.id)
+                          const att = await api.vault?.downloadAttachment(a.id)
                           if (!att?.data) return
                           const byteChars = atob(att.data)
                           const arr = new Uint8Array(byteChars.length)
@@ -506,7 +507,7 @@ export function VaultItemDialog({ open, onOpenChange, onSaved, item = null, hide
                       type="button"
                       onClick={async () => {
                         try {
-                          await window.vaultAPI?.deleteAttachment(a.id)
+                          await api.vault?.deleteAttachment(a.id)
                           setAttachments((prev) => prev.filter((x) => x.id !== a.id))
                           toast.success("Attachment removed")
                         } catch {

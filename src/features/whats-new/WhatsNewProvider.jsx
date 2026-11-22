@@ -2,17 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { getEntriesForInstall } from "@/lib/changelog"
 import { WhatsNewContext } from "./whats-new-context"
 import { WhatsNewDialog } from "./WhatsNewDialog"
+import { api } from "@/lib/api"
 
 const STORAGE_KEY = "lastSeenVersion"
 const AUTO_SHOW_DELAY_MS = 1500
 
 async function readLastSeen() {
-  if (window.settingsAPI?.get) return window.settingsAPI.get(STORAGE_KEY, null)
+  if (api.settings?.get) return api.settings.get(STORAGE_KEY, null)
   return localStorage.getItem(STORAGE_KEY)
 }
 
 async function writeLastSeen(version) {
-  if (window.settingsAPI?.set) return window.settingsAPI.set(STORAGE_KEY, version)
+  if (api.settings?.set) return api.settings.set(STORAGE_KEY, version)
   localStorage.setItem(STORAGE_KEY, version)
   return undefined
 }
