@@ -27,6 +27,26 @@ export const SECTION_META = {
 
 export const CHANGELOG = [
   {
+    version: "3.0.0",
+    date: "2026-11-22",
+    title: "Brand new engine, same QuickPrompt",
+    sections: [
+      {
+        type: "added",
+        items: [
+          { icon: IconSparkles, title: "Lighter app", desc: "Faster startup, smaller installer, less memory" },
+        ],
+      },
+      {
+        type: "improved",
+        items: [
+          { icon: IconDeviceDesktop, title: "Same data", desc: "Your prompts, folders and vault open unchanged" },
+          { icon: IconDownload, title: "Automatic updates", desc: "Updates now check and download through GitHub releases" },
+        ],
+      },
+    ],
+  },
+  {
     version: "2.6.0",
     date: "2026-11-13",
     title: "Folder icons on your terms",

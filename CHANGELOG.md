@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] - November 22, 2026
+
+### Brand new engine
+
+QuickPrompt now runs on a lighter engine. It starts faster, uses less memory, and the installer is smaller — all your prompts, tags, folders, vault and settings open exactly as before.
+
+### Improved
+
+- Smaller download and install size
+- Faster startup
+- Automatic updates through GitHub releases
+
+---
+
 ## [2.6.0] - November 13, 2026
 
 ### Added
