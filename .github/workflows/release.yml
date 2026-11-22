@@ -58,6 +58,17 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: tauri build ${{ matrix.args }}
 
+      # Both macOS targets emit the same `QuickPrompt.app.tar.gz`, which would
+      # overwrite each other when artifacts are merged. Give each its arch.
+      - name: Name macOS updater archive by target
+        if: runner.os == 'macOS'
+        run: |
+          cd src-tauri/target/release/bundle/macos
+          if [ -f QuickPrompt.app.tar.gz ]; then
+            mv QuickPrompt.app.tar.gz "QuickPrompt_3.0.0_${{ matrix.target }}.app.tar.gz"
+            mv QuickPrompt.app.tar.gz.sig "QuickPrompt_3.0.0_${{ matrix.target }}.app.tar.gz.sig"
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: bundles-${{ matrix.target }}
