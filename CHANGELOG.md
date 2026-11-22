@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.1] - November 22, 2026
+
+### Improved
+
+- Prompts inside a folder can now use the same rich cards as the home screen — turn this on in Settings → App Customization → Folder prompt cards
+- Rich cards in a folder leave out the folder name, since you are already inside it
+
+---
+
 ## [3.0.0] - November 22, 2026
 
 ### Brand new engine

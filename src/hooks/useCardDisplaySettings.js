@@ -12,6 +12,7 @@ import { api } from "@/lib/api"
    cardDensity: "normal",
    maxLines: 3,
    colorByTag: false,
+   folderCardStyle: "compact",
  }
  
  export const DENSITY_CLASSES = {

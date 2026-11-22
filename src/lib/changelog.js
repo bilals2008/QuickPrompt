@@ -27,6 +27,20 @@ export const SECTION_META = {
 
 export const CHANGELOG = [
   {
+    version: "3.0.1",
+    date: "2026-11-22",
+    title: "Folder cards, your way",
+    sections: [
+      {
+        type: "improved",
+        items: [
+          { icon: IconLayoutGrid, title: "Rich cards in folders", desc: "Use the home-style cards inside folders, toggle in Settings" },
+          { icon: IconDeviceDesktop, title: "Cleaner cards", desc: "No folder name on cards already inside that folder" },
+        ],
+      },
+    ],
+  },
+  {
     version: "3.0.0",
     date: "2026-11-22",
     title: "Brand new engine, same QuickPrompt",

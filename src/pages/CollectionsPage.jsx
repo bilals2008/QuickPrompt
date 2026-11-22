@@ -31,6 +31,7 @@ import {
 
 import { FolderTile } from "@/components/folders/FolderTile"
 import { PromptRow } from "@/components/collections/PromptRow"
+import { PromptCardItem } from "@/components/prompt-card"
 import { AddPromptDialog } from "@/components/add-prompt-dialog"
 import { AddPromptsDialog } from "@/components/collections/AddPromptsDialog"
 import { FolderDetailsDialog } from "@/components/collections/FolderDetailsDialog"
@@ -43,6 +44,7 @@ import { EmptyState } from "@/components/empty-state"
 
 import { useFolders } from "@/hooks/useFolders"
 import { useFolderDisplaySettings } from "@/hooks/useFolderDisplaySettings"
+import { useCardDisplaySettings } from "@/hooks/useCardDisplaySettings"
 import { api } from "@/lib/api"
 
 export default function CollectionsPage() {
@@ -50,6 +52,7 @@ export default function CollectionsPage() {
   const navigate = useNavigate()
 
   const [folderDisplay] = useFolderDisplaySettings()
+  const [cardDisplay] = useCardDisplaySettings()
 
   const {
     folders,
@@ -639,17 +642,35 @@ export default function CollectionsPage() {
                 }
               />
             ) : (
-              <div className="flex flex-col gap-2">
-                {filteredPrompts.map((prompt) => (
-                  <PromptRow
-                    key={prompt.id}
-                    prompt={prompt}
-                    onCopy={copyPrompt}
-                    onRemove={() => removePromptFromFolder(prompt.id)}
-                    onToggleFavorite={() => toggleFavorite(prompt.id)}
-                  />
-                ))}
-              </div>
+              cardDisplay.folderCardStyle === "rich" ? (
+                <div className="grid grid-cols-1 gap-3">
+                  {filteredPrompts.map((prompt) => (
+                    <PromptCardItem
+                      key={prompt.id}
+                      prompt={prompt}
+                      viewMode="grid"
+                      onCopy={copyPrompt}
+                      onDelete={(id) => removePromptFromFolder(id)}
+                      onToggleFavorite={toggleFavorite}
+                      allTags={[]}
+                      onSaved={handleNewPromptSaved}
+                      display={cardDisplay}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {filteredPrompts.map((prompt) => (
+                    <PromptRow
+                      key={prompt.id}
+                      prompt={prompt}
+                      onCopy={copyPrompt}
+                      onRemove={() => removePromptFromFolder(prompt.id)}
+                      onToggleFavorite={() => toggleFavorite(prompt.id)}
+                    />
+                  ))}
+                </div>
+              )
             )}
           </>
         )}

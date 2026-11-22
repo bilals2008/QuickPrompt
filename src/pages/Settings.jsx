@@ -824,6 +824,25 @@ export default function Settings() {
                     </SettingRow>
                     <Separator />
                     <SettingRow
+                      icon={IconLayoutGrid}
+                      label="Folder prompt cards"
+                      description="How prompts look inside a folder"
+                    >
+                      <Select
+                        value={cardDisplay.folderCardStyle || "compact"}
+                        onValueChange={(v) => handleCardDisplayToggle("folderCardStyle", v)}
+                      >
+                        <SelectTrigger className="w-[140px] h-8 text-xs cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="compact">Compact rows</SelectItem>
+                          <SelectItem value="rich">Rich cards</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                    <Separator />
+                    <SettingRow
                       icon={IconTextCaption}
                       label="Max lines in card"
                       description="Limit the prompt body text shown on cards"

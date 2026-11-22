@@ -1,6 +1,6 @@
 [package]
 name = "quickprompt"
-version = "3.0.0"
+version = "3.0.1"
 description = "A simple prompt manager - create, tag, and copy prompts instantly"
 authors = ["Muhammad Bilal Hassan"]
 edition = "2021"
