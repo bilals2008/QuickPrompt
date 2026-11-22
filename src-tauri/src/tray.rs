@@ -186,10 +186,16 @@ pub fn handle_menu_event(app: &AppHandle, id: &str) {
             window::emit(app, "qp:navigate", Some("/import-export"));
             refresh(app);
         }
-        "settings" | "check-updates" => {
+        "settings" => {
             window::show_and_focus(app);
             window::emit(app, "qp:navigate", Some("/settings"));
             refresh(app);
+        }
+        "check-updates" => {
+            window::show_and_focus(app);
+            window::emit(app, "qp:navigate", Some("/settings"));
+            refresh(app);
+            crate::update::schedule_menu_check(app);
         }
         "about" => {
             window::show_and_focus(app);

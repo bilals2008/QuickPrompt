@@ -6,6 +6,7 @@ pub mod fs;
 pub mod import_export;
 pub mod prompts;
 pub mod settings;
+pub mod update;
 pub mod vault;
 pub mod vault_folders;
 pub mod window;

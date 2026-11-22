@@ -17,6 +17,48 @@
 5. Artifact naming: match `QuickPrompt-Setup-${version}.exe`, `QuickPrompt-${version}.dmg`, etc.
 6. CI: update `.github/workflows` to build Tauri artifacts; keep matrix for the three OSes.
 
+## Status (2026-11-22)
+
+Implemented:
+
+- `tauri-plugin-updater` added; the static GitHub Releases endpoint
+  (`.../releases/latest/download/latest.json`) and public key are configured.
+- Signing keypair generated at `%USERPROFILE%\.tauri\quickprompt.key`
+  (outside the repo, no password). **Add that file as the
+  `TAURI_SIGNING_PRIVATE_KEY` repository secret** (and an empty
+  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`). Losing it blocks future updates.
+- `update:*` commands ported (`commands/update.rs`; state and logic in
+  `src-tauri/src/update.rs`): check, download, install, get-status,
+  auto-check/auto-download get+set. Progress arrives as `qp:update` events with
+  the same payload keys Electron used; `api.update.*` and `onEvent` are wired
+  in `src/lib/api/tauri.js`.
+- Startup auto-check after 3s, the tray "Check for Updates…" delay, and
+  download-on-available match Electron.
+- `.github/workflows/release.yml` builds NSIS (Windows), DMG (macOS x64 +
+  arm64) and AppImage + deb (Linux), then publishes the assets plus
+  `latest.json` from `scripts/update-manifest.mjs`.
+
+Verified locally:
+
+- `cargo clippy --all-targets`, `npm test`, `npm run lint` all green.
+- `cargo tauri build --bundles nsis` produces
+  `QuickPrompt_2.6.0_x64-setup.exe` and its `.sig`; the packaged app launches.
+- `node scripts/update-manifest.mjs` emits a valid manifest for the build.
+
+Still open (needs a person or a real runner):
+
+- [ ] Installer tested on a clean machine.
+- [ ] A live update check → download → install against a published release.
+- [ ] macOS/Linux CI jobs actually executed; Windows/macOS code-signing and
+      Apple notarization certificates procured.
+
+Deviations:
+
+- Tauri 2 has no `artifactName` setting, so bundle filenames are Tauri-derived
+  (`QuickPrompt_2.6.0_x64-setup.exe`), not electron-builder's.
+- Native OS notifications for "update available"/"downloaded" are not shown;
+  the existing in-app toasts cover both moments.
+
 ## Done when
 
 - [ ] `cargo tauri build` produces installers for all three platforms.

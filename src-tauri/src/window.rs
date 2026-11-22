@@ -139,14 +139,22 @@ pub fn apply_preset(window: &WebviewWindow, name: &str) {
     let _ = window.center();
 }
 
-/// Push an event to the webview. The React app listens for these as DOM
-/// events, so no extra JS package is needed to bridge them.
+/// Push an event carrying a string to the webview. The React app listens for
+/// these as DOM events, so no extra JS package is needed to bridge them.
 pub fn emit(app: &AppHandle, event: &str, detail: Option<&str>) {
+    emit_json(
+        app,
+        event,
+        detail
+            .map(|value| serde_json::Value::String(value.to_string()))
+            .unwrap_or(serde_json::Value::Null),
+    );
+}
+
+/// Same as [`emit`], but the payload is any JSON value.
+pub fn emit_json(app: &AppHandle, event: &str, detail: serde_json::Value) {
     let Some(window) = main_window(app) else { return };
-    let detail = match detail {
-        Some(value) => serde_json::to_string(value).unwrap_or_else(|_| "null".to_string()),
-        None => "null".to_string(),
-    };
+    let detail = serde_json::to_string(&detail).unwrap_or_else(|_| "null".to_string());
     let script =
         format!("window.dispatchEvent(new CustomEvent('{event}', {{ detail: {detail} }}));");
     if let Err(err) = window.eval(&script) {

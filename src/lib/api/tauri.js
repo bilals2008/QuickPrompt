@@ -2,8 +2,8 @@
 // `invoke` works without the @tauri-apps/api package (still deliberately absent).
 const invoke = (command, args) => window.__TAURI_INTERNALS__.invoke(command, args)
 
-// Commands that exist in Rust today. Groups still missing (update) keep
-// rejecting with a readable error until phase 7 fills them in.
+// Commands that exist in Rust today. Groups still missing keep rejecting with a
+// readable error.
 const IMPLEMENTED = {
   prompts: {
     health: () => invoke("db_health"),
@@ -120,6 +120,16 @@ const IMPLEMENTED = {
     show: ({ title, body, silent } = {}) =>
       invoke("notification_show", { title, body, silent }),
   },
+  update: {
+    checkForUpdates: () => invoke("update_check"),
+    downloadUpdate: () => invoke("update_download"),
+    installUpdate: () => invoke("update_install"),
+    getStatus: () => invoke("update_get_status"),
+    setAutoCheck: (enabled) => invoke("update_set_auto_check", { enabled }),
+    getAutoCheck: () => invoke("update_get_auto_check"),
+    setAutoDownload: (enabled) => invoke("update_set_auto_download", { enabled }),
+    getAutoDownload: () => invoke("update_get_auto_download"),
+  },
 }
 
 const pending = (path) => () => Promise.reject(new Error(`${path} is not implemented in Tauri yet`))
@@ -138,9 +148,9 @@ const noop = () => () => {}
 const SUBSCRIPTIONS = {
   onNavigate: domEvent("qp:navigate"),
   onGlobalSearch: domEvent("qp:global-search"),
-  // Maximise is disabled and updates are not wired yet, so nothing fires.
+  // Maximise is disabled, so nothing fires.
   onMaximizeChange: noop,
-  onEvent: noop,
+  onEvent: domEvent("qp:update"),
 }
 
 export const api = new Proxy(

@@ -9,12 +9,24 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ${{ matrix.os }}
+  build:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-15, ubuntu-latest]
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: '--bundles nsis'
+          - os: macos-13
+            target: x86_64-apple-darwin
+            args: '--bundles dmg'
+          - os: macos-15
+            target: aarch64-apple-darwin
+            args: '--bundles dmg'
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            args: '--bundles appimage deb'
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -23,9 +35,52 @@ jobs:
           node-version: 24
           cache: npm
 
-      - run: npm ci
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
-      - name: Build & Publish
-        run: npm run release:${{ startsWith(matrix.os, 'macos') && 'mac' || matrix.os == 'windows-latest' && 'win' || 'linux' }}
+      - name: Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf build-essential curl wget file
+
+      - run: npm ci
+      - run: npm run build:web
+
+      - name: Install Tauri CLI
+        run: npm install --global @tauri-apps/cli@2.12.6
+
+      - name: Build bundles
+        working-directory: src-tauri
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: tauri build ${{ matrix.args }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles-${{ matrix.target }}
+          path: src-tauri/target/release/bundle/**
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Generate updater manifest
+        run: node scripts/update-manifest.mjs "${{ github.ref_name }}" artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: artifacts/**

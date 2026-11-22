@@ -6,6 +6,7 @@ pub mod icons;
 pub mod repo;
 pub mod settings;
 pub mod tray;
+pub mod update;
 pub mod window;
 
 use tauri::Manager;
@@ -19,6 +20,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         // Custom folder icons, served at `qpicon://icon/<name>` (macOS/Linux)
         // and `http://qpicon.localhost/icon/<name>` (Windows/Android).
@@ -54,9 +56,11 @@ pub fn run() {
             app.manage(state);
             app.manage(crypto::VaultCipher::load());
             app.manage(settings::SettingsStore::load(app.handle()));
+            app.manage(update::UpdateState::new());
 
             tray::build(app.handle())?;
             register_quick_search(app.handle());
+            update::schedule_startup_check(app.handle());
 
             if let Some(window) = app.get_webview_window(window::MAIN_WINDOW) {
                 let settings = app.state::<settings::SettingsStore>();
@@ -163,6 +167,14 @@ pub fn run() {
             commands::app::app_relaunch,
             commands::app::notification_show,
             commands::app::shell_open_external,
+            commands::update::update_check,
+            commands::update::update_download,
+            commands::update::update_install,
+            commands::update::update_get_status,
+            commands::update::update_set_auto_check,
+            commands::update::update_get_auto_check,
+            commands::update::update_set_auto_download,
+            commands::update::update_get_auto_download,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");
