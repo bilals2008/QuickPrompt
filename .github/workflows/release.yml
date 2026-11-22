@@ -63,10 +63,11 @@ jobs:
       - name: Name macOS updater archive by target
         if: runner.os == 'macOS'
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
           cd src-tauri/target/release/bundle/macos
           if [ -f QuickPrompt.app.tar.gz ]; then
-            mv QuickPrompt.app.tar.gz "QuickPrompt_3.0.0_${{ matrix.target }}.app.tar.gz"
-            mv QuickPrompt.app.tar.gz.sig "QuickPrompt_3.0.0_${{ matrix.target }}.app.tar.gz.sig"
+            mv QuickPrompt.app.tar.gz "QuickPrompt_${VERSION}_${{ matrix.target }}.app.tar.gz"
+            mv QuickPrompt.app.tar.gz.sig "QuickPrompt_${VERSION}_${{ matrix.target }}.app.tar.gz.sig"
           fi
 
       - uses: actions/upload-artifact@v4
