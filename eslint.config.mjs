@@ -3,7 +3,7 @@ import globals from "globals";
 
 export default [
   js.configs.recommended,
-  { ignores: ["dist", "dist-electron", "src-tauri"] },
+  { ignores: ["dist", "src-tauri"] },
   {
     files: ["**/*.{js,jsx}"],
     languageOptions: {
@@ -27,7 +27,7 @@ export default [
         "error",
         {
           selector:
-            "MemberExpression[object.name='window'][property.name=/^(db|settingsAPI|folderAPI|vaultAPI|vaultFolderAPI|backupAPI|updateAPI|electronAPI|shellAPI|windowAPI|notificationAPI|importExportAPI|fsAPI|appAPI)$/]",
+            "MemberExpression[object.name='window'][property.name=/^(db|settingsAPI|folderAPI|vaultAPI|vaultFolderAPI|backupAPI|updateAPI|shellAPI|windowAPI|notificationAPI|importExportAPI|fsAPI|appAPI)$/]",
           message: "Use the api adapter from src/lib/api instead of window.* directly.",
         },
       ],
